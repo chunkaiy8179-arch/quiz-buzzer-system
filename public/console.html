@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>搶答燈 — 主持端</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+}
+
+/* ── Top Bar ── */
+.top-bar {
+  position: sticky; top: 0; z-index: 10;
+  background: #0f0f0f;
+  border-bottom: 1px solid #1f1f1f;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.top-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #e5e5e5;
+  text-transform: uppercase;
+  flex: 1;
+}
+#phase-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: #1a1a1a;
+  color: #555;
+  transition: background 0.3s, color 0.3s;
+}
+#ws-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #333;
+  transition: background 0.3s;
+}
+#ws-dot.on { background: #22c55e; }
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.btn-open, .btn-reset {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.2s, transform 0.08s;
+}
+.btn-open:active:not(:disabled), .btn-reset:active { transform: scale(0.96); }
+.btn-open {
+  background: #16a34a;
+  color: #fff;
+}
+.btn-open:disabled { background: #1a1a1a; color: #333; cursor: not-allowed; }
+.btn-reset {
+  background: #1a1a1a;
+  color: #777;
+  max-width: 100px;
+  border: 1px solid #2a2a2a;
+}
+.btn-reset:hover { background: #222; }
+
+/* ── Buzz List ── */
+#main {
+  overflow-y: auto;
+  padding: 16px 20px;
+  height: calc(100% - 120px);
+}
+#empty-msg {
+  margin-top: 60px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2a2a2a;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+#buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.buzz-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #141414;
+  border: 1px solid #1f1f1f;
+  border-radius: 14px;
+  padding: 16px 18px;
+  animation: row-in 0.25s ease-out both;
+  transition: border-color 0.2s, background 0.2s;
+}
+.buzz-row.focus {
+  background: rgba(234,179,8,0.08);
+  border-color: #ca8a04;
+}
+.buzz-row.verified-correct {
+  background: rgba(22,163,74,0.08);
+  border-color: #15803d;
+  opacity: 0.7;
+}
+.buzz-row.verified-wrong {
+  background: rgba(220,38,38,0.06);
+  border-color: #991b1b;
+  opacity: 0.5;
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.rank-num {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+.rank-1 { background: #854d0e; color: #fef08a; }
+.rank-2 { background: #374151; color: #d1d5db; }
+.rank-3 { background: #431407; color: #fdba74; }
+.rank-n { background: #1a1a1a; color: #555; font-size: 12px; }
+
+.team-name {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #e5e5e5;
+}
+.focus .team-name { color: #fde047; }
+.verified-correct .team-name { color: #4ade80; text-decoration: line-through; }
+.verified-wrong .team-name { color: #f87171; text-decoration: line-through; }
+
+.focus-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ca8a04;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid #854d0e;
+  border-radius: 6px;
+  animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.result-badge {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+.badge-correct { background: rgba(22,163,74,0.2); color: #4ade80; }
+.badge-wrong   { background: rgba(220,38,38,0.2); color: #f87171; }
+
+.verify-btns { display: flex; gap: 8px; }
+.v-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.08s;
+}
+.v-btn:active { transform: scale(0.93); }
+.v-correct { background: #16a34a; color: #fff; }
+.v-wrong   { background: #dc2626; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <span class="top-title">主持端</span>
+  <span id="phase-badge">LOCKED</span>
+  <div id="ws-dot"></div>
+</div>
+
+<div class="controls">
+  <button id="btn-open" class="btn-open">開啟搶答</button>
+  <button id="btn-reset" class="btn-reset">重設</button>
+</div>
+
+<div id="main">
+  <div id="empty-msg">尚無搶答記錄</div>
+  <ol id="buzz-list"></ol>
+</div>
+
+<script>
+const WS_URL = `ws://${location.host}`;
+let ws;
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+const $ = id => document.getElementById(id);
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.addEventListener('open', () => { $('ws-dot').classList.add('on'); });
+  ws.addEventListener('close', () => { $('ws-dot').classList.remove('on'); setTimeout(connect, 2000); });
+  ws.addEventListener('message', e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'state') renderState(msg);
+  });
+}
+connect();
+
+function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+$('btn-open').addEventListener('click', () => send({ type: 'host_open' }));
+$('btn-reset').addEventListener('click', () => send({ type: 'host_reset' }));
+
+function renderState(state) {
+  // Phase badge
+  const badge = $('phase-badge');
+  const phases = {
+    locked:    ['LOCKED',   '#1a1a1a', '#444'],
+    open:      ['OPEN',     'rgba(22,163,74,0.2)', '#4ade80'],
+    reviewing: ['REVIEW',   'rgba(234,179,8,0.15)', '#fde047'],
+  };
+  const [label, bg, color] = phases[state.phase] ?? phases.locked;
+  badge.textContent = label;
+  badge.style.background = bg;
+  badge.style.color = color;
+
+  // Open button
+  const btnOpen = $('btn-open');
+  btnOpen.disabled = state.phase !== 'locked';
+
+  // List
+  const list = $('buzz-list');
+  list.innerHTML = '';
+  $('empty-msg').style.display = state.buzzOrder.length ? 'none' : '';
+
+  state.buzzOrder.forEach((entry, i) => {
+    const isFocus = state.currentFocus === entry.team && !entry.verified;
+    const li = document.createElement('li');
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
+    const rowClass = entry.verified
+      ? (entry.result === 'correct' ? 'verified-correct' : 'verified-wrong')
+      : (isFocus ? 'focus' : '');
+
+    li.className = `buzz-row ${rowClass}`;
+
+    const rankLabel = i < 3 ? ['1ST','2ND','3RD'][i] : `#${i+1}`;
+
+    let rightContent = '';
+    if (entry.verified) {
+      const cls = entry.result === 'correct' ? 'badge-correct' : 'badge-wrong';
+      const label = entry.result === 'correct' ? '正確' : '錯誤';
+      rightContent = `<span class="result-badge ${cls}">${label}</span>`;
+    } else if (isFocus) {
+      rightContent = `
+        <span class="focus-tag">待驗證</span>
+        <div class="verify-btns">
+          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O 正確</button>
+          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X 錯誤</button>
+        </div>`;
+    } else {
+      rightContent = `
+        <div class="verify-btns">
+          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O</button>
+          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X</button>
+        </div>`;
+    }
+
+    li.innerHTML = `
+      <div class="rank-num ${rankClass}">${rankLabel}</div>
+      <span class="team-name">${escHtml(entry.team)}</span>
+      ${rightContent}
+    `;
+    list.appendChild(li);
+  });
+
+  // Delegate verify clicks
+  list.querySelectorAll('.v-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      send({ type: 'host_verify', team: btn.dataset.team, result: btn.dataset.result });
+    });
+  });
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return s.replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

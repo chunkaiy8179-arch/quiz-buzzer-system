@@ -1,0 +1,21 @@
+{
+  "name": "quiz-buzzer-system",
+  "version": "1.0.0",
+  "description": "跨裝置網頁版電子搶答燈系統",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}

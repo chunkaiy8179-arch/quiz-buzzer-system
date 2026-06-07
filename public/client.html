@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>搶答燈 — 學員端</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Login ── */
+#login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  height: 100%;
+  padding: 32px 28px;
+}
+.login-logo {
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: -4px;
+  color: #e11d48;
+  line-height: 1;
+}
+.login-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #e5e5e5;
+  text-transform: uppercase;
+}
+.login-sub {
+  font-size: 14px;
+  color: #555;
+  letter-spacing: 1px;
+  margin-top: -8px;
+}
+#team-input {
+  width: 100%;
+  max-width: 320px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 14px;
+  padding: 18px 20px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 1px;
+}
+#team-input:focus { border-color: #e11d48; }
+#team-input::placeholder { color: #444; font-weight: 400; font-size: 16px; }
+#join-btn {
+  width: 100%;
+  max-width: 320px;
+  background: #e11d48;
+  border: none;
+  border-radius: 14px;
+  padding: 20px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+#join-btn:active { background: #be123c; transform: scale(0.97); }
+
+/* ── Game Screen ── */
+#game-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0;
+}
+
+/* Top Bar */
+.top-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.top-bar-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #444;
+  text-transform: uppercase;
+}
+#team-badge {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e5e5e5;
+  letter-spacing: 1px;
+}
+#ws-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #555;
+  transition: background 0.3s;
+}
+#ws-dot.connected { background: #22c55e; }
+
+/* Buzz Button Area */
+.btn-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  padding: 24px;
+}
+
+#buzz-btn {
+  width: min(72vw, 320px);
+  height: min(72vw, 320px);
+  border-radius: 50%;
+  border: none;
+  font-size: clamp(36px, 10vw, 56px);
+  font-weight: 900;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  cursor: not-allowed;
+  transition: transform 0.08s, box-shadow 0.15s, background 0.2s, color 0.2s;
+  position: relative;
+  outline: none;
+}
+
+/* Locked */
+#buzz-btn.state-locked {
+  background: #1c1c1c;
+  color: #3a3a3a;
+  box-shadow: 0 0 0 8px #161616, 0 0 0 16px #111;
+}
+
+/* Open */
+#buzz-btn.state-open {
+  background: #e11d48;
+  color: #fff;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 8px rgba(225,29,72,0.15),
+    0 0 0 16px rgba(225,29,72,0.07),
+    0 20px 60px rgba(225,29,72,0.5);
+  animation: buzz-pulse 1.4s ease-in-out infinite;
+}
+#buzz-btn.state-open:active {
+  transform: scale(0.88);
+  box-shadow: 0 0 0 4px rgba(225,29,72,0.3), 0 8px 30px rgba(225,29,72,0.4);
+}
+
+/* Buzzed */
+#buzz-btn.state-buzzed {
+  background: #f59e0b;
+  color: #0a0a0a;
+  cursor: not-allowed;
+  box-shadow: 0 0 0 8px rgba(245,158,11,0.12), 0 0 0 16px rgba(245,158,11,0.06);
+  font-size: clamp(22px, 6vw, 32px);
+  letter-spacing: 1px;
+}
+
+@keyframes buzz-pulse {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(225,29,72,0.15), 0 0 0 16px rgba(225,29,72,0.07), 0 20px 60px rgba(225,29,72,0.5); }
+  50%       { box-shadow: 0 0 0 14px rgba(225,29,72,0.22), 0 0 0 28px rgba(225,29,72,0.1), 0 20px 80px rgba(225,29,72,0.7); }
+}
+
+@keyframes body-flash {
+  0%   { background: #fff; }
+  20%  { background: #e11d48; }
+  100% { background: #0a0a0a; }
+}
+body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
+
+/* Status Bar */
+.status-bar {
+  width: 100%;
+  padding: 20px 24px 32px;
+  text-align: center;
+  border-top: 1px solid #1a1a1a;
+  min-height: 80px;
+}
+#status-msg {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #555;
+  transition: color 0.3s;
+}
+#status-msg.active { color: #fbbf24; }
+#status-msg.locked { color: #3a3a3a; }
+
+/* Lock indicator */
+.lock-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.lock-bar {
+  width: 40px; height: 3px;
+  background: #222;
+  border-radius: 2px;
+}
+#phase-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  color: #333;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- 登入畫面 -->
+<div id="login-screen">
+  <div class="login-logo">B</div>
+  <div>
+    <div class="login-title">搶答燈系統</div>
+    <div class="login-sub">QUIZ BUZZER SYSTEM</div>
+  </div>
+  <input id="team-input" type="text" placeholder="輸入組別名稱"
+    maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+  <button id="join-btn">加入搶答</button>
+</div>
+
+<!-- 搶答畫面 -->
+<div id="game-screen">
+  <div class="top-bar">
+    <span class="top-bar-title">搶答燈</span>
+    <span id="team-badge">—</span>
+    <div id="ws-dot"></div>
+  </div>
+
+  <div class="btn-area">
+    <button id="buzz-btn" class="state-locked" disabled>BUZZ</button>
+  </div>
+
+  <div class="status-bar">
+    <div id="status-msg" class="locked">等待主持人開放搶答</div>
+    <div class="lock-indicator">
+      <div class="lock-bar"></div>
+      <span id="phase-label">LOCKED</span>
+      <div class="lock-bar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const WS_URL = `ws://${location.host}`;
+let ws, myTeam, buzzed = false;
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+const $ = id => document.getElementById(id);
+
+$('join-btn').addEventListener('click', joinGame);
+$('team-input').addEventListener('keydown', e => { if (e.key === 'Enter') joinGame(); });
+
+function joinGame() {
+  const name = $('team-input').value.trim();
+  if (!name) { $('team-input').focus(); return; }
+  myTeam = name;
+  connectWS();
+}
+
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({ type: 'join', team: myTeam }));
+    $('login-screen').style.display = 'none';
+    $('game-screen').style.display = 'flex';
+    $('team-badge').textContent = myTeam;
+    $('ws-dot').classList.add('connected');
+  });
+  ws.addEventListener('message', e => handleMessage(JSON.parse(e.data)));
+  ws.addEventListener('close', () => {
+    $('ws-dot').classList.remove('connected');
+    setTimeout(connectWS, 2000);
+  });
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'state': applyState(msg); break;
+    case 'first_buzz':
+    case 'buzz_registered':
+      if (msg.team === myTeam) setBuzzLocked(msg.rank);
+      break;
+  }
+}
+
+function applyState(msg) {
+  const btn = $('buzz-btn');
+
+  if (msg.phase === 'locked') {
+    buzzed = false;
+    btn.disabled = true;
+    btn.className = 'state-locked';
+    btn.textContent = 'BUZZ';
+    setStatus('等待主持人開放搶答', 'locked');
+    setPhaseLabel('LOCKED');
+  } else if (msg.phase === 'open') {
+    if (buzzed) return;
+    const myEntry = msg.buzzOrder.find(b => b.team === myTeam);
+    if (myEntry) { setBuzzLocked(msg.buzzOrder.indexOf(myEntry) + 1); return; }
+    btn.disabled = false;
+    btn.className = 'state-open';
+    btn.textContent = 'BUZZ';
+    setStatus('搶答開放中！', 'active');
+    setPhaseLabel('OPEN');
+  }
+}
+
+function setBuzzLocked(rank) {
+  buzzed = true;
+  const btn = $('buzz-btn');
+  btn.disabled = true;
+  btn.className = 'state-buzzed';
+  btn.textContent = `第 ${rank} 名`;
+  setStatus('已搶答，等待驗證', 'active');
+  setPhaseLabel(`RANK  ${rank}`);
+  document.body.classList.add('buzz-flash');
+  setTimeout(() => document.body.classList.remove('buzz-flash'), 500);
+}
+
+function setStatus(text, cls) {
+  const el = $('status-msg');
+  el.textContent = text;
+  el.className = cls;
+}
+function setPhaseLabel(text) { $('phase-label').textContent = text; }
+
+$('buzz-btn').addEventListener('click', () => {
+  if (buzzed || !ws || ws.readyState !== 1) return;
+  buzzed = true;
+  ws.send(JSON.stringify({ type: 'buzz', team: myTeam, ts: Date.now() }));
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+});
+</script>
+</body>
+</html>
