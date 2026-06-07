@@ -275,7 +275,7 @@ body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
 </div>
 
 <script>
-const WS_URL = `ws://${location.host}`;
+const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
 let ws, myTeam, buzzed = false;
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -449,7 +449,7 @@ function handleMessage(msg) {
 
 // ── WebSocket ─────────────────────────────────────────────────────────────
 function connect() {
-  ws = new WebSocket(`ws://${location.host}`);
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
   ws.addEventListener('message', e => handleMessage(JSON.parse(e.data)));
   ws.addEventListener('close', () => setTimeout(connect, 2000));
 }
