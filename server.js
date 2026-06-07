@@ -7,14 +7,25 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+// ── Security headers ───────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.redirect('/client.html'));
 
+// ── Host PIN ───────────────────────────────────────────────────────────────
+const HOST_PIN = process.env.HOST_PIN || Math.random().toString(36).slice(2, 6).toUpperCase();
+
 // ── State ──────────────────────────────────────────────────────────────────
 let state = {
-  phase: 'locked',          // 'locked' | 'open' | 'reviewing'
-  buzzOrder: [],             // [{ team, ts, verified, result }]
-  currentFocus: null,        // team string currently under review
+  phase: 'locked',
+  buzzOrder: [],
+  currentFocus: null,
 };
 
 function currentFocusTeam() {
@@ -38,7 +49,6 @@ function broadcastState() {
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
 wss.on('connection', (ws) => {
-  // Send current state to new connection
   const focus = currentFocusTeam();
   ws.send(JSON.stringify({
     type: 'state',
@@ -51,9 +61,18 @@ wss.on('connection', (ws) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
 
+    const checkPin = () => {
+      if (msg.pin !== HOST_PIN) {
+        ws.send(JSON.stringify({ type: 'auth_error' }));
+        return false;
+      }
+      return true;
+    };
+
     switch (msg.type) {
 
       case 'host_open': {
+        if (!checkPin()) return;
         if (state.phase !== 'locked') return;
         state.phase = 'open';
         state.buzzOrder = [];
@@ -63,6 +82,7 @@ wss.on('connection', (ws) => {
       }
 
       case 'host_reset': {
+        if (!checkPin()) return;
         state.phase = 'locked';
         state.buzzOrder = [];
         state.currentFocus = null;
@@ -72,29 +92,31 @@ wss.on('connection', (ws) => {
 
       case 'buzz': {
         if (state.phase !== 'open') return;
-        const { team, ts } = msg;
-        if (!team) return;
-        // Ignore duplicate buzz from same team
-        if (state.buzzOrder.find(b => b.team === team)) return;
+        const { team } = msg;
+        if (!team || typeof team !== 'string') return;
+        const trimmed = team.trim();
+        if (trimmed.length === 0 || trimmed.length > 30) return;
+        if (state.buzzOrder.find(b => b.team === trimmed)) return;
 
         const isFirst = state.buzzOrder.length === 0;
-        state.buzzOrder.push({ team, ts: ts || Date.now(), verified: false, result: null });
-        // Keep sorted by timestamp
+        // Always use server timestamp — client ts is ignored to prevent rank manipulation
+        state.buzzOrder.push({ team: trimmed, ts: Date.now(), verified: false, result: null });
         state.buzzOrder.sort((a, b) => a.ts - b.ts);
-        const rank = state.buzzOrder.findIndex(b => b.team === team) + 1;
+        const rank = state.buzzOrder.findIndex(b => b.team === trimmed) + 1;
 
         if (isFirst) {
-          broadcast({ type: 'first_buzz', team, rank: 1 });
+          broadcast({ type: 'first_buzz', team: trimmed, rank: 1 });
         } else {
-          broadcast({ type: 'buzz_registered', team, rank });
+          broadcast({ type: 'buzz_registered', team: trimmed, rank });
         }
         broadcastState();
         break;
       }
 
       case 'host_verify': {
+        if (!checkPin()) return;
         const { team, result } = msg;
-        if (!team || !result) return;
+        if (!team || !['correct', 'wrong'].includes(result)) return;
         const entry = state.buzzOrder.find(b => b.team === team);
         if (!entry) return;
 
@@ -123,4 +145,5 @@ server.listen(PORT, () => {
   console.log(`  學員端: http://localhost:${PORT}/client.html`);
   console.log(`  主持端: http://localhost:${PORT}/console.html`);
   console.log(`  投影端: http://localhost:${PORT}/display.html`);
+  console.log(`  主持端 PIN: ${HOST_PIN}`);
 });

@@ -15,6 +15,48 @@ html, body {
   color: #fff;
 }
 
+/* ── PIN Screen ── */
+#pin-screen {
+  position: fixed; inset: 0; z-index: 100;
+  background: #0a0a0a;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; padding: 32px 24px;
+}
+#pin-screen.hidden { display: none; }
+.pin-logo {
+  font-size: 48px; font-weight: 900;
+  letter-spacing: -2px; color: #e11d48; line-height: 1;
+}
+.pin-title {
+  font-size: 20px; font-weight: 800;
+  letter-spacing: 4px; color: #e5e5e5; text-transform: uppercase;
+}
+.pin-sub { font-size: 13px; color: #555; letter-spacing: 1px; margin-top: -4px; }
+#pin-input {
+  width: 100%; max-width: 260px;
+  background: #1a1a1a; border: 2px solid #333;
+  border-radius: 12px; padding: 16px 20px;
+  font-size: 26px; font-weight: 700; color: #fff;
+  text-align: center; outline: none; letter-spacing: 6px;
+  transition: border-color 0.2s;
+}
+#pin-input:focus { border-color: #e11d48; }
+#pin-btn {
+  width: 100%; max-width: 260px;
+  background: #1a1a1a; border: 1px solid #333;
+  border-radius: 12px; padding: 16px;
+  font-size: 15px; font-weight: 800; color: #e5e5e5;
+  letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s;
+}
+#pin-btn:hover { background: #222; }
+#pin-btn:active { background: #2a2a2a; }
+#pin-error {
+  font-size: 13px; color: #f87171;
+  font-weight: 600; letter-spacing: 1px; min-height: 18px;
+}
+
 /* ── Top Bar ── */
 .top-bar {
   position: sticky; top: 0; z-index: 10;
@@ -206,6 +248,16 @@ html, body {
 </head>
 <body>
 
+<div id="pin-screen">
+  <div class="pin-logo">HOST</div>
+  <div class="pin-title">主持端</div>
+  <div class="pin-sub">輸入 PIN 碼進入控制台</div>
+  <input id="pin-input" type="password" placeholder="PIN" maxlength="10"
+    autocomplete="off" autocorrect="off" spellcheck="false">
+  <button id="pin-btn">進入</button>
+  <div id="pin-error"></div>
+</div>
+
 <div class="top-bar">
   <span class="top-title">主持端</span>
   <span id="phase-badge">LOCKED</span>
@@ -224,11 +276,33 @@ html, body {
 
 <script>
 const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
-let ws;
+let ws, hostPin = '';
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 const $ = id => document.getElementById(id);
 
+// ── PIN Screen ─────────────────────────────────────────────────────────────
+$('pin-btn').addEventListener('click', submitPin);
+$('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
+
+function submitPin() {
+  const val = $('pin-input').value.trim();
+  if (!val) { $('pin-input').focus(); return; }
+  hostPin = val;
+  $('pin-error').textContent = '';
+  $('pin-screen').classList.add('hidden');
+  connect();
+}
+
+function showPinError(msg) {
+  hostPin = '';
+  $('pin-input').value = '';
+  $('pin-error').textContent = msg;
+  $('pin-screen').classList.remove('hidden');
+  $('pin-input').focus();
+}
+
+// ── WebSocket ──────────────────────────────────────────────────────────────
 function connect() {
   ws = new WebSocket(WS_URL);
   ws.addEventListener('open', () => { $('ws-dot').classList.add('on'); });
@@ -236,14 +310,15 @@ function connect() {
   ws.addEventListener('message', e => {
     const msg = JSON.parse(e.data);
     if (msg.type === 'state') renderState(msg);
+    if (msg.type === 'auth_error') showPinError('PIN 錯誤，請重新輸入');
   });
 }
-connect();
 
 function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+function sendHost(obj) { send({ ...obj, pin: hostPin }); }
 
-$('btn-open').addEventListener('click', () => send({ type: 'host_open' }));
-$('btn-reset').addEventListener('click', () => send({ type: 'host_reset' }));
+$('btn-open').addEventListener('click', () => sendHost({ type: 'host_open' }));
+$('btn-reset').addEventListener('click', () => sendHost({ type: 'host_reset' }));
 
 function renderState(state) {
   // Phase badge
@@ -310,13 +385,13 @@ function renderState(state) {
   // Delegate verify clicks
   list.querySelectorAll('.v-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      send({ type: 'host_verify', team: btn.dataset.team, result: btn.dataset.result });
+      sendHost({ type: 'host_verify', team: btn.dataset.team, result: btn.dataset.result });
     });
   });
 }
 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s) { return s.replace(/"/g,'&quot;'); }
+function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>

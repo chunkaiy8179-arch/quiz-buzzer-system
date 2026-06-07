@@ -6,11 +6,12 @@ const path = require('path');
 let serverProc;
 const BASE = 'http://localhost:3000';
 const WS_TIMEOUT = 5000;
+const TEST_PIN = 'TEST1234';
 
 test.beforeAll(async () => {
   serverProc = spawn('node', [path.join(__dirname, '..', 'server.js')], {
     stdio: 'pipe',
-    env: { ...process.env, PORT: '3000' },
+    env: { ...process.env, PORT: '3000', HOST_PIN: TEST_PIN },
   });
   await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Server start timeout')), 10000);
@@ -27,6 +28,13 @@ test.beforeAll(async () => {
 test.afterAll(() => {
   if (serverProc) serverProc.kill();
 });
+
+async function joinHost(page) {
+  await page.goto(`${BASE}/console.html`);
+  await page.fill('#pin-input', TEST_PIN);
+  await page.click('#pin-btn');
+  await expect(page.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS_TIMEOUT });
+}
 
 async function joinClient(page, teamName) {
   await page.goto(`${BASE}/client.html`);
@@ -47,10 +55,8 @@ test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) 
     ctx.newPage(), ctx.newPage(), ctx.newPage(), ctx.newPage(),
   ]);
 
-  await Promise.all([
-    hostPage.goto(`${BASE}/console.html`),
-    displayPage.goto(`${BASE}/display.html`),
-  ]);
+  await joinHost(hostPage);
+  await displayPage.goto(`${BASE}/display.html`);
   await joinClient(client1, '第1組');
   await joinClient(client2, '第2組');
 
@@ -108,7 +114,7 @@ test('重設後回到 locked 狀態，學員按鈕文字清除', async ({ browse
   const ctx = await browser.newContext();
   const [hostPage, client] = await Promise.all([ctx.newPage(), ctx.newPage()]);
 
-  await hostPage.goto(`${BASE}/console.html`);
+  await joinHost(hostPage);
   await joinClient(client, '測試組');
 
   await hostPage.click('#btn-open');
@@ -135,7 +141,7 @@ test('投影端在各 phase 顯示正確畫面', async ({ browser }) => {
     ctx.newPage(), ctx.newPage(), ctx.newPage(),
   ]);
 
-  await hostPage.goto(`${BASE}/console.html`);
+  await joinHost(hostPage);
   await displayPage.goto(`${BASE}/display.html`);
   await joinClient(client, '展示組');
 
