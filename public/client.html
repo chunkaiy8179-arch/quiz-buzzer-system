@@ -44,7 +44,7 @@ html, body {
 }
 .login-sub {
   font-size: 14px;
-  color: #555;
+  color: #777;
   letter-spacing: 1px;
   margin-top: -8px;
 }
@@ -198,6 +198,11 @@ html, body {
 }
 body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
 
+@media (prefers-reduced-motion: reduce) {
+  #buzz-btn.state-open { animation: none; }
+  body.buzz-flash { animation: none; background: #0a0a0a; }
+}
+
 /* Status Bar */
 .status-bar {
   width: 100%;
@@ -214,7 +219,7 @@ body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
   transition: color 0.3s;
 }
 #status-msg.active { color: #fbbf24; }
-#status-msg.locked { color: #3a3a3a; }
+#status-msg.locked { color: #555; }
 
 /* Lock indicator */
 .lock-indicator {
@@ -265,7 +270,7 @@ body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
   </div>
 
   <div class="status-bar">
-    <div id="status-msg" class="locked">等待主持人開放搶答</div>
+    <div id="status-msg" class="locked" aria-live="polite" aria-atomic="true">等待主持人開放搶答</div>
     <div class="lock-indicator">
       <div class="lock-bar"></div>
       <span id="phase-label">LOCKED</span>
@@ -347,7 +352,7 @@ function setBuzzLocked(rank) {
   btn.className = 'state-buzzed';
   btn.textContent = `第 ${rank} 名`;
   setStatus('已搶答，等待驗證', 'active');
-  setPhaseLabel(`RANK  ${rank}`);
+  setPhaseLabel(`RANK ${rank}`);
   document.body.classList.add('buzz-flash');
   setTimeout(() => document.body.classList.remove('buzz-flash'), 500);
 }

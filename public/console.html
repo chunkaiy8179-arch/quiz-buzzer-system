@@ -96,7 +96,7 @@ html, body {
   text-align: center;
   font-size: 18px;
   font-weight: 600;
-  color: #2a2a2a;
+  color: #555;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -169,6 +169,10 @@ html, body {
   animation: blink 1s ease-in-out infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@media (prefers-reduced-motion: reduce) {
+  .focus-tag { animation: none; opacity: 1; }
+  .buzz-row { animation: none; }
+}
 
 .result-badge {
   font-size: 13px;
@@ -186,6 +190,8 @@ html, body {
   border: none;
   border-radius: 10px;
   padding: 10px 16px;
+  min-height: 44px;
+  min-width: 44px;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 1px;
