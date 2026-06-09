@@ -1,4 +1,4 @@
-const CACHE = 'buzzer-v1';
+const CACHE = 'buzzer-v2';
 const SHELL = ['/', '/client.html', '/console.html', '/display.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
