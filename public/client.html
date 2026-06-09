@@ -12,7 +12,11 @@
 html, body {
   height: 100%; overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  background: #0a0a0a;
+  background:
+    radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse at 88% 88%, rgba(10, 30, 170, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 65% 28%, rgba(220, 0, 60, 0.1) 0%, transparent 42%),
+    #07070f;
   color: #fff;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -24,53 +28,102 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 22px;
   height: 100%;
-  padding: 32px 28px;
+  padding: 40px 28px;
+  position: relative;
+  overflow: hidden;
 }
+
+/* Atmospheric orbs */
+#login-screen::before {
+  content: '';
+  position: absolute;
+  width: 380px; height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.13) 0%, transparent 70%);
+  top: -120px; right: -100px;
+  animation: orb-drift 12s ease-in-out infinite;
+  pointer-events: none;
+}
+#login-screen::after {
+  content: '';
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 20, 200, 0.14) 0%, transparent 70%);
+  bottom: -80px; left: -70px;
+  animation: orb-drift 16s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(18px, -22px) scale(1.04); }
+  66% { transform: translate(-12px, 16px) scale(0.96); }
+}
+
 .login-logo {
-  font-size: 72px;
-  font-weight: 900;
-  letter-spacing: -4px;
-  color: #e11d48;
-  line-height: 1;
+  width: 96px; height: 96px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #ff3a6e 0%, #e11d48 50%, #9b0f31 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  box-shadow:
+    0 10px 40px rgba(225, 29, 72, 0.55),
+    0 2px 0 rgba(255,255,255,0.14) inset,
+    0 -2px 8px rgba(0,0,0,0.3) inset;
+  position: relative; z-index: 1;
 }
+
 .login-title {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  color: #e5e5e5;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: #f0f0f8;
   text-transform: uppercase;
+  position: relative; z-index: 1;
+  text-align: center;
 }
 .login-sub {
-  font-size: 14px;
-  color: #777;
-  letter-spacing: 1px;
-  margin-top: -8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 3px;
+  margin-top: -14px;
+  position: relative; z-index: 1;
+  text-transform: uppercase;
 }
+
 #team-input {
   width: 100%;
   max-width: 320px;
-  background: #1a1a1a;
-  border: 2px solid #333;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   padding: 18px 20px;
   font-size: 20px;
   font-weight: 600;
   color: #fff;
   text-align: center;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   letter-spacing: 1px;
+  position: relative; z-index: 1;
 }
-#team-input:focus { border-color: #e11d48; }
-#team-input::placeholder { color: #444; font-weight: 400; font-size: 16px; }
+#team-input:focus {
+  border-color: rgba(225, 29, 72, 0.65);
+  background: rgba(225, 29, 72, 0.07);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.12);
+}
+#team-input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; font-size: 16px; }
+
 #join-btn {
   width: 100%;
   max-width: 320px;
-  background: #e11d48;
+  background: linear-gradient(160deg, #ff3a6e 0%, #e11d48 55%, #be123c 100%);
   border: none;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 20px;
   font-size: 20px;
   font-weight: 800;
@@ -78,9 +131,16 @@ html, body {
   letter-spacing: 3px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.15s;
+  box-shadow:
+    0 10px 32px rgba(225, 29, 72, 0.5),
+    0 1px 0 rgba(255,255,255,0.14) inset;
+  position: relative; z-index: 1;
 }
-#join-btn:active { background: #be123c; transform: scale(0.97); }
+#join-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
+}
 
 /* ── Game Screen ── */
 #game-screen {
@@ -98,33 +158,36 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid #1a1a1a;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 .top-bar-title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 4px;
-  color: #444;
+  color: rgba(255,255,255,0.2);
   text-transform: uppercase;
 }
 #team-badge {
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   padding: 6px 16px;
   font-size: 15px;
   font-weight: 700;
-  color: #e5e5e5;
+  color: #e0e0f0;
   letter-spacing: 1px;
 }
 #ws-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #555;
-  transition: background 0.3s;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.3s, box-shadow 0.3s;
 }
-#ws-dot.connected { background: #22c55e; }
+#ws-dot.connected {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+}
 
 /* Buzz Button Area */
 .btn-area {
@@ -133,112 +196,159 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
   width: 100%;
   padding: 24px;
 }
 
 #buzz-btn {
-  width: min(72vw, 320px);
-  height: min(72vw, 320px);
+  width: min(80vw, 330px);
+  height: min(80vw, 330px);
   border-radius: 50%;
   border: none;
-  font-size: clamp(36px, 10vw, 56px);
+  font-size: clamp(34px, 9vw, 52px);
   font-weight: 900;
-  letter-spacing: 6px;
+  letter-spacing: 5px;
   text-transform: uppercase;
   cursor: not-allowed;
-  transition: transform 0.08s, box-shadow 0.15s, background 0.2s, color 0.2s;
+  transition: transform 0.08s, box-shadow 0.2s, background 0.2s, color 0.2s;
   position: relative;
   outline: none;
 }
 
-/* Locked */
+/* Locked — subtle 3D dark sphere */
 #buzz-btn.state-locked {
-  background: #1c1c1c;
-  color: #3a3a3a;
-  box-shadow: 0 0 0 8px #161616, 0 0 0 16px #111;
+  background: radial-gradient(circle at 38% 32%, #282830, #181820 60%, #100f18);
+  color: rgba(255,255,255,0.18);
+  box-shadow:
+    inset 0 2px 8px rgba(255,255,255,0.04),
+    inset 0 -5px 16px rgba(0,0,0,0.5),
+    0 0 0 8px rgba(255,255,255,0.015),
+    0 0 0 16px rgba(255,255,255,0.007);
 }
 
-/* Open */
+/* Open — red glowing sphere */
 #buzz-btn.state-open {
-  background: #e11d48;
+  background: radial-gradient(circle at 38% 32%, #ff4a75, #e11d48 55%, #8b0929);
   color: #fff;
   cursor: pointer;
   box-shadow:
-    0 0 0 8px rgba(225,29,72,0.15),
-    0 0 0 16px rgba(225,29,72,0.07),
-    0 20px 60px rgba(225,29,72,0.5);
+    inset 0 4px 16px rgba(255,255,255,0.24),
+    inset 0 -6px 16px rgba(0,0,0,0.3),
+    0 0 0 10px rgba(225,29,72,0.16),
+    0 0 0 24px rgba(225,29,72,0.07),
+    0 28px 72px rgba(225,29,72,0.6);
   animation: buzz-pulse 1.4s ease-in-out infinite;
 }
 #buzz-btn.state-open:active {
   transform: scale(0.88);
-  box-shadow: 0 0 0 4px rgba(225,29,72,0.3), 0 8px 30px rgba(225,29,72,0.4);
+  box-shadow:
+    inset 0 6px 20px rgba(0,0,0,0.35),
+    0 0 0 4px rgba(225,29,72,0.3),
+    0 8px 30px rgba(225,29,72,0.4);
 }
 
-/* Buzzed */
+/* Buzzed — gold sphere */
 #buzz-btn.state-buzzed {
-  background: #f59e0b;
-  color: #0a0a0a;
+  background: radial-gradient(circle at 38% 32%, #fde68a, #f59e0b 55%, #b45309);
+  color: #1a0a00;
   cursor: not-allowed;
-  box-shadow: 0 0 0 8px rgba(245,158,11,0.12), 0 0 0 16px rgba(245,158,11,0.06);
-  font-size: clamp(22px, 6vw, 32px);
+  box-shadow:
+    inset 0 4px 14px rgba(255,255,255,0.35),
+    inset 0 -5px 14px rgba(0,0,0,0.2),
+    0 0 0 8px rgba(245,158,11,0.15),
+    0 0 0 18px rgba(245,158,11,0.07),
+    0 22px 55px rgba(245,158,11,0.4);
+  font-size: clamp(20px, 5.5vw, 32px);
   letter-spacing: 1px;
 }
 
 @keyframes buzz-pulse {
-  0%, 100% { box-shadow: 0 0 0 8px rgba(225,29,72,0.15), 0 0 0 16px rgba(225,29,72,0.07), 0 20px 60px rgba(225,29,72,0.5); }
-  50%       { box-shadow: 0 0 0 14px rgba(225,29,72,0.22), 0 0 0 28px rgba(225,29,72,0.1), 0 20px 80px rgba(225,29,72,0.7); }
+  0%, 100% {
+    box-shadow:
+      inset 0 4px 16px rgba(255,255,255,0.24),
+      inset 0 -6px 16px rgba(0,0,0,0.3),
+      0 0 0 10px rgba(225,29,72,0.16),
+      0 0 0 24px rgba(225,29,72,0.07),
+      0 28px 72px rgba(225,29,72,0.6);
+  }
+  50% {
+    box-shadow:
+      inset 0 4px 16px rgba(255,255,255,0.24),
+      inset 0 -6px 16px rgba(0,0,0,0.3),
+      0 0 0 16px rgba(225,29,72,0.22),
+      0 0 0 38px rgba(225,29,72,0.1),
+      0 28px 95px rgba(225,29,72,0.75);
+  }
 }
 
 @keyframes body-flash {
   0%   { background: #fff; }
-  20%  { background: #e11d48; }
-  100% { background: #0a0a0a; }
+  18%  { background: #e11d48; }
+  100% {
+    background:
+      radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.22) 0%, transparent 50%),
+      radial-gradient(ellipse at 88% 88%, rgba(10, 30, 170, 0.18) 0%, transparent 50%),
+      #07070f;
+  }
 }
 body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
 
 @media (prefers-reduced-motion: reduce) {
   #buzz-btn.state-open { animation: none; }
-  body.buzz-flash { animation: none; background: #0a0a0a; }
+  body.buzz-flash { animation: none; }
+  #login-screen::before, #login-screen::after { animation: none; }
 }
 
 /* Status Bar */
 .status-bar {
   width: 100%;
-  padding: 20px 24px 32px;
+  padding: 18px 24px 36px;
   text-align: center;
-  border-top: 1px solid #1a1a1a;
-  min-height: 80px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 #status-msg {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 1px;
-  color: #555;
-  transition: color 0.3s;
+  color: rgba(255,255,255,0.2);
+  transition: color 0.3s, background 0.3s;
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: transparent;
 }
-#status-msg.active { color: #fbbf24; }
-#status-msg.locked { color: #555; }
+#status-msg.active {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+#status-msg.locked {
+  color: rgba(255,255,255,0.18);
+  background: transparent;
+  border: none;
+}
 
-/* Lock indicator */
 .lock-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
 }
 .lock-bar {
-  width: 40px; height: 3px;
-  background: #222;
+  width: 28px; height: 2px;
+  background: rgba(255,255,255,0.07);
   border-radius: 2px;
 }
 #phase-label {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 3px;
   font-weight: 700;
-  color: #333;
+  color: rgba(255,255,255,0.14);
   text-transform: uppercase;
 }
 </style>
@@ -247,7 +357,7 @@ body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
 
 <!-- 登入畫面 -->
 <div id="login-screen">
-  <div class="login-logo">B</div>
+  <div class="login-logo">BZ</div>
   <div>
     <div class="login-title">搶答燈系統</div>
     <div class="login-sub">QUIZ BUZZER SYSTEM</div>
