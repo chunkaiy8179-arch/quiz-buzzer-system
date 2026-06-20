@@ -8,3 +8,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # 主持端 PIN：值在 Render 後台設定（不寫進 git），設一次即固定不變
+      - key: HOST_PIN
+        sync: false
