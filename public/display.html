@@ -5,645 +5,389 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>搶答燈 — 投影端</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+/* ── Binance-derived design tokens ── */
+:root{
+  --canvas:#0b0e11; --surface:#1e2329; --surface2:#2b3139;
+  --primary:#fcd535; --primary-active:#f0b90b; --on-primary:#181a20;
+  --body:#eaecef; --muted:#707a8a; --muted-strong:#929aa5;
+  --hairline:#2b3139; --up:#0ecb81; --down:#f6465d;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%; overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  background:
-    radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.2) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 88%, rgba(10, 30, 170, 0.16) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 28%, rgba(220, 0, 60, 0.08) 0%, transparent 42%),
-    #07070f;
-  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--canvas);
+  color: var(--body);
+  -webkit-font-smoothing: antialiased;
 }
+.num { font-variant-numeric: tabular-nums; }
 
 /* ── Screens ── */
-.screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; }
+.screen { display: none; flex-direction: column; height: 100%; width: 100%; }
 .screen.active { display: flex; }
 
 /* ── Idle ── */
-#idle-screen {
-  gap: 24px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Animated atmospheric orbs */
-#idle-screen::before {
-  content: '';
-  position: absolute;
-  width: 60vw; height: 60vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(225, 29, 72, 0.1) 0%, transparent 65%);
-  top: -15%; left: 50%; transform: translateX(-50%);
-  animation: idle-orb-1 10s ease-in-out infinite;
-  pointer-events: none;
-}
-#idle-screen::after {
-  content: '';
-  position: absolute;
-  width: 40vw; height: 40vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 20, 200, 0.12) 0%, transparent 65%);
-  bottom: -10%; right: -5%;
-  animation: idle-orb-2 14s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes idle-orb-1 {
-  0%, 100% { transform: translateX(-50%) scale(1) translateY(0); }
-  50% { transform: translateX(-50%) scale(1.15) translateY(-3%); }
-}
-@keyframes idle-orb-2 {
-  0%, 100% { transform: scale(1) translate(0, 0); }
-  50% { transform: scale(1.1) translate(-2%, -3%); }
-}
-
-.idle-logo-wrap {
-  position: relative; z-index: 1;
-}
+#idle-screen { align-items: center; justify-content: center; gap: 28px; padding: 48px; }
 .idle-logo-badge {
-  display: inline-flex;
-  align-items: center; justify-content: center;
-  width: clamp(100px, 14vw, 160px);
-  height: clamp(100px, 14vw, 160px);
-  border-radius: clamp(24px, 4vw, 40px);
-  background: linear-gradient(145deg, #ff3a6e 0%, #e11d48 50%, #9b0f31 100%);
-  box-shadow:
-    0 clamp(12px, 2vw, 24px) clamp(40px, 6vw, 80px) rgba(225, 29, 72, 0.6),
-    0 2px 0 rgba(255,255,255,0.15) inset;
-  margin: 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: clamp(96px, 12vw, 150px); height: clamp(96px, 12vw, 150px);
+  border-radius: clamp(20px, 2.6vw, 30px);
+  background: var(--primary);
+  box-shadow: 0 clamp(10px,1.6vw,22px) clamp(30px,5vw,70px) rgba(252,213,53,0.28);
 }
-.idle-logo {
-  font-size: clamp(40px, 7vw, 80px);
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: -2px;
-  line-height: 1;
-}
-.idle-title {
-  font-size: clamp(28px, 5vw, 58px);
-  font-weight: 900;
-  letter-spacing: clamp(6px, 1.5vw, 14px);
-  color: #f0f0f8;
-  text-transform: uppercase;
-  position: relative; z-index: 1;
-  margin-top: 8px;
-}
-.idle-sub {
-  font-size: clamp(13px, 1.8vw, 22px);
-  letter-spacing: clamp(4px, 1vw, 8px);
-  color: rgba(255,255,255,0.3);
-  text-transform: uppercase;
-  position: relative; z-index: 1;
-}
-.idle-divider {
-  width: clamp(40px, 6vw, 80px);
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #e11d48, transparent);
-  border-radius: 2px;
-  position: relative; z-index: 1;
-  animation: divider-pulse 2.5s ease-in-out infinite;
-}
-@keyframes divider-pulse {
-  0%, 100% { opacity: 0.6; width: clamp(40px, 6vw, 80px); }
-  50% { opacity: 1; width: clamp(60px, 9vw, 120px); }
-}
-.idle-standby {
-  font-size: clamp(11px, 1.4vw, 16px);
-  letter-spacing: clamp(4px, 1vw, 8px);
-  color: rgba(255,255,255,0.18);
-  text-transform: uppercase;
-  position: relative; z-index: 1;
-  animation: blink-soft 2.8s ease-in-out infinite;
-}
-@keyframes blink-soft {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.9; }
-}
+.idle-logo { font-size: clamp(40px, 6vw, 72px); font-weight: 900; color: var(--on-primary); letter-spacing: -2px; }
+.idle-title { font-size: clamp(30px, 5vw, 62px); font-weight: 800; color: #fff; letter-spacing: 2px; }
+.idle-sub { font-size: clamp(12px, 1.6vw, 18px); letter-spacing: 6px; color: var(--muted); text-transform: uppercase; margin-top: -14px; }
 
-/* ── Open ── */
-#open-screen {
-  gap: 28px;
-  background: radial-gradient(circle at 50% 52%, rgba(74, 222, 128, 0.09) 0%, transparent 55%);
+/* Joined-teams panel (需求1) */
+.joined-panel {
+  width: min(86vw, 1100px);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: clamp(18px, 2.4vw, 28px) clamp(20px, 3vw, 36px);
+  display: flex; flex-direction: column; gap: 16px;
 }
-.open-label {
-  font-size: clamp(18px, 2.8vw, 34px);
-  font-weight: 800;
-  letter-spacing: clamp(4px, 1.2vw, 10px);
-  color: #4ade80;
-  text-transform: uppercase;
-  text-shadow: 0 0 30px rgba(74,222,128,0.5);
+.joined-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.joined-label { font-size: clamp(13px,1.5vw,17px); font-weight: 700; letter-spacing: 4px; color: var(--muted-strong); text-transform: uppercase; }
+.joined-count { font-size: clamp(18px,2.4vw,30px); font-weight: 800; color: var(--primary); }
+.joined-count small { color: var(--muted); font-size: 0.5em; font-weight: 600; letter-spacing: 2px; margin-left: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: clamp(8px,1vw,12px); }
+.chip {
+  font-size: clamp(15px, 1.8vw, 22px); font-weight: 700; color: var(--body);
+  background: var(--surface2); border-radius: 8px;
+  padding: clamp(8px,1vw,12px) clamp(14px,1.6vw,20px);
+  animation: chip-in 0.25s ease-out both;
 }
-.countdown-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-/* Decorative ring around countdown */
-.countdown-ring {
-  position: absolute;
-  width: clamp(220px, 40vw, 400px);
-  height: clamp(220px, 40vw, 400px);
-  border-radius: 50%;
-  border: 2px solid rgba(74, 222, 128, 0.12);
-  box-shadow:
-    0 0 0 clamp(6px, 1vw, 12px) rgba(74, 222, 128, 0.06),
-    0 0 0 clamp(14px, 2.2vw, 28px) rgba(74, 222, 128, 0.03);
-  animation: ring-breathe 1.4s ease-in-out infinite;
-}
-@keyframes ring-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.04); opacity: 1; }
-}
-#countdown {
-  font-size: clamp(130px, 28vw, 260px);
-  font-weight: 900;
-  line-height: 1;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-  position: relative; z-index: 1;
-  text-shadow:
-    0 0 60px rgba(74,222,128,0.3),
-    0 0 120px rgba(74,222,128,0.15);
-  animation: count-glow 1s ease-in-out infinite;
-}
-@keyframes count-glow {
-  0%,100% { text-shadow: 0 0 40px rgba(74,222,128,0.25), 0 0 80px rgba(74,222,128,0.12); }
-  50%     { text-shadow: 0 0 70px rgba(74,222,128,0.5), 0 0 130px rgba(74,222,128,0.25); }
-}
-.open-hint {
-  font-size: clamp(14px, 2vw, 26px);
-  letter-spacing: clamp(4px, 1.2vw, 10px);
-  color: rgba(74,222,128,0.45);
-  text-transform: uppercase;
-}
+.chips-empty { font-size: clamp(15px,1.8vw,20px); color: var(--muted); letter-spacing: 2px; }
+@keyframes chip-in { from{opacity:0; transform:translateY(6px) scale(0.96);} to{opacity:1; transform:none;} }
+.idle-standby { font-size: clamp(11px,1.3vw,15px); letter-spacing: 7px; color: var(--muted); text-transform: uppercase; animation: blink-soft 2.6s ease-in-out infinite; }
+@keyframes blink-soft { 0%,100%{opacity:0.35;} 50%{opacity:0.85;} }
 
-/* ── First Popup ── */
-#first-popup {
-  display: none;
-  position: fixed; inset: 0; z-index: 20;
-  flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  pointer-events: none;
-  background: radial-gradient(circle at center, rgba(253,224,71,0.08) 0%, transparent 60%);
+/* ── Open (需求2: 倒數移到角落，中間即時順位) ── */
+#open-screen { padding: clamp(24px,3vw,40px) clamp(32px,4vw,64px); }
+.open-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; flex-shrink: 0; margin-bottom: clamp(16px,2vw,28px);
 }
-#first-popup.show { display: flex; }
-.first-rank-label {
-  font-size: clamp(14px, 2.2vw, 28px);
-  font-weight: 800;
-  letter-spacing: clamp(5px, 1.2vw, 12px);
-  color: #fbbf24;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  text-shadow: 0 0 30px rgba(251,191,36,0.6);
+.open-status {
+  display: flex; align-items: center; gap: 14px;
+  font-size: clamp(20px,2.6vw,36px); font-weight: 800; letter-spacing: 4px;
+  color: var(--primary); text-transform: uppercase;
 }
-#first-team-name {
-  font-size: clamp(56px, 13vw, 140px);
-  font-weight: 900;
-  color: #fde047;
-  line-height: 1.1;
-  padding: 0 40px;
-  text-shadow:
-    0 0 60px rgba(253,224,71,0.5),
-    0 4px 24px rgba(0,0,0,0.4);
+.live-dot {
+  width: clamp(12px,1.3vw,16px); height: clamp(12px,1.3vw,16px); border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 0 rgba(252,213,53,0.6);
+  animation: live-pulse 1.2s ease-out infinite;
 }
-.first-sub {
-  font-size: clamp(20px, 3.8vw, 50px);
-  font-weight: 800;
-  letter-spacing: clamp(4px, 1vw, 8px);
-  color: #fff;
-  text-transform: uppercase;
-  margin-top: 14px;
+@keyframes live-pulse { 0%{box-shadow:0 0 0 0 rgba(252,213,53,0.5);} 100%{box-shadow:0 0 0 16px rgba(252,213,53,0);} }
+/* 角落倒數計時 */
+.count-badge {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: clamp(8px,1vw,12px) clamp(16px,1.8vw,24px);
 }
+.count-badge .cb-label { font-size: clamp(10px,1.1vw,13px); font-weight: 700; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+#count-badge-num { font-size: clamp(30px,3.6vw,52px); font-weight: 800; color: #fff; line-height: 1; }
+.count-badge.low #count-badge-num { color: var(--down); }
 
-@keyframes pop-in {
-  0%   { transform: scale(0.3) translateY(60px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+.open-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.open-waiting {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center;
 }
-.pop-in { animation: pop-in 0.45s cubic-bezier(0.22,0.61,0.36,1) both; }
+.open-waiting-title { font-size: clamp(28px,4vw,56px); font-weight: 800; color: #fff; letter-spacing: 3px; }
+.open-waiting-sub { font-size: clamp(14px,1.8vw,22px); color: var(--muted); letter-spacing: 4px; text-transform: uppercase; }
+.open-waiting .chips { justify-content: center; max-width: 80vw; }
 
-/* ── Rank Screen ── */
-#rank-screen {
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  padding: 36px 60px 44px;
-  width: 100%;
-  height: 100%;
-  gap: 0;
-  background: radial-gradient(ellipse at 50% 20%, rgba(234,179,8,0.07) 0%, transparent 50%);
-}
-.rank-title {
-  font-size: clamp(14px, 1.8vw, 24px);
-  font-weight: 800;
-  letter-spacing: clamp(6px, 1.5vw, 12px);
-  color: rgba(255,255,255,0.25);
-  text-transform: uppercase;
-  margin-bottom: clamp(16px, 2.5vw, 32px);
-  flex-shrink: 0;
-}
-#rank-list {
-  list-style: none;
-  width: 100%;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(10px, 1.5vw, 16px);
-  overflow-y: auto;
-}
-
+/* ── Live order list (共用樣式：open 即時 + rank 回顧) ── */
+.order-list { list-style: none; width: 100%; flex: 1; display: flex; flex-direction: column; gap: clamp(8px,1.2vw,14px); overflow-y: auto; }
 .rank-row {
-  display: flex;
-  align-items: center;
-  gap: clamp(16px, 2.5vw, 28px);
-  border-radius: clamp(14px, 2vw, 22px);
-  padding: clamp(18px, 2.5vw, 28px) clamp(22px, 3vw, 36px);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  animation: slide-up 0.3s ease-out both;
+  display: flex; align-items: center; gap: clamp(16px,2.2vw,28px);
+  border-radius: 12px; padding: clamp(14px,2vw,24px) clamp(20px,2.6vw,34px);
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-left: 4px solid var(--hairline);
+  animation: slide-up 0.28s ease-out both; flex-shrink: 0;
   transition: background 0.3s, border-color 0.3s, opacity 0.3s;
-  flex-shrink: 0;
 }
-
-/* Rank-specific left accent + tint */
-#rank-list > li:nth-child(1).rank-row {
-  border-left: 4px solid #ffd700;
-  background: rgba(255,215,0,0.07);
-}
-#rank-list > li:nth-child(2).rank-row {
-  border-left: 4px solid #a8b2c4;
-  background: rgba(168,178,196,0.05);
-}
-#rank-list > li:nth-child(3).rank-row {
-  border-left: 4px solid #cd7f32;
-  background: rgba(205,127,50,0.05);
-}
-
-.rank-row.focus {
-  background: rgba(234,179,8,0.1) !important;
-  border-color: #ca8a04 !important;
-  border-left-color: #ca8a04 !important;
-}
-.rank-row.correct {
-  background: rgba(22,163,74,0.08) !important;
-  border-color: #15803d !important;
-  opacity: 0.65;
-}
-.rank-row.wrong {
-  background: rgba(220,38,38,0.06) !important;
-  border-color: #7f1d1d !important;
-  opacity: 0.4;
-}
-
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.order-list > li:nth-child(1).rank-row { border-left-color: var(--primary); background: rgba(252,213,53,0.06); }
+.order-list > li:nth-child(2).rank-row { border-left-color: var(--muted-strong); }
+.order-list > li:nth-child(3).rank-row { border-left-color: #cd7f32; }
+.rank-row.focus { border-color: var(--primary) !important; border-left-color: var(--primary) !important; background: rgba(252,213,53,0.1) !important; }
+.rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: rgba(14,203,129,0.08) !important; opacity: 0.7; }
+.rank-row.wrong { border-color: var(--down) !important; border-left-color: var(--down) !important; background: rgba(246,70,93,0.06) !important; opacity: 0.45; }
+.rank-row.just-buzzed { animation: just-buzzed 0.5s ease-out; }
+@keyframes slide-up { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
+@keyframes just-buzzed { 0%{transform:scale(1);} 30%{transform:scale(1.025); border-color:var(--primary);} 100%{transform:scale(1);} }
 
 .rank-num {
-  width: clamp(46px, 6vw, 68px);
-  height: clamp(46px, 6vw, 68px);
-  border-radius: 50%;
+  width: clamp(44px,5.5vw,64px); height: clamp(44px,5.5vw,64px); border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(12px, 1.4vw, 16px);
-  font-weight: 900;
-  flex-shrink: 0;
-  letter-spacing: 0;
+  font-size: clamp(16px,2vw,26px); font-weight: 800; flex-shrink: 0;
+  background: var(--surface2); color: var(--muted-strong); font-variant-numeric: tabular-nums;
 }
-.r1 {
-  background: linear-gradient(145deg, #fde68a, #d97706);
-  color: #431a00;
-  box-shadow: 0 4px 16px rgba(217,119,6,0.5);
-}
-.r2 {
-  background: linear-gradient(145deg, #e2e8f0, #94a3b8);
-  color: #1e293b;
-  box-shadow: 0 4px 14px rgba(148,163,184,0.4);
-}
-.r3 {
-  background: linear-gradient(145deg, #fdba74, #cd7f32);
-  color: #431407;
-  box-shadow: 0 4px 14px rgba(205,127,50,0.4);
-}
-.rn {
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.35);
-  font-size: clamp(11px, 1.2vw, 14px);
-}
-
-.rank-team {
-  flex: 1;
-  font-size: clamp(26px, 4.5vw, 54px);
-  font-weight: 800;
-  color: #f0f0f8;
-  letter-spacing: 2px;
-}
-.rank-row.focus .rank-team { color: #fde047; }
-.rank-row.correct .rank-team { color: #4ade80; text-decoration: line-through; }
-.rank-row.wrong   .rank-team { color: #f87171; text-decoration: line-through; }
+.rank-num.r1 { background: var(--primary); color: var(--on-primary); }
+.rank-num.r2 { background: #c2cad6; color: #1e2329; }
+.rank-num.r3 { background: #cd7f32; color: #1a0d00; }
+.rank-team { flex: 1; font-size: clamp(26px,4vw,52px); font-weight: 800; color: #fff; letter-spacing: 1px; }
+.rank-row.focus .rank-team { color: var(--primary); }
+.rank-row.correct .rank-team { color: var(--up); text-decoration: line-through; }
+.rank-row.wrong .rank-team { color: var(--down); text-decoration: line-through; }
 
 .focus-indicator {
-  font-size: clamp(11px, 1.2vw, 14px);
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: #fbbf24;
-  text-transform: uppercase;
-  padding: 6px 16px;
-  border: 1px solid rgba(202,138,4,0.5);
-  border-radius: 8px;
-  background: rgba(234,179,8,0.1);
-  animation: blink 1s ease-in-out infinite;
-  white-space: nowrap;
+  font-size: clamp(12px,1.3vw,16px); font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--primary); padding: 7px 16px; border: 1px solid var(--primary); border-radius: 8px;
+  background: rgba(252,213,53,0.08); white-space: nowrap; animation: blink 1s ease-in-out infinite;
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+.result-tag { font-size: clamp(13px,1.4vw,17px); font-weight: 800; letter-spacing: 2px; padding: 8px 18px; border-radius: 8px; text-transform: uppercase; white-space: nowrap; }
+.tag-correct { background: rgba(14,203,129,0.18); color: var(--up); }
+.tag-wrong { background: rgba(246,70,93,0.18); color: var(--down); }
 
-.result-tag {
-  font-size: clamp(12px, 1.4vw, 16px);
-  font-weight: 800;
-  letter-spacing: 2px;
-  padding: 8px 18px;
-  border-radius: 10px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.tag-correct { background: rgba(22,163,74,0.2); color: #4ade80; }
-.tag-wrong   { background: rgba(220,38,38,0.2); color: #f87171; }
+/* ── Rank recap screen ── */
+#rank-screen { padding: clamp(28px,3.4vw,44px) clamp(32px,4vw,64px); }
+.rank-title { font-size: clamp(14px,1.7vw,22px); font-weight: 800; letter-spacing: 6px; color: var(--muted-strong); text-transform: uppercase; margin-bottom: clamp(16px,2.4vw,30px); flex-shrink: 0; }
 
-/* ── Flash ── */
-@keyframes flash-boom {
-  0%   { background-color: #fff; }
-  12%  { background-color: #e11d48; }
-  40%  { background-color: #4a0820; }
-  100% { background-color: transparent; }
+/* ── First-buzz flash ── */
+@keyframes flash-boom { 0%{background:#fff;} 12%{background:var(--primary);} 45%{background:#3a2f06;} 100%{background:transparent;} }
+body.flash::after {
+  content:''; position: fixed; inset: 0; z-index: 5; pointer-events: none;
+  animation: flash-boom 0.6s ease-out forwards;
 }
-body.flash { animation: flash-boom 0.7s ease-out forwards; }
 
-/* ── X Overlay ── */
-#x-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 30;
-  align-items: center; justify-content: center;
-  pointer-events: none;
-  background: radial-gradient(circle at center, rgba(220,38,38,0.15) 0%, transparent 55%);
-}
+/* ── X overlay (wrong) ── */
+#x-overlay { display: none; position: fixed; inset: 0; z-index: 30; align-items: center; justify-content: center; pointer-events: none; }
 #x-overlay.show { display: flex; }
-.x-mark {
-  font-size: clamp(180px, 38vw, 380px);
-  font-weight: 900;
-  color: #dc2626;
-  line-height: 1;
-  text-shadow:
-    0 0 80px rgba(220,38,38,0.9),
-    0 0 160px rgba(220,38,38,0.5);
-}
-@keyframes x-stamp {
-  0%   { transform: scale(2.2) rotate(-15deg); opacity: 0; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-.x-stamp { animation: x-stamp 0.35s cubic-bezier(0.22,0.61,0.36,1) both; }
+.x-mark { font-size: clamp(180px,36vw,360px); font-weight: 900; color: var(--down); line-height: 1; }
+@keyframes x-stamp { 0%{transform:scale(2.2) rotate(-15deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;} }
+.x-stamp { animation: x-stamp 0.32s cubic-bezier(0.22,0.61,0.36,1) both; }
 
-/* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
-  #countdown { animation: none; }
-  .pop-in { animation: none; opacity: 1; transform: none; }
+  .rank-row, .chip { animation: none; }
+  .focus-indicator, .live-dot { animation: none; opacity: 1; }
+  .idle-standby { animation: none; opacity: 1; }
+  body.flash::after { animation: none; }
   .x-stamp { animation: none; opacity: 1; transform: none; }
-  .rank-row { animation: none; }
-  .focus-indicator { animation: none; opacity: 1; }
-  body.flash { animation: none; }
-  #idle-screen::before, #idle-screen::after { animation: none; }
-  .countdown-ring { animation: none; }
-  .idle-divider, .idle-standby { animation: none; opacity: 1; }
 }
 </style>
 </head>
 <body>
 
 <div id="idle-screen" class="screen active">
-  <div class="idle-logo-wrap">
-    <div class="idle-logo-badge">
-      <div class="idle-logo">BZ</div>
-    </div>
+  <div class="idle-logo-badge"><div class="idle-logo">BZ</div></div>
+  <div style="text-align:center">
+    <div class="idle-title">搶答燈系統</div>
+    <div class="idle-sub">Quiz Buzzer System</div>
   </div>
-  <div class="idle-title">搶答燈系統</div>
-  <div class="idle-sub">Quiz Buzzer System</div>
-  <div class="idle-divider"></div>
-  <div class="idle-standby">STANDBY · 等待開始</div>
+  <div class="joined-panel">
+    <div class="joined-head">
+      <span class="joined-label">已進場組別</span>
+      <span class="joined-count num"><span id="idle-count">0</span><small>組</small></span>
+    </div>
+    <div id="idle-chips" class="chips"><span class="chips-empty">等待組別加入…</span></div>
+  </div>
+  <div class="idle-standby">STANDBY · 等待主持人開始</div>
 </div>
 
 <div id="open-screen" class="screen">
-  <div class="open-label">搶答開放中</div>
-  <div class="countdown-wrap">
-    <div class="countdown-ring"></div>
-    <div id="countdown">--</div>
+  <div class="open-top">
+    <div class="open-status"><span class="live-dot"></span>搶答開放中</div>
+    <div id="count-badge" class="count-badge">
+      <span class="cb-label">倒數</span>
+      <span id="count-badge-num" class="num">--</span>
+    </div>
   </div>
-  <div class="open-hint">BUZZING NOW</div>
-</div>
-
-<div id="first-popup">
-  <div class="first-rank-label">FIRST BUZZ</div>
-  <div id="first-team-name"></div>
-  <div class="first-sub">搶到了！</div>
+  <div class="open-body">
+    <div id="open-waiting" class="open-waiting">
+      <div class="open-waiting-title">搶答開放！</div>
+      <div class="open-waiting-sub">按下按鈕搶答</div>
+      <div id="open-waiting-chips" class="chips"></div>
+    </div>
+    <ol id="open-rank-list" class="order-list" style="display:none"></ol>
+  </div>
 </div>
 
 <div id="rank-screen" class="screen">
   <div class="rank-title">搶答順位</div>
-  <ol id="rank-list"></ol>
+  <ol id="rank-list" class="order-list"></ol>
 </div>
 
-<div id="x-overlay">
-  <div id="x-icon" class="x-mark">✕</div>
-</div>
+<div id="x-overlay"><div id="x-icon" class="x-mark">✕</div></div>
 
 <script>
 const $ = id => document.getElementById(id);
 const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-let ws, audioCtx, countdownInterval = null, lastPhase = 'locked';
+let ws, audioCtx, countdownInterval = null, lastPhase = 'locked', prevBuzzCount = 0;
+const COUNT_FROM = 30;
 
-// ── Audio ─────────────────────────────────────────────────────────────────
-function getCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-
-function playBoom() {
-  const ctx = getCtx();
-  const buf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(ctx.sampleRate*0.05));
-  const ns = ctx.createBufferSource(); ns.buffer = buf;
-  const ng = ctx.createGain(); ng.gain.setValueAtTime(3, ctx.currentTime); ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.5);
+// ── Audio ──
+function getCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playBoom(){
+  const ctx=getCtx();
+  const buf=ctx.createBuffer(1,ctx.sampleRate*0.5,ctx.sampleRate); const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.05));
+  const ns=ctx.createBufferSource(); ns.buffer=buf;
+  const ng=ctx.createGain(); ng.gain.setValueAtTime(3,ctx.currentTime); ng.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
   ns.connect(ng); ng.connect(ctx.destination); ns.start();
-  const osc = ctx.createOscillator(), og = ctx.createGain();
-  osc.type = 'sine'; osc.frequency.setValueAtTime(80, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(28, ctx.currentTime+0.45);
-  og.gain.setValueAtTime(2, ctx.currentTime); og.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.65);
+  const osc=ctx.createOscillator(), og=ctx.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(80,ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(28,ctx.currentTime+0.45);
+  og.gain.setValueAtTime(2,ctx.currentTime); og.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
   osc.connect(og); og.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.65);
 }
-
-function playCorrect() {
-  const ctx = getCtx();
-  [523,659,784,1047].forEach((f,i) => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'triangle'; o.frequency.value = f;
-    g.gain.setValueAtTime(0.45, ctx.currentTime+i*0.1); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+i*0.1+0.35);
-    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+i*0.1); o.stop(ctx.currentTime+i*0.1+0.35);
-  });
+function playTick(){
+  const ctx=getCtx(); const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='square'; o.frequency.value=1200; g.gain.setValueAtTime(0.12,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.08);
+  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.1);
 }
-
-function playWrong() {
-  const ctx = getCtx();
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = 'sawtooth'; o.frequency.setValueAtTime(220, ctx.currentTime); o.frequency.linearRampToValueAtTime(100, ctx.currentTime+1.3);
-  g.gain.setValueAtTime(0.65, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+1.3);
+function playCorrect(){
+  const ctx=getCtx();
+  [523,659,784,1047].forEach((f,i)=>{ const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.45,ctx.currentTime+i*0.1); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.1+0.35);
+    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+i*0.1); o.stop(ctx.currentTime+i*0.1+0.35); });
+}
+function playWrong(){
+  const ctx=getCtx(); const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(220,ctx.currentTime); o.frequency.linearRampToValueAtTime(100,ctx.currentTime+1.3);
+  g.gain.setValueAtTime(0.6,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.3);
   o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+1.3);
 }
-
-function playOpenBeep() {
-  const ctx = getCtx();
-  [0,0.32,0.64,0.88].forEach(t => {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'square'; o.frequency.value = t===0.88 ? 1200 : 880;
-    const dur = t===0.88 ? 0.45 : 0.16;
-    g.gain.setValueAtTime(0.28, ctx.currentTime+t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+dur);
-    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+dur+0.05);
-  });
+function playOpenBeep(){
+  const ctx=getCtx();
+  [0,0.32,0.64,0.88].forEach(t=>{ const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='square'; o.frequency.value=t===0.88?1200:880; const dur=t===0.88?0.45:0.16;
+    g.gain.setValueAtTime(0.26,ctx.currentTime+t); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+dur);
+    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+dur+0.05); });
 }
 
-// ── Confetti ──────────────────────────────────────────────────────────────
-function fireConfetti() {
-  confetti({ particleCount:100, spread:65, angle:60, origin:{x:0,y:0.5} });
-  confetti({ particleCount:100, spread:65, angle:120, origin:{x:1,y:0.5} });
-  setTimeout(() => confetti({ particleCount:70, spread:90, origin:{y:0.3}, colors:['#ffd700','#ff6b6b','#4ecdc4','#fff'] }), 350);
+function fireConfetti(){
+  confetti({ particleCount:120, spread:65, angle:60, origin:{x:0,y:0.5}, colors:['#fcd535','#f0b90b','#fff'] });
+  confetti({ particleCount:120, spread:65, angle:120, origin:{x:1,y:0.5}, colors:['#fcd535','#f0b90b','#fff'] });
+  setTimeout(()=>confetti({ particleCount:80, spread:100, origin:{y:0.3}, colors:['#fcd535','#0ecb81','#fff'] }),350);
 }
 
-// ── Screens ───────────────────────────────────────────────────────────────
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = $(`${name}-screen`);
-  if (el) el.classList.add('active');
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=$(`${name}-screen`); if(el) el.classList.add('active');
 }
 
-function startCountdown() {
-  clearInterval(countdownInterval); countdownInterval = null;
-  let s = 30;
-  $('countdown').textContent = s;
-  countdownInterval = setInterval(() => {
-    s--; $('countdown').textContent = s;
-    if (s <= 0) { clearInterval(countdownInterval); countdownInterval = null; }
-  }, 1000);
+// ── Countdown (角落 badge) ──
+function startCountdown(){
+  clearInterval(countdownInterval); countdownInterval=null;
+  let s=COUNT_FROM;
+  const badge=$('count-badge'), numEl=$('count-badge-num');
+  numEl.textContent=s; badge.classList.remove('low');
+  countdownInterval=setInterval(()=>{
+    s--; numEl.textContent=Math.max(s,0);
+    if(s<=5 && s>0){ badge.classList.add('low'); playTick(); }
+    if(s<=0){ clearInterval(countdownInterval); countdownInterval=null; }
+  },1000);
 }
 
-// ── Rank List ─────────────────────────────────────────────────────────────
-function renderRankList(buzzOrder, currentFocus) {
-  const list = $('rank-list');
-  list.innerHTML = '';
-  const numCls = ['r1','r2','r3'];
-  const numLabels = ['1ST','2ND','3RD'];
-  buzzOrder.forEach((entry, i) => {
-    const isFocus = currentFocus === entry.team && !entry.verified;
-    const rowCls = entry.verified
-      ? (entry.result === 'correct' ? 'correct' : 'wrong')
-      : (isFocus ? 'focus' : '');
-    const li = document.createElement('li');
-    li.className = `rank-row ${rowCls}`;
-    li.style.animationDelay = `${i*0.06}s`;
+// ── Chips (進場名單) ──
+function renderChips(container, teams){
+  container.innerHTML='';
+  if(!teams || teams.length===0){ container.innerHTML='<span class="chips-empty">等待組別加入…</span>'; return; }
+  teams.forEach(t=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; container.appendChild(s); });
+}
 
-    let badge = '';
-    if (entry.verified) {
-      badge = entry.result === 'correct'
+// ── Order list (open 即時 + rank 回顧共用) ──
+function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
+  listEl.innerHTML='';
+  const numLabels=['1','2','3'];
+  buzzOrder.forEach((entry,i)=>{
+    const isFocus = currentFocus===entry.team && !entry.verified;
+    const rowCls = entry.verified ? (entry.result==='correct'?'correct':'wrong') : (isFocus?'focus':'');
+    const li=document.createElement('li');
+    li.className=`rank-row ${rowCls}`;
+    li.style.animationDelay=`${Math.min(i,8)*0.05}s`;
+    if(highlightNew && i===buzzOrder.length-1 && !entry.verified) li.classList.add('just-buzzed');
+    let badge='';
+    if(entry.verified){
+      badge = entry.result==='correct'
         ? '<span class="result-tag tag-correct">正確</span>'
         : '<span class="result-tag tag-wrong">錯誤</span>';
-    } else if (isFocus) {
-      badge = '<span class="focus-indicator">待驗證</span>';
-    }
-
-    li.innerHTML = `
-      <div class="rank-num ${numCls[i]??'rn'}">${numLabels[i]??`#${i+1}`}</div>
+    } else if(isFocus){ badge='<span class="focus-indicator">待驗證</span>'; }
+    const numCls = i<3 ? `r${i+1}` : '';
+    li.innerHTML=`
+      <div class="rank-num ${numCls} num">${numLabels[i]??(i+1)}</div>
       <span class="rank-team">${escHtml(entry.team)}</span>
-      ${badge}
-    `;
-    list.appendChild(li);
+      ${badge}`;
+    listEl.appendChild(li);
   });
 }
 
-// ── State ─────────────────────────────────────────────────────────────────
-function applyState(state) {
-  if (state.phase === 'locked') {
-    clearInterval(countdownInterval); countdownInterval = null;
-    $('first-popup').classList.remove('show');
-    $('x-overlay').classList.remove('show');
-    showScreen(state.buzzOrder.length ? 'rank' : 'idle');
-    if (state.buzzOrder.length) renderRankList(state.buzzOrder, state.currentFocus);
-  } else if (state.phase === 'open') {
+// ── State ──
+function applyState(state){
+  const teams = state.joinedTeams || [];
+  if(state.phase==='open'){
     showScreen('open');
-    if (!countdownInterval) startCountdown();
-    if (state.buzzOrder.length) renderRankList(state.buzzOrder, state.currentFocus);
-  } else if (state.phase === 'reviewing') {
+    if(!countdownInterval && lastPhase!=='open') startCountdown();
+    const hasBuzz = state.buzzOrder.length>0;
+    $('open-waiting').style.display = hasBuzz ? 'none' : 'flex';
+    $('open-rank-list').style.display = hasBuzz ? 'flex' : 'none';
+    if(hasBuzz){
+      renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
+    } else {
+      renderChips($('open-waiting-chips'), teams);
+    }
+  } else if(state.phase==='reviewing'){
+    clearInterval(countdownInterval); countdownInterval=null;
     showScreen('rank');
-    renderRankList(state.buzzOrder, state.currentFocus);
+    renderOrderList($('rank-list'), state.buzzOrder, state.currentFocus, false);
+  } else { // locked
+    clearInterval(countdownInterval); countdownInterval=null;
+    $('x-overlay').classList.remove('show');
+    if(state.buzzOrder.length){
+      showScreen('rank');
+      renderOrderList($('rank-list'), state.buzzOrder, state.currentFocus, false);
+    } else {
+      showScreen('idle');
+      $('idle-count').textContent = teams.length;
+      renderChips($('idle-chips'), teams);
+    }
   }
+  prevBuzzCount = state.buzzOrder.length;
 }
 
-// ── Message Handling ───────────────────────────────────────────────────────
-function handleMessage(msg) {
-  switch (msg.type) {
+function handleMessage(msg){
+  switch(msg.type){
     case 'state':
-      if (lastPhase !== 'open' && msg.phase === 'open') {
-        playOpenBeep();
-        startCountdown();
-      }
-      lastPhase = msg.phase;
+      if(lastPhase!=='open' && msg.phase==='open'){ playOpenBeep(); startCountdown(); }
+      lastPhase=msg.phase;
       applyState(msg);
       break;
-    case 'first_buzz': {
-      clearInterval(countdownInterval); countdownInterval = null;
+    case 'first_buzz':
+      clearInterval(countdownInterval); countdownInterval=null;
       document.body.classList.add('flash');
-      setTimeout(() => document.body.classList.remove('flash'), 700);
+      setTimeout(()=>document.body.classList.remove('flash'),600);
       playBoom();
-      const popup = $('first-popup');
-      const nameEl = $('first-team-name');
-      nameEl.textContent = msg.team;
-      nameEl.classList.remove('pop-in');
-      void nameEl.offsetWidth;
-      nameEl.classList.add('pop-in');
-      popup.classList.add('show');
-      setTimeout(() => {
-        popup.classList.remove('show');
-        showScreen('rank');
-      }, 2400);
       break;
-    }
     case 'verify_result':
-      if (msg.result === 'correct') {
-        playCorrect();
-        fireConfetti();
-      } else {
+      if(msg.result==='correct'){ playCorrect(); fireConfetti(); }
+      else {
         playWrong();
-        const overlay = $('x-overlay');
-        const icon = $('x-icon');
-        icon.classList.remove('x-stamp');
-        void icon.offsetWidth;
-        icon.classList.add('x-stamp');
+        const overlay=$('x-overlay'), icon=$('x-icon');
+        icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
-        setTimeout(() => overlay.classList.remove('show'), 1800);
+        setTimeout(()=>overlay.classList.remove('show'),1800);
       }
       break;
   }
 }
 
-// ── WebSocket ─────────────────────────────────────────────────────────────
-function connect() {
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`);
-  ws.addEventListener('message', e => handleMessage(JSON.parse(e.data)));
-  ws.addEventListener('close', () => setTimeout(connect, 2000));
+function connect(){
+  ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}`);
+  ws.addEventListener('message', e=>handleMessage(JSON.parse(e.data)));
+  ws.addEventListener('close', ()=>setTimeout(connect,2000));
 }
 
-document.addEventListener('click', () => getCtx(), { once: true });
-document.addEventListener('keydown', () => getCtx(), { once: true });
+document.addEventListener('click', ()=>getCtx(), { once:true });
+document.addEventListener('keydown', ()=>getCtx(), { once:true });
 connect();
 </script>
 </body>

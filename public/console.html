@@ -6,280 +6,125 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>搶答燈 — 主持端</title>
 <link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+:root{
+  --canvas:#0b0e11; --surface:#1e2329; --surface2:#2b3139;
+  --primary:#fcd535; --primary-active:#f0b90b; --on-primary:#181a20;
+  --body:#eaecef; --muted:#707a8a; --muted-strong:#929aa5;
+  --hairline:#2b3139; --up:#0ecb81; --down:#f6465d;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  background:
-    radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 88%, rgba(10, 30, 170, 0.14) 0%, transparent 50%),
-    #07070f;
-  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--canvas); color: var(--body);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── PIN Screen ── */
+/* ── PIN ── */
 #pin-screen {
-  position: fixed; inset: 0; z-index: 100;
-  background:
-    radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.2) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 88%, rgba(10, 30, 170, 0.16) 0%, transparent 50%),
-    #07070f;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  position: fixed; inset: 0; z-index: 100; background: var(--canvas);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; padding: 40px 28px;
 }
 #pin-screen.hidden { display: none; }
-
 .pin-logo {
-  width: 72px; height: 72px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+  width: 68px; height: 68px; border-radius: 18px; background: var(--primary);
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 900;
-  color: #fff;
-  letter-spacing: 0;
-  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.45), 0 1px 0 rgba(255,255,255,0.14) inset;
+  font-size: 18px; font-weight: 900; color: var(--on-primary);
+  box-shadow: 0 8px 28px rgba(252,213,53,0.28);
 }
-.pin-title {
-  font-size: 20px; font-weight: 800;
-  letter-spacing: 4px; color: #f0f0f8; text-transform: uppercase;
-}
-.pin-sub { font-size: 13px; color: rgba(255,255,255,0.3); letter-spacing: 1px; margin-top: -6px; }
-
+.pin-title { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: #fff; }
+.pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 1px; margin-top: -6px; }
 #pin-input {
-  width: 100%; max-width: 260px;
-  background: rgba(255,255,255,0.06);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  border-radius: 14px; padding: 16px 20px;
-  font-size: 26px; font-weight: 700; color: #fff;
+  width: 100%; max-width: 260px; background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 8px; padding: 14px 20px; font-size: 26px; font-weight: 700; color: #fff;
   text-align: center; outline: none; letter-spacing: 8px;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-#pin-input:focus {
-  border-color: rgba(59, 130, 246, 0.6);
-  background: rgba(59, 130, 246, 0.06);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-}
-
+#pin-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(252,213,53,0.18); }
 #pin-btn {
-  width: 100%; max-width: 260px;
-  background: linear-gradient(145deg, #3b82f6, #1d4ed8);
-  border: none;
-  border-radius: 14px; padding: 16px;
-  font-size: 15px; font-weight: 800; color: #fff;
-  letter-spacing: 2px; text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.15s;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4), 0 1px 0 rgba(255,255,255,0.12) inset;
+  width: 100%; max-width: 260px; background: var(--primary); color: var(--on-primary);
+  border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 2px;
+  cursor: pointer; transition: transform 0.1s, background 0.15s;
 }
-#pin-btn:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+#pin-btn:active { transform: scale(0.97); background: var(--primary-active); }
+#pin-error { font-size: 13px; color: var(--down); font-weight: 600; min-height: 18px; }
 
-#pin-error {
-  font-size: 13px; color: #f87171;
-  font-weight: 600; letter-spacing: 1px; min-height: 18px;
-}
-
-/* ── Top Bar ── */
+/* ── Top bar ── */
 .top-bar {
-  position: sticky; top: 0; z-index: 10;
-  background: rgba(7, 7, 15, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  position: sticky; top: 0; z-index: 10; background: var(--canvas);
+  border-bottom: 1px solid var(--hairline); padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px;
 }
-.top-title {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: #e0e0f0;
-  text-transform: uppercase;
-  flex: 1;
-}
+.top-title { font-size: 14px; font-weight: 800; letter-spacing: 3px; color: #fff; text-transform: uppercase; flex: 1; }
 #phase-badge {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 5px 14px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.3);
-  border: 1px solid rgba(255,255,255,0.08);
-  transition: background 0.3s, color 0.3s, border-color 0.3s;
+  font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 14px; border-radius: 8px; background: var(--surface); color: var(--muted);
+  border: 1px solid var(--hairline); transition: background 0.3s, color 0.3s, border-color 0.3s;
 }
-#ws-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  transition: background 0.3s, box-shadow 0.3s;
+#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s, box-shadow 0.3s; }
+#ws-dot.on { background: var(--up); box-shadow: 0 0 8px rgba(14,203,129,0.7); }
+
+/* ── Joined count strip (需求1) ── */
+.joined-strip {
+  display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+  border-bottom: 1px solid var(--hairline); font-size: 13px; color: var(--muted);
 }
-#ws-dot.on {
-  background: #22c55e;
-  box-shadow: 0 0 8px rgba(34,197,94,0.7);
-}
+.joined-strip b { color: var(--primary); font-size: 15px; }
+#joined-names { color: var(--muted-strong); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
 /* ── Controls ── */
-.controls {
-  display: flex;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.btn-open, .btn-reset {
-  flex: 1;
-  border: none;
-  border-radius: 14px;
-  padding: 16px;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.15s, opacity 0.2s;
-}
-.btn-open:active:not(:disabled), .btn-reset:active { transform: scale(0.96); }
+.controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
+.btn-open, .btn-reset { flex: 1; border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 800; letter-spacing: 2px; cursor: pointer; transition: transform 0.1s, background 0.15s, opacity 0.2s; }
+.btn-open:active:not(:disabled), .btn-reset:active { transform: scale(0.97); }
+.btn-open { background: var(--primary); color: var(--on-primary); }
+.btn-open:active:not(:disabled) { background: var(--primary-active); }
+.btn-open:disabled { background: var(--surface); color: var(--muted); cursor: not-allowed; }
+.btn-reset { background: var(--surface); color: var(--body); max-width: 100px; border: 1px solid var(--hairline); }
+.btn-reset:active { background: var(--surface2); }
 
-.btn-open {
-  background: linear-gradient(145deg, #22c55e, #16a34a);
-  color: #fff;
-  box-shadow: 0 6px 22px rgba(34,197,94,0.4), 0 1px 0 rgba(255,255,255,0.14) inset;
-}
-.btn-open:disabled {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.2);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-.btn-reset {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.5);
-  max-width: 100px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.btn-reset:hover { background: rgba(255,255,255,0.1); }
-
-/* ── Buzz List ── */
-#main {
-  overflow-y: auto;
-  padding: 14px 16px;
-  height: calc(100% - 120px);
-}
-#empty-msg {
-  margin-top: 60px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.2);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
+/* ── Buzz list ── */
+#main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
+#empty-msg { margin-top: 60px; text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 2px; }
 #buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
 
 .buzz-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 14px;
-  padding: 14px 18px;
-  animation: row-in 0.25s ease-out both;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--hairline); border-left: 4px solid var(--hairline);
+  border-radius: 10px; padding: 14px 18px; animation: row-in 0.22s ease-out both;
   transition: border-color 0.2s, background 0.2s;
 }
-.buzz-row.focus {
-  background: rgba(234,179,8,0.08);
-  border-color: #ca8a04;
-}
-.buzz-row.verified-correct {
-  background: rgba(22,163,74,0.07);
-  border-color: #15803d;
-  opacity: 0.7;
-}
-.buzz-row.verified-wrong {
-  background: rgba(220,38,38,0.05);
-  border-color: #991b1b;
-  opacity: 0.5;
-}
+.buzz-row.focus { background: rgba(252,213,53,0.08); border-color: var(--primary); border-left-color: var(--primary); }
+.buzz-row.verified-correct { background: rgba(14,203,129,0.07); border-color: var(--up); border-left-color: var(--up); opacity: 0.7; }
+.buzz-row.verified-wrong { background: rgba(246,70,93,0.05); border-color: var(--down); border-left-color: var(--down); opacity: 0.5; }
+@keyframes row-in { from{opacity:0; transform:translateX(-12px);} to{opacity:1; transform:none;} }
 
-@keyframes row-in {
-  from { opacity: 0; transform: translateX(-14px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
+.rank-num { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; background: var(--surface2); color: var(--muted-strong); }
+.rank-1 { background: var(--primary); color: var(--on-primary); }
+.rank-2 { background: #c2cad6; color: #1e2329; }
+.rank-3 { background: #cd7f32; color: #1a0d00; }
+.team-name { flex: 1; font-size: 18px; font-weight: 700; color: #fff; }
+.focus .team-name { color: var(--primary); }
+.verified-correct .team-name { color: var(--up); text-decoration: line-through; }
+.verified-wrong .team-name { color: var(--down); text-decoration: line-through; }
 
-.rank-num {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 900;
-  flex-shrink: 0;
-  letter-spacing: 0;
-}
-.rank-1 { background: linear-gradient(145deg, #fde68a, #d97706); color: #431a00; }
-.rank-2 { background: linear-gradient(145deg, #e2e8f0, #94a3b8); color: #1e293b; }
-.rank-3 { background: linear-gradient(145deg, #fdba74, #cd7f32); color: #431407; }
-.rank-n { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); font-size: 11px; }
+.focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--primary); text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--primary); border-radius: 6px; background: rgba(252,213,53,0.08); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} }
 
-.team-name {
-  flex: 1;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: #e0e0f0;
-}
-.focus .team-name { color: #fde047; }
-.verified-correct .team-name { color: #4ade80; text-decoration: line-through; }
-.verified-wrong .team-name { color: #f87171; text-decoration: line-through; }
-
-.focus-tag {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: #fbbf24;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border: 1px solid rgba(202,138,4,0.4);
-  border-radius: 6px;
-  background: rgba(234,179,8,0.1);
-  animation: blink 1s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
-@media (prefers-reduced-motion: reduce) {
-  .focus-tag { animation: none; opacity: 1; }
-  .buzz-row { animation: none; }
-}
-
-.result-badge {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  text-transform: uppercase;
-}
-.badge-correct { background: rgba(22,163,74,0.2); color: #4ade80; }
-.badge-wrong   { background: rgba(220,38,38,0.2); color: #f87171; }
+.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; }
+.badge-correct { background: rgba(14,203,129,0.18); color: var(--up); }
+.badge-wrong { background: rgba(246,70,93,0.18); color: var(--down); }
 
 .verify-btns { display: flex; gap: 8px; }
-.v-btn {
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  min-height: 44px;
-  min-width: 44px;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.08s;
-}
+.v-btn { border: none; border-radius: 8px; padding: 10px 16px; min-height: 44px; min-width: 44px; font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer; transition: transform 0.08s, opacity 0.15s; color: #fff; }
 .v-btn:active { transform: scale(0.93); }
-.v-correct { background: linear-gradient(145deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 14px rgba(34,197,94,0.35); }
-.v-wrong   { background: linear-gradient(145deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.35); }
+.v-correct { background: var(--up); }
+.v-wrong { background: var(--down); }
 </style>
 </head>
 <body>
@@ -288,8 +133,7 @@ html, body {
   <div class="pin-logo">HOST</div>
   <div class="pin-title">主持端</div>
   <div class="pin-sub">輸入 PIN 碼進入控制台</div>
-  <input id="pin-input" type="password" placeholder="PIN" maxlength="10"
-    autocomplete="off" autocorrect="off" spellcheck="false">
+  <input id="pin-input" type="password" placeholder="PIN" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false">
   <button id="pin-btn">進入</button>
   <div id="pin-error"></div>
 </div>
@@ -298,6 +142,11 @@ html, body {
   <span class="top-title">主持端</span>
   <span id="phase-badge">LOCKED</span>
   <div id="ws-dot"></div>
+</div>
+
+<div class="joined-strip">
+  已進場 <b id="joined-count">0</b> 組
+  <span id="joined-names"></span>
 </div>
 
 <div class="controls">
@@ -311,89 +160,77 @@ html, body {
 </div>
 
 <script>
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
 let ws, hostPin = '';
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
 
-// ── PIN Screen ─────────────────────────────────────────────────────────────
 $('pin-btn').addEventListener('click', submitPin);
-$('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
+$('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') submitPin(); });
 
-function submitPin() {
+function submitPin(){
   const val = $('pin-input').value.trim();
-  if (!val) { $('pin-input').focus(); return; }
-  hostPin = val;
-  $('pin-error').textContent = '';
-  $('pin-screen').classList.add('hidden');
+  if(!val){ $('pin-input').focus(); return; }
+  hostPin = val; $('pin-error').textContent=''; $('pin-screen').classList.add('hidden');
   connect();
 }
-
-function showPinError(msg) {
-  hostPin = '';
-  $('pin-input').value = '';
-  $('pin-error').textContent = msg;
-  $('pin-screen').classList.remove('hidden');
-  $('pin-input').focus();
+function showPinError(msg){
+  hostPin=''; $('pin-input').value=''; $('pin-error').textContent=msg;
+  $('pin-screen').classList.remove('hidden'); $('pin-input').focus();
 }
 
-// ── WebSocket ──────────────────────────────────────────────────────────────
-function connect() {
+function connect(){
   ws = new WebSocket(WS_URL);
-  ws.addEventListener('open', () => { $('ws-dot').classList.add('on'); });
-  ws.addEventListener('close', () => { $('ws-dot').classList.remove('on'); setTimeout(connect, 2000); });
-  ws.addEventListener('message', e => {
+  ws.addEventListener('open', ()=>{ $('ws-dot').classList.add('on'); });
+  ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('on'); setTimeout(connect,2000); });
+  ws.addEventListener('message', e=>{
     const msg = JSON.parse(e.data);
-    if (msg.type === 'state') renderState(msg);
-    if (msg.type === 'auth_error') showPinError('PIN 錯誤，請重新輸入');
+    if(msg.type==='state') renderState(msg);
+    if(msg.type==='auth_error') showPinError('PIN 錯誤，請重新輸入');
   });
 }
 
-function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
-function sendHost(obj) { send({ ...obj, pin: hostPin }); }
+function send(obj){ if(ws && ws.readyState===1) ws.send(JSON.stringify(obj)); }
+function sendHost(obj){ send({ ...obj, pin:hostPin }); }
 
-$('btn-open').addEventListener('click', () => sendHost({ type: 'host_open' }));
-$('btn-reset').addEventListener('click', () => sendHost({ type: 'host_reset' }));
+$('btn-open').addEventListener('click', ()=>sendHost({ type:'host_open' }));
+$('btn-reset').addEventListener('click', ()=>sendHost({ type:'host_reset' }));
 
-function renderState(state) {
+function renderState(state){
   const badge = $('phase-badge');
   const phases = {
-    locked:    ['LOCKED',   'rgba(255,255,255,0.07)', 'rgba(255,255,255,0.3)', 'rgba(255,255,255,0.08)'],
-    open:      ['OPEN',     'rgba(22,163,74,0.18)',   '#4ade80',               'rgba(22,163,74,0.3)'],
-    reviewing: ['REVIEW',   'rgba(234,179,8,0.15)',   '#fde047',               'rgba(234,179,8,0.3)'],
+    locked:    ['LOCKED', 'var(--surface)',        'var(--muted)',  'var(--hairline)'],
+    open:      ['OPEN',   'rgba(252,213,53,0.16)',  'var(--primary)','var(--primary)'],
+    reviewing: ['REVIEW', 'rgba(252,213,53,0.12)',  'var(--primary)','var(--primary)'],
   };
-  const [label, bg, color, border] = phases[state.phase] ?? phases.locked;
-  badge.textContent = label;
-  badge.style.background = bg;
-  badge.style.color = color;
-  badge.style.borderColor = border;
+  const [label,bg,color,border] = phases[state.phase] ?? phases.locked;
+  badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
 
-  const btnOpen = $('btn-open');
-  btnOpen.disabled = state.phase !== 'locked';
+  // 進場名單 (需求1)
+  const teams = state.joinedTeams || [];
+  $('joined-count').textContent = teams.length;
+  $('joined-names').textContent = teams.length ? teams.join('、') : '';
+
+  $('btn-open').disabled = state.phase !== 'locked';
 
   const list = $('buzz-list');
-  list.innerHTML = '';
+  list.innerHTML='';
   $('empty-msg').style.display = state.buzzOrder.length ? 'none' : '';
 
-  state.buzzOrder.forEach((entry, i) => {
-    const isFocus = state.currentFocus === entry.team && !entry.verified;
+  state.buzzOrder.forEach((entry,i)=>{
+    const isFocus = state.currentFocus===entry.team && !entry.verified;
     const li = document.createElement('li');
-    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
-    const rowClass = entry.verified
-      ? (entry.result === 'correct' ? 'verified-correct' : 'verified-wrong')
-      : (isFocus ? 'focus' : '');
-
-    li.className = `buzz-row ${rowClass}`;
-
-    const rankLabel = i < 3 ? ['1ST','2ND','3RD'][i] : `#${i+1}`;
-
-    let rightContent = '';
-    if (entry.verified) {
-      const cls = entry.result === 'correct' ? 'badge-correct' : 'badge-wrong';
-      const label = entry.result === 'correct' ? '正確' : '錯誤';
-      rightContent = `<span class="result-badge ${cls}">${label}</span>`;
-    } else if (isFocus) {
+    const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+    const rowClass = entry.verified ? (entry.result==='correct'?'verified-correct':'verified-wrong') : (isFocus?'focus':'');
+    li.className=`buzz-row ${rowClass}`;
+    const rankLabel = i+1;
+    let rightContent='';
+    if(entry.verified){
+      const cls = entry.result==='correct'?'badge-correct':'badge-wrong';
+      const lbl = entry.result==='correct'?'正確':'錯誤';
+      rightContent = `<span class="result-badge ${cls}">${lbl}</span>`;
+    } else if(isFocus){
       rightContent = `
         <span class="focus-tag">待驗證</span>
         <div class="verify-btns">
@@ -407,24 +244,22 @@ function renderState(state) {
           <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X</button>
         </div>`;
     }
-
     li.innerHTML = `
       <div class="rank-num ${rankClass}">${rankLabel}</div>
       <span class="team-name">${escHtml(entry.team)}</span>
-      ${rightContent}
-    `;
+      ${rightContent}`;
     list.appendChild(li);
   });
 
-  list.querySelectorAll('.v-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sendHost({ type: 'host_verify', team: btn.dataset.team, result: btn.dataset.result });
+  list.querySelectorAll('.v-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      sendHost({ type:'host_verify', team:btn.dataset.team, result:btn.dataset.result });
     });
   });
 }
 
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>

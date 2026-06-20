@@ -7,478 +7,199 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>搶答燈 — 學員端</title>
 <link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+:root{
+  --canvas:#0b0e11; --surface:#1e2329; --surface2:#2b3139;
+  --primary:#fcd535; --primary-active:#f0b90b; --on-primary:#181a20;
+  --body:#eaecef; --muted:#707a8a; --muted-strong:#929aa5;
+  --hairline:#2b3139; --up:#0ecb81; --down:#f6465d;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%; overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  background:
-    radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.22) 0%, transparent 50%),
-    radial-gradient(ellipse at 88% 88%, rgba(10, 30, 170, 0.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 65% 28%, rgba(220, 0, 60, 0.1) 0%, transparent 42%),
-    #07070f;
-  color: #fff;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--canvas); color: var(--body);
+  -webkit-tap-highlight-color: transparent; user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Login ── */
 #login-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
-  height: 100%;
-  padding: 40px 28px;
-  position: relative;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 22px; height: 100%; padding: 40px 28px;
 }
-
-/* Atmospheric orbs */
-#login-screen::before {
-  content: '';
-  position: absolute;
-  width: 380px; height: 380px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(225, 29, 72, 0.13) 0%, transparent 70%);
-  top: -120px; right: -100px;
-  animation: orb-drift 12s ease-in-out infinite;
-  pointer-events: none;
-}
-#login-screen::after {
-  content: '';
-  position: absolute;
-  width: 280px; height: 280px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 20, 200, 0.14) 0%, transparent 70%);
-  bottom: -80px; left: -70px;
-  animation: orb-drift 16s ease-in-out infinite reverse;
-  pointer-events: none;
-}
-@keyframes orb-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(18px, -22px) scale(1.04); }
-  66% { transform: translate(-12px, 16px) scale(0.96); }
-}
-
 .login-logo {
-  width: 96px; height: 96px;
-  border-radius: 28px;
-  background: linear-gradient(145deg, #ff3a6e 0%, #e11d48 50%, #9b0f31 100%);
+  width: 88px; height: 88px; border-radius: 22px;
+  background: var(--primary);
   display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 900;
-  color: #fff;
-  letter-spacing: -1px;
-  box-shadow:
-    0 10px 40px rgba(225, 29, 72, 0.55),
-    0 2px 0 rgba(255,255,255,0.14) inset,
-    0 -2px 8px rgba(0,0,0,0.3) inset;
-  position: relative; z-index: 1;
+  font-size: 30px; font-weight: 900; color: var(--on-primary); letter-spacing: -1px;
+  box-shadow: 0 10px 36px rgba(252,213,53,0.28);
 }
-
-.login-title {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 5px;
-  color: #f0f0f8;
-  text-transform: uppercase;
-  position: relative; z-index: 1;
-  text-align: center;
-}
-.login-sub {
-  font-size: 12px;
-  color: rgba(255,255,255,0.28);
-  letter-spacing: 3px;
-  margin-top: -14px;
-  position: relative; z-index: 1;
-  text-transform: uppercase;
-}
+.login-title { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #fff; text-align: center; }
+.login-sub { font-size: 11px; color: var(--muted); letter-spacing: 4px; margin-top: -12px; text-transform: uppercase; }
 
 #team-input {
-  width: 100%;
-  max-width: 320px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 18px 20px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-  letter-spacing: 1px;
-  position: relative; z-index: 1;
+  width: 100%; max-width: 320px;
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: 8px; padding: 16px 18px;
+  font-size: 20px; font-weight: 600; color: #fff; text-align: center; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-#team-input:focus {
-  border-color: rgba(225, 29, 72, 0.65);
-  background: rgba(225, 29, 72, 0.07);
-  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.12);
-}
-#team-input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; font-size: 16px; }
+#team-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(252,213,53,0.18); }
+#team-input::placeholder { color: var(--muted); font-weight: 400; font-size: 16px; }
 
 #join-btn {
-  width: 100%;
-  max-width: 320px;
-  background: linear-gradient(160deg, #ff3a6e 0%, #e11d48 55%, #be123c 100%);
-  border: none;
-  border-radius: 16px;
-  padding: 20px;
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.15s;
-  box-shadow:
-    0 10px 32px rgba(225, 29, 72, 0.5),
-    0 1px 0 rgba(255,255,255,0.14) inset;
-  position: relative; z-index: 1;
+  width: 100%; max-width: 320px;
+  background: var(--primary); color: var(--on-primary);
+  border: none; border-radius: 8px; padding: 18px;
+  font-size: 17px; font-weight: 800; letter-spacing: 2px; cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
 }
-#join-btn:active {
-  transform: scale(0.97);
-  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
-}
+#join-btn:active { transform: scale(0.97); background: var(--primary-active); }
 
-/* ── Game Screen ── */
-#game-screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0;
-}
+/* ── Game ── */
+#game-screen { display: none; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; }
+.top-bar { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--hairline); }
+.top-bar-title { font-size: 11px; font-weight: 700; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
+#team-badge { background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 6px 14px; font-size: 15px; font-weight: 700; color: #fff; }
+#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s, box-shadow 0.3s; }
+#ws-dot.connected { background: var(--up); box-shadow: 0 0 8px rgba(14,203,129,0.7); }
 
-/* Top Bar */
-.top-bar {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.top-bar-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  color: rgba(255,255,255,0.2);
-  text-transform: uppercase;
-}
-#team-badge {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  padding: 6px 16px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #e0e0f0;
-  letter-spacing: 1px;
-}
-#ws-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  transition: background 0.3s, box-shadow 0.3s;
-}
-#ws-dot.connected {
-  background: #22c55e;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
-}
-
-/* Buzz Button Area */
-.btn-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 24px;
-}
-
+.btn-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 24px; }
 #buzz-btn {
-  width: min(80vw, 330px);
-  height: min(80vw, 330px);
-  border-radius: 50%;
-  border: none;
-  font-size: clamp(34px, 9vw, 52px);
-  font-weight: 900;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  cursor: not-allowed;
-  transition: transform 0.08s, box-shadow 0.2s, background 0.2s, color 0.2s;
-  position: relative;
-  outline: none;
+  width: min(80vw, 330px); height: min(80vw, 330px); border-radius: 50%; border: none;
+  font-size: clamp(34px, 9vw, 52px); font-weight: 900; letter-spacing: 4px;
+  cursor: not-allowed; transition: transform 0.08s, background 0.2s, color 0.2s, box-shadow 0.2s; outline: none;
 }
-
-/* Locked — subtle 3D dark sphere */
-#buzz-btn.state-locked {
-  background: radial-gradient(circle at 38% 32%, #282830, #181820 60%, #100f18);
-  color: rgba(255,255,255,0.18);
-  box-shadow:
-    inset 0 2px 8px rgba(255,255,255,0.04),
-    inset 0 -5px 16px rgba(0,0,0,0.5),
-    0 0 0 8px rgba(255,255,255,0.015),
-    0 0 0 16px rgba(255,255,255,0.007);
-}
-
-/* Open — red glowing sphere */
+/* Locked */
+#buzz-btn.state-locked { background: var(--surface); color: var(--muted); box-shadow: inset 0 0 0 1px var(--hairline); }
+/* Open — yellow primary (the action) */
 #buzz-btn.state-open {
-  background: radial-gradient(circle at 38% 32%, #ff4a75, #e11d48 55%, #8b0929);
-  color: #fff;
-  cursor: pointer;
-  box-shadow:
-    inset 0 4px 16px rgba(255,255,255,0.24),
-    inset 0 -6px 16px rgba(0,0,0,0.3),
-    0 0 0 10px rgba(225,29,72,0.16),
-    0 0 0 24px rgba(225,29,72,0.07),
-    0 28px 72px rgba(225,29,72,0.6);
-  animation: buzz-pulse 1.4s ease-in-out infinite;
+  background: var(--primary); color: var(--on-primary); cursor: pointer;
+  box-shadow: 0 0 0 8px rgba(252,213,53,0.14), 0 0 0 20px rgba(252,213,53,0.06), 0 20px 60px rgba(252,213,53,0.4);
+  animation: buzz-pulse 1.3s ease-in-out infinite;
 }
-#buzz-btn.state-open:active {
-  transform: scale(0.88);
-  box-shadow:
-    inset 0 6px 20px rgba(0,0,0,0.35),
-    0 0 0 4px rgba(225,29,72,0.3),
-    0 8px 30px rgba(225,29,72,0.4);
-}
-
-/* Buzzed — gold sphere */
+#buzz-btn.state-open:active { transform: scale(0.9); background: var(--primary-active); }
+/* Buzzed — locked-in */
 #buzz-btn.state-buzzed {
-  background: radial-gradient(circle at 38% 32%, #fde68a, #f59e0b 55%, #b45309);
-  color: #1a0a00;
-  cursor: not-allowed;
-  box-shadow:
-    inset 0 4px 14px rgba(255,255,255,0.35),
-    inset 0 -5px 14px rgba(0,0,0,0.2),
-    0 0 0 8px rgba(245,158,11,0.15),
-    0 0 0 18px rgba(245,158,11,0.07),
-    0 22px 55px rgba(245,158,11,0.4);
-  font-size: clamp(20px, 5.5vw, 32px);
-  letter-spacing: 1px;
+  background: var(--surface2); color: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--primary), 0 14px 40px rgba(0,0,0,0.4);
+  font-size: clamp(22px, 6vw, 34px); letter-spacing: 1px;
 }
-
 @keyframes buzz-pulse {
-  0%, 100% {
-    box-shadow:
-      inset 0 4px 16px rgba(255,255,255,0.24),
-      inset 0 -6px 16px rgba(0,0,0,0.3),
-      0 0 0 10px rgba(225,29,72,0.16),
-      0 0 0 24px rgba(225,29,72,0.07),
-      0 28px 72px rgba(225,29,72,0.6);
-  }
-  50% {
-    box-shadow:
-      inset 0 4px 16px rgba(255,255,255,0.24),
-      inset 0 -6px 16px rgba(0,0,0,0.3),
-      0 0 0 16px rgba(225,29,72,0.22),
-      0 0 0 38px rgba(225,29,72,0.1),
-      0 28px 95px rgba(225,29,72,0.75);
-  }
+  0%,100% { box-shadow: 0 0 0 8px rgba(252,213,53,0.14), 0 0 0 20px rgba(252,213,53,0.06), 0 20px 60px rgba(252,213,53,0.4); }
+  50% { box-shadow: 0 0 0 14px rgba(252,213,53,0.2), 0 0 0 34px rgba(252,213,53,0.08), 0 20px 80px rgba(252,213,53,0.55); }
 }
-
-@keyframes body-flash {
-  0%   { background: #fff; }
-  18%  { background: #e11d48; }
-  100% {
-    background:
-      radial-gradient(ellipse at 15% 12%, rgba(120, 0, 200, 0.22) 0%, transparent 50%),
-      radial-gradient(ellipse at 88% 88%, rgba(10, 30, 170, 0.18) 0%, transparent 50%),
-      #07070f;
-  }
-}
+@keyframes body-flash { 0%{background:#fff;} 18%{background:var(--primary);} 100%{background:var(--canvas);} }
 body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open { animation: none; } body.buzz-flash { animation: none; } }
 
-@media (prefers-reduced-motion: reduce) {
-  #buzz-btn.state-open { animation: none; }
-  body.buzz-flash { animation: none; }
-  #login-screen::before, #login-screen::after { animation: none; }
-}
-
-/* Status Bar */
-.status-bar {
-  width: 100%;
-  padding: 18px 24px 36px;
-  text-align: center;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  min-height: 82px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-#status-msg {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: rgba(255,255,255,0.2);
-  transition: color 0.3s, background 0.3s;
-  display: inline-block;
-  padding: 6px 18px;
-  border-radius: 20px;
-  background: transparent;
-}
-#status-msg.active {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.2);
-}
-#status-msg.locked {
-  color: rgba(255,255,255,0.18);
-  background: transparent;
-  border: none;
-}
-
-.lock-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-.lock-bar {
-  width: 28px; height: 2px;
-  background: rgba(255,255,255,0.07);
-  border-radius: 2px;
-}
-#phase-label {
-  font-size: 10px;
-  letter-spacing: 3px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.14);
-  text-transform: uppercase;
-}
+.status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--hairline); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color 0.3s, background 0.3s; }
+#status-msg.active { color: var(--primary); background: rgba(252,213,53,0.1); }
+#phase-label { font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 </style>
 </head>
 <body>
 
-<!-- 登入畫面 -->
 <div id="login-screen">
   <div class="login-logo">BZ</div>
-  <div>
+  <div style="text-align:center">
     <div class="login-title">搶答燈系統</div>
-    <div class="login-sub">QUIZ BUZZER SYSTEM</div>
+    <div class="login-sub">Quiz Buzzer System</div>
   </div>
-  <input id="team-input" type="text" placeholder="輸入組別名稱"
-    maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+  <input id="team-input" type="text" placeholder="輸入組別名稱" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
   <button id="join-btn">加入搶答</button>
 </div>
 
-<!-- 搶答畫面 -->
 <div id="game-screen">
   <div class="top-bar">
     <span class="top-bar-title">搶答燈</span>
     <span id="team-badge">—</span>
     <div id="ws-dot"></div>
   </div>
-
   <div class="btn-area">
     <button id="buzz-btn" class="state-locked" disabled>BUZZ</button>
   </div>
-
   <div class="status-bar">
-    <div id="status-msg" class="locked" aria-live="polite" aria-atomic="true">等待主持人開放搶答</div>
-    <div class="lock-indicator">
-      <div class="lock-bar"></div>
-      <span id="phase-label">LOCKED</span>
-      <div class="lock-bar"></div>
-    </div>
+    <div id="status-msg" aria-live="polite" aria-atomic="true">等待主持人開放搶答</div>
+    <span id="phase-label">LOCKED</span>
   </div>
 </div>
 
 <script>
-const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
 let ws, myTeam, buzzed = false;
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
 
 $('join-btn').addEventListener('click', joinGame);
-$('team-input').addEventListener('keydown', e => { if (e.key === 'Enter') joinGame(); });
+$('team-input').addEventListener('keydown', e => { if(e.key==='Enter') joinGame(); });
 
-function joinGame() {
+function joinGame(){
   const name = $('team-input').value.trim();
-  if (!name) { $('team-input').focus(); return; }
+  if(!name){ $('team-input').focus(); return; }
   myTeam = name;
   connectWS();
 }
 
-function connectWS() {
+function connectWS(){
   ws = new WebSocket(WS_URL);
-  ws.addEventListener('open', () => {
-    ws.send(JSON.stringify({ type: 'join', team: myTeam }));
-    $('login-screen').style.display = 'none';
-    $('game-screen').style.display = 'flex';
-    $('team-badge').textContent = myTeam;
+  ws.addEventListener('open', ()=>{
+    ws.send(JSON.stringify({ type:'join', team:myTeam }));
+    $('login-screen').style.display='none';
+    $('game-screen').style.display='flex';
+    $('team-badge').textContent=myTeam;
     $('ws-dot').classList.add('connected');
   });
-  ws.addEventListener('message', e => handleMessage(JSON.parse(e.data)));
-  ws.addEventListener('close', () => {
-    $('ws-dot').classList.remove('connected');
-    setTimeout(connectWS, 2000);
-  });
+  ws.addEventListener('message', e=>handleMessage(JSON.parse(e.data)));
+  ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('connected'); setTimeout(connectWS,2000); });
 }
 
-function handleMessage(msg) {
-  switch (msg.type) {
+function handleMessage(msg){
+  switch(msg.type){
     case 'state': applyState(msg); break;
     case 'first_buzz':
     case 'buzz_registered':
-      if (msg.team === myTeam) setBuzzLocked(msg.rank);
+      if(msg.team===myTeam) setBuzzLocked(msg.rank);
       break;
   }
 }
 
-function applyState(msg) {
+function applyState(msg){
   const btn = $('buzz-btn');
-
-  if (msg.phase === 'locked') {
-    buzzed = false;
-    btn.disabled = true;
-    btn.className = 'state-locked';
-    btn.textContent = 'BUZZ';
-    setStatus('等待主持人開放搶答', 'locked');
-    setPhaseLabel('LOCKED');
-  } else if (msg.phase === 'open') {
-    if (buzzed) return;
-    const myEntry = msg.buzzOrder.find(b => b.team === myTeam);
-    if (myEntry) { setBuzzLocked(msg.buzzOrder.indexOf(myEntry) + 1); return; }
-    btn.disabled = false;
-    btn.className = 'state-open';
-    btn.textContent = 'BUZZ';
-    setStatus('搶答開放中！', 'active');
-    setPhaseLabel('OPEN');
+  if(msg.phase==='locked'){
+    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
+    setStatus('等待主持人開放搶答', ''); $('phase-label').textContent='LOCKED';
+  } else if(msg.phase==='open'){
+    if(buzzed) return;
+    const myEntry = msg.buzzOrder.find(b=>b.team===myTeam);
+    if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
+    btn.disabled=false; btn.className='state-open'; btn.textContent='BUZZ';
+    setStatus('搶答開放中！', 'active'); $('phase-label').textContent='OPEN';
   }
 }
 
-function setBuzzLocked(rank) {
-  buzzed = true;
-  const btn = $('buzz-btn');
-  btn.disabled = true;
-  btn.className = 'state-buzzed';
-  btn.textContent = `第 ${rank} 名`;
-  setStatus('已搶答，等待驗證', 'active');
-  setPhaseLabel(`RANK ${rank}`);
+function setBuzzLocked(rank){
+  buzzed=true;
+  const btn=$('buzz-btn');
+  btn.disabled=true; btn.className='state-buzzed'; btn.textContent=`第 ${rank} 名`;
+  setStatus('已搶答，等待驗證', 'active'); $('phase-label').textContent=`RANK ${rank}`;
   document.body.classList.add('buzz-flash');
-  setTimeout(() => document.body.classList.remove('buzz-flash'), 500);
+  setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
 }
 
-function setStatus(text, cls) {
-  const el = $('status-msg');
-  el.textContent = text;
-  el.className = cls;
-}
-function setPhaseLabel(text) { $('phase-label').textContent = text; }
+function setStatus(text, cls){ const el=$('status-msg'); el.textContent=text; el.className=cls; }
 
-$('buzz-btn').addEventListener('click', () => {
-  if (buzzed || !ws || ws.readyState !== 1) return;
-  buzzed = true;
-  ws.send(JSON.stringify({ type: 'buzz', team: myTeam, ts: Date.now() }));
-  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+$('buzz-btn').addEventListener('click', ()=>{
+  if(buzzed || !ws || ws.readyState!==1) return;
+  buzzed=true;
+  ws.send(JSON.stringify({ type:'buzz', team:myTeam, ts:Date.now() }));
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
 });
 </script>
 </body>

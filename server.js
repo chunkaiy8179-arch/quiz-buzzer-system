@@ -28,6 +28,18 @@ let state = {
   currentFocus: null,
 };
 
+// 已加入的學員端：ws → 組別名稱（投影端/主持端不會 join，故不計入）
+const sockets = new Map();
+
+function joinedTeams() {
+  const seen = new Set();
+  const out = [];
+  for (const name of sockets.values()) {
+    if (!seen.has(name)) { seen.add(name); out.push(name); }
+  }
+  return out;
+}
+
 function currentFocusTeam() {
   return state.buzzOrder.find(b => !b.verified) ?? null;
 }
@@ -37,25 +49,31 @@ function broadcast(msg) {
   wss.clients.forEach(c => { if (c.readyState === 1) c.send(data); });
 }
 
-function broadcastState() {
+function stateMsg() {
   const focus = currentFocusTeam();
-  broadcast({
+  return {
     type: 'state',
     phase: state.phase,
     buzzOrder: state.buzzOrder,
     currentFocus: focus ? focus.team : null,
-  });
+    joinedTeams: joinedTeams(),
+  };
+}
+
+function broadcastState() {
+  broadcast(stateMsg());
 }
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
 wss.on('connection', (ws) => {
-  const focus = currentFocusTeam();
-  ws.send(JSON.stringify({
-    type: 'state',
-    phase: state.phase,
-    buzzOrder: state.buzzOrder,
-    currentFocus: focus ? focus.team : null,
-  }));
+  ws.send(JSON.stringify(stateMsg()));
+
+  ws.on('close', () => {
+    if (sockets.has(ws)) {
+      sockets.delete(ws);
+      broadcastState();
+    }
+  });
 
   ws.on('message', (raw) => {
     let msg;
@@ -70,6 +88,16 @@ wss.on('connection', (ws) => {
     };
 
     switch (msg.type) {
+
+      case 'join': {
+        const { team } = msg;
+        if (!team || typeof team !== 'string') return;
+        const trimmed = team.trim();
+        if (trimmed.length === 0 || trimmed.length > 30) return;
+        sockets.set(ws, trimmed);
+        broadcastState();
+        break;
+      }
 
       case 'host_open': {
         if (!checkPin()) return;
