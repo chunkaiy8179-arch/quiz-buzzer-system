@@ -87,8 +87,9 @@ test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) 
   await expect(hostPage.locator('#buzz-list li').first()).toContainText('第1組', { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('第2組', { timeout: WS_TIMEOUT });
 
-  // 投影端排名畫面
-  await expect(displayPage.locator('#rank-list li').first()).toContainText('第1組', { timeout: WS_TIMEOUT });
+  // 投影端開放畫面中即時順位列表（搶答時仍在 open phase，倒數移到角落）
+  await expect(displayPage.locator('#open-screen')).toBeVisible();
+  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('第1組', { timeout: WS_TIMEOUT });
 
   // 主持人判第1組錯誤
   const wrongBtn = hostPage.locator('.v-btn[data-result="wrong"]').first();
@@ -152,10 +153,10 @@ test('投影端在各 phase 顯示正確畫面', async ({ browser }) => {
   await hostPage.click('#btn-open');
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
-  // 搶答 → rank 畫面
+  // 搶答 → 仍在 open 畫面，即時順位顯示於中央列表
   await client.click('#buzz-btn');
-  await expect(displayPage.locator('#rank-screen')).toBeVisible({ timeout: WS_TIMEOUT });
-  await expect(displayPage.locator('#rank-list li').first()).toContainText('展示組');
+  await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
+  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('展示組');
 
   // 重設 → idle 畫面
   await hostPage.click('#btn-reset');
