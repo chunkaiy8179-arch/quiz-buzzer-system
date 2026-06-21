@@ -64,6 +64,8 @@ html, body {
 .btn-open:disabled { background: rgba(212,175,55,.08); color: var(--muted); cursor: not-allowed; box-shadow: none; }
 .btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 100px; border: 1px solid var(--gold-dim); }
 .btn-reset:active { background: rgba(212,175,55,.16); }
+.btn-clear { background: rgba(192,57,43,.1); color: #e3897f; max-width: 120px; border: 1px solid rgba(192,57,43,.5); }
+.btn-clear:active { background: rgba(192,57,43,.2); }
 
 /* ── 搶答列表 ── */
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
@@ -130,6 +132,7 @@ html, body {
 <div class="controls">
   <button id="btn-open" class="btn-open">點燃聖火</button>
   <button id="btn-reset" class="btn-reset">重設</button>
+  <button id="btn-clear" class="btn-clear">清空連線</button>
 </div>
 
 <div id="main">
@@ -174,6 +177,9 @@ function sendHost(obj){ send({ ...obj, pin:hostPin }); }
 
 $('btn-open').addEventListener('click', ()=>sendHost({ type:'host_open' }));
 $('btn-reset').addEventListener('click', ()=>sendHost({ type:'host_reset' }));
+$('btn-clear').addEventListener('click', ()=>{
+  if(confirm('確定清空所有連線？所有學員將被退回選城鎮畫面，需重新加入。')) sendHost({ type:'host_clear' });
+});
 
 function renderState(state){
   const badge = $('phase-badge');

@@ -11,7 +11,7 @@ const BASE = `http://localhost:${PORT}`;
 const WS_TIMEOUT = 8000;
 const TEST_PIN = 'LOAD1234';
 const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-const N = 8; // 同時連線城鎮數（對應 client.html 預設 8 城鎮）
+const N = 10; // 同時連線城鎮數（對應 client.html 預設 10 城鎮）
 
 test.beforeAll(async () => {
   serverProc = spawn('node', [path.join(__dirname, '..', 'server.js')], {
@@ -47,6 +47,7 @@ test(`${N} 城鎮同時連線、進場顯示、同時搶答的順序正確且順
   await Promise.all(clients.map(async (page, i) => {
     await page.goto(`${BASE}/client.html`);
     await page.click(`.town-btn[data-town="${teamNames[i]}"]`);
+    await page.click('#join-btn');
     await expect(page.locator('#game-screen')).toBeVisible({ timeout: WS_TIMEOUT });
   }));
 
@@ -98,6 +99,7 @@ test('城鎮斷線後進場名單即時減少', async ({ browser }) => {
   for (const [page, name] of [[c1, '城鎮一'], [c2, '城鎮二']]) {
     await page.goto(`${BASE}/client.html`);
     await page.click(`.town-btn[data-town="${name}"]`);
+    await page.click('#join-btn');
     await expect(page.locator('#game-screen')).toBeVisible({ timeout: WS_TIMEOUT });
   }
   await expect(hostPage.locator('#joined-count')).toHaveText('2', { timeout: WS_TIMEOUT });
