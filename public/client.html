@@ -131,10 +131,18 @@ const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
 let ws, myTeam = null, buzzed = false, joinedTeams = [];
 
 // 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
+// 另存重連權杖 token：F5 後帶回給伺服器，讓伺服器認得同一人、直接接管原城鎮
+//（Render 等代理清掉舊連線可能要約 10 秒，光靠重試等不到，故用 token 主動接管）
+// 用 sessionStorage 而非 localStorage：記憶綁「分頁」而非「整個瀏覽器」——
+// F5/重整同分頁會保留（達成回原城鎮），但同一瀏覽器另開新分頁不會共用、互相覆蓋。
+const STORE = window.sessionStorage;
 const STORE_KEY = 'sf_team';
-let storedTeam = null;
-try { storedTeam = localStorage.getItem(STORE_KEY) || null; } catch(e){}
-function rememberTeam(n){ try{ n ? localStorage.setItem(STORE_KEY, n) : localStorage.removeItem(STORE_KEY); }catch(e){} }
+const STORE_TOKEN = 'sf_token';
+let storedTeam = null, storedToken = null;
+try { storedTeam = STORE.getItem(STORE_KEY) || null; } catch(e){}
+try { storedToken = STORE.getItem(STORE_TOKEN) || null; } catch(e){}
+function rememberTeam(n){ try{ n ? STORE.setItem(STORE_KEY, n) : STORE.removeItem(STORE_KEY); }catch(e){} }
+function rememberToken(t){ try{ t ? STORE.setItem(STORE_TOKEN, t) : STORE.removeItem(STORE_TOKEN); }catch(e){} }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
@@ -181,7 +189,7 @@ $('join-btn').addEventListener('click', doJoin);
 let autoName = null, autoTries = 0;
 function sendJoin(name, auto){
   if(auto){ autoName = name; } else { autoName = null; autoTries = 0; }
-  if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'join', team:name }));
+  if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'join', team:name, token: storedToken || undefined }));
 }
 
 function doJoin(){
@@ -201,7 +209,7 @@ function showSelection(){
 
 $('change-town').addEventListener('click', ()=>{
   if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'leave' }));
-  storedTeam = null; rememberTeam(null); // 主動換城鎮 → 清除記憶
+  storedTeam = null; rememberTeam(null); storedToken = null; rememberToken(null); // 主動換城鎮 → 清除記憶與權杖
   showSelection();
 });
 
@@ -226,6 +234,7 @@ function handleMessage(msg){
       break;
     case 'join_ok':
       myTeam = msg.team; storedTeam = msg.team; rememberTeam(msg.team);
+      if(msg.token){ storedToken = msg.token; rememberToken(msg.token); }
       autoName = null; autoTries = 0;
       $('team-badge').textContent = myTeam;
       $('login-screen').style.display = 'none';
@@ -233,12 +242,12 @@ function handleMessage(msg){
       break;
     case 'join_error':
       if(autoName){
-        // F5/重連自動加入：重名多半是舊連線尚未被伺服器清除，稍候重試
+        // F5/重連自動加入：帶 token 多半會被伺服器接管成功；萬一仍重名（無 token 或舊連線殘留）稍候重試
         if(msg.reason==='duplicate' && autoTries<3){
           autoTries++;
-          setTimeout(()=>{ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'join',team:autoName})); }, 700);
+          setTimeout(()=>{ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'join',team:autoName,token:storedToken||undefined})); }, 700);
         } else {
-          storedTeam = null; rememberTeam(null); showSelection();
+          storedTeam = null; rememberTeam(null); storedToken = null; rememberToken(null); showSelection();
         }
         break;
       }
@@ -247,7 +256,7 @@ function handleMessage(msg){
         : '名稱不合法，請輸入 1–10 字';
       break;
     case 'force_reselect':
-      storedTeam = null; rememberTeam(null);
+      storedTeam = null; rememberTeam(null); storedToken = null; rememberToken(null);
       showSelection();
       break;
     case 'first_buzz':

@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +40,12 @@ function clearCountdown() {
 
 // 已加入的學員端：ws → 組別名稱（投影端/主持端不會 join，故不計入）
 const sockets = new Map();
+
+// 重連權杖：組別名稱 → token。F5/重連時 client 帶 token 回來，
+// 伺服器認得同一人就「接管」該名稱（踢掉殘留的舊連線），不必等舊連線被代理清掉。
+// Render 等反向代理偵測斷線常延遲約 10 秒，遠超過 client 重試預算，故需此機制。
+const teamTokens = new Map();
+function makeToken() { return crypto.randomUUID(); }
 
 function joinedTeams() {
   const seen = new Set();
@@ -125,17 +132,43 @@ wss.on('connection', (ws) => {
       case 'join': {
         const name = cleanTeam(msg.team);
         if (!name) { ws.send(JSON.stringify({ type: 'join_error', reason: 'invalid' })); return; }
-        // 拒絕重複名稱（不同連線、相同名稱），避免兩支手機同名而其一無法搶答
-        if (nameInUse(name, ws)) { ws.send(JSON.stringify({ type: 'join_error', reason: 'duplicate' })); return; }
+        const token = typeof msg.token === 'string' ? msg.token : null;
+        const sameOwner = token && teamTokens.get(name) === token; // 帶對 token = 同一人重連
+
+        if (nameInUse(name, ws)) {
+          if (sameOwner) {
+            // 同一人 F5/重連：踢掉仍占用此名稱的舊連線，由新連線接管
+            for (const [s, n] of sockets) {
+              if (s !== ws && n === name) {
+                sockets.delete(s);
+                try { s.send(JSON.stringify({ type: 'force_reselect' })); } catch {}
+                try { s.close(); } catch {}
+              }
+            }
+          } else {
+            // 不同裝置撞同名 → 維持原本保護，拒絕
+            ws.send(JSON.stringify({ type: 'join_error', reason: 'duplicate' }));
+            return;
+          }
+        }
+
+        // 接管沿用原 token；全新加入則發新 token
+        const outToken = sameOwner ? token : makeToken();
         sockets.set(ws, name);
-        ws.send(JSON.stringify({ type: 'join_ok', team: name }));
+        teamTokens.set(name, outToken);
+        ws.send(JSON.stringify({ type: 'join_ok', team: name, token: outToken }));
         broadcastState();
         break;
       }
 
-      // 學員自行「換城鎮」：離開目前名稱但保持連線
+      // 學員自行「換城鎮」：離開目前名稱但保持連線（主動離開 → 連 token 一併作廢）
       case 'leave': {
-        if (sockets.has(ws)) { sockets.delete(ws); broadcastState(); }
+        if (sockets.has(ws)) {
+          const name = sockets.get(ws);
+          sockets.delete(ws);
+          if (!nameInUse(name, ws)) teamTokens.delete(name);
+          broadcastState();
+        }
         break;
       }
 
@@ -144,6 +177,7 @@ wss.on('connection', (ws) => {
         if (!checkPin()) return;
         clearCountdown();
         sockets.clear();
+        teamTokens.clear();
         state.phase = 'locked';
         state.buzzOrder = [];
         state.currentFocus = null;
