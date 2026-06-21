@@ -130,6 +130,12 @@ const MAX_NAME = 10;
 const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
 let ws, myTeam = null, buzzed = false, joinedTeams = [];
 
+// 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
+const STORE_KEY = 'sf_team';
+let storedTeam = null;
+try { storedTeam = localStorage.getItem(STORE_KEY) || null; } catch(e){}
+function rememberTeam(n){ try{ n ? localStorage.setItem(STORE_KEY, n) : localStorage.removeItem(STORE_KEY); }catch(e){} }
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
 
@@ -171,15 +177,22 @@ $('name-input').addEventListener('input', e=>{
 $('name-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doJoin(); });
 $('join-btn').addEventListener('click', doJoin);
 
+// auto = 自動加入（重連/F5），失敗時可重試，不顯示一般錯誤訊息
+let autoName = null, autoTries = 0;
+function sendJoin(name, auto){
+  if(auto){ autoName = name; } else { autoName = null; autoTries = 0; }
+  if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'join', team:name }));
+}
+
 function doJoin(){
   const name = cleanName($('name-input').value);
   if(!name){ $('join-error').textContent = '請選一個城鎮或輸入隊名（1–10 字）'; return; }
   $('join-error').textContent = '';
-  if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'join', team:name }));
+  sendJoin(name, false);
 }
 
 function showSelection(){
-  myTeam = null; buzzed = false;
+  myTeam = null; buzzed = false; autoName = null; autoTries = 0;
   $('game-screen').style.display = 'none';
   $('login-screen').style.display = 'flex';
   document.querySelectorAll('.town-btn').forEach(x=>x.classList.remove('selected'));
@@ -188,6 +201,7 @@ function showSelection(){
 
 $('change-town').addEventListener('click', ()=>{
   if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'leave' }));
+  storedTeam = null; rememberTeam(null); // 主動換城鎮 → 清除記憶
   showSelection();
 });
 
@@ -195,7 +209,9 @@ function connectWS(){
   ws = new WebSocket(WS_URL);
   ws.addEventListener('open', ()=>{
     $('ws-dot').classList.add('connected');
-    if(myTeam) ws.send(JSON.stringify({ type:'join', team:myTeam }));
+    // 重連沿用目前隊伍；F5 後 myTeam 為空但 storedTeam 仍在 → 自動回到原隊伍
+    const rejoin = myTeam || storedTeam;
+    if(rejoin) sendJoin(rejoin, true);
   });
   ws.addEventListener('message', e=>handleMessage(JSON.parse(e.data)));
   ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('connected'); setTimeout(connectWS,2000); });
@@ -209,17 +225,29 @@ function handleMessage(msg){
       else applyState(msg);
       break;
     case 'join_ok':
-      myTeam = msg.team;
+      myTeam = msg.team; storedTeam = msg.team; rememberTeam(msg.team);
+      autoName = null; autoTries = 0;
       $('team-badge').textContent = myTeam;
       $('login-screen').style.display = 'none';
       $('game-screen').style.display = 'flex';
       break;
     case 'join_error':
+      if(autoName){
+        // F5/重連自動加入：重名多半是舊連線尚未被伺服器清除，稍候重試
+        if(msg.reason==='duplicate' && autoTries<3){
+          autoTries++;
+          setTimeout(()=>{ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'join',team:autoName})); }, 700);
+        } else {
+          storedTeam = null; rememberTeam(null); showSelection();
+        }
+        break;
+      }
       $('join-error').textContent = msg.reason==='duplicate'
         ? '這個名稱已被使用，請換一個'
         : '名稱不合法，請輸入 1–10 字';
       break;
     case 'force_reselect':
+      storedTeam = null; rememberTeam(null);
       showSelection();
       break;
     case 'first_buzz':
@@ -231,15 +259,28 @@ function handleMessage(msg){
 
 function applyState(msg){
   const btn = $('buzz-btn');
-  if(msg.phase==='locked'){
-    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
-    setStatus('等待主持人點燃聖火', ''); $('phase-label').textContent='LOCKED';
-  } else if(msg.phase==='open'){
+  // 換城鎮只在「未開賽（locked）」時可用；點燃聖火後不得更換
+  $('change-town').style.display = (msg.phase==='locked') ? '' : 'none';
+
+  const myEntry = msg.buzzOrder ? msg.buzzOrder.find(b=>b.team===myTeam) : null;
+
+  if(msg.phase==='open' && !msg.closed){
     if(buzzed) return;
-    const myEntry = msg.buzzOrder.find(b=>b.team===myTeam);
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
     btn.disabled=false; btn.className='state-open'; btn.textContent='搶答';
     setStatus('聖火開放中！', 'active'); $('phase-label').textContent='OPEN';
+  } else if(msg.phase==='open' && msg.closed){
+    // 倒數歸零：搶答視窗關閉
+    if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
+    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
+    setStatus('搶答時間結束', ''); $('phase-label').textContent='TIME UP';
+  } else if(msg.phase==='reviewing'){
+    if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
+    btn.disabled=true; btn.className='state-locked'; btn.textContent='驗證中';
+    setStatus('主持人驗證中', ''); $('phase-label').textContent='REVIEW';
+  } else { // locked
+    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
+    setStatus('等待主持人點燃聖火', ''); $('phase-label').textContent='LOCKED';
   }
 }
 

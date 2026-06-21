@@ -1,5 +1,6 @@
-const CACHE = 'buzzer-v7';
-const SHELL = ['/', '/client.html', '/console.html', '/display.html', '/manifest.json'];
+const CACHE = 'buzzer-v8';
+const SHELL = ['/', '/client.html', '/console.html', '/display.html', '/manifest.json',
+  '/sounds/first-buzz.mp3', '/sounds/correct.mp3', '/sounds/wrong.mp3'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
