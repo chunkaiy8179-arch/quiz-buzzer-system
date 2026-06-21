@@ -120,7 +120,20 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 @keyframes x-stamp { 0%{transform:scale(2.2) rotate(-15deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;} }
 .x-stamp { animation: x-stamp .32s cubic-bezier(.22,.61,.36,1) both; }
 
+/* ── 啟用音效按鈕 ── */
+#audio-unlock {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+  background: linear-gradient(160deg,#ffd96b,#f5a623 60%,#c0390f); color: #3a1900;
+  border: none; border-radius: 12px; padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif TC', serif; font-size: clamp(14px,1.6vw,20px); font-weight: 800; letter-spacing: 2px;
+  box-shadow: 0 8px 30px rgba(232,67,31,.45);
+  animation: au-pulse 1.6s ease-in-out infinite;
+}
+#audio-unlock.hidden { display: none; }
+@keyframes au-pulse { 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.05);} }
+
 @media (prefers-reduced-motion: reduce) {
+  #audio-unlock { animation: none; }
   .rank-row, .chip { animation: none; }
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
@@ -129,6 +142,8 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 </style>
 </head>
 <body>
+
+<button id="audio-unlock">🔊 點我啟用音效</button>
 
 <!-- 可重用的聖杯火焰標記 -->
 <svg width="0" height="0" style="position:absolute">
@@ -203,43 +218,61 @@ const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'
 let ws, audioCtx, countdownInterval = null, lastPhase = 'locked', prevBuzzCount = 0;
 const COUNT_FROM = 30;
 
-function getCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+// 主輸出：masterGain 提升整體音量，compressor 防破音（投影接喇叭更響亮不刺耳）
+let masterGain;
+function getCtx(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 1.5; // 整體音量
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+function out(){ getCtx(); return masterGain; }
+// 通用音符（type/音量/滑音）
+function tone(freq, start, dur, { type='sine', gain=0.4, glideTo=null } = {}){
+  const ctx=getCtx(); const o=ctx.createOscillator(), g=ctx.createGain();
+  const t0=ctx.currentTime+start;
+  o.type=type; o.frequency.setValueAtTime(freq, t0);
+  if(glideTo!=null) o.frequency.exponentialRampToValueAtTime(glideTo, t0+dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g); g.connect(out()); o.start(t0); o.stop(t0+dur+0.05);
+}
+
 function playBoom(){
   const ctx=getCtx();
+  // 衝擊噪音
   const buf=ctx.createBuffer(1,ctx.sampleRate*0.5,ctx.sampleRate); const d=buf.getChannelData(0);
   for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.05));
   const ns=ctx.createBufferSource(); ns.buffer=buf;
-  const ng=ctx.createGain(); ng.gain.setValueAtTime(3,ctx.currentTime); ng.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-  ns.connect(ng); ng.connect(ctx.destination); ns.start();
-  const osc=ctx.createOscillator(), og=ctx.createGain();
-  osc.type='sine'; osc.frequency.setValueAtTime(80,ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(28,ctx.currentTime+0.45);
-  og.gain.setValueAtTime(2,ctx.currentTime); og.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
-  osc.connect(og); og.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.65);
+  const ng=ctx.createGain(); ng.gain.setValueAtTime(3.2,ctx.currentTime); ng.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+  ns.connect(ng); ng.connect(out()); ns.start();
+  // 低頻衝擊 + 金屬鐘響泛音（聖火點燃）
+  tone(92,0,0.6,{type:'sine',gain:1.7,glideTo:30});
+  [1,2.76,5.4].forEach((m,i)=> tone(330*m, 0.02, 1.0, { type:'sine', gain:0.5/(i+1) }));
 }
-function playTick(){
-  const ctx=getCtx(); const o=ctx.createOscillator(), g=ctx.createGain();
-  o.type='square'; o.frequency.value=1200; g.gain.setValueAtTime(0.12,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.08);
-  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.1);
+function playDing(){ // 後續搶答者的輕亮「叮」
+  tone(1318,0,0.28,{type:'triangle',gain:0.45});
+  tone(1976,0,0.18,{type:'sine',gain:0.25});
 }
-function playCorrect(){
-  const ctx=getCtx();
-  [523,659,784,1047].forEach((f,i)=>{ const o=ctx.createOscillator(),g=ctx.createGain();
-    o.type='triangle'; o.frequency.value=f;
-    g.gain.setValueAtTime(0.45,ctx.currentTime+i*0.1); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.1+0.35);
-    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+i*0.1); o.stop(ctx.currentTime+i*0.1+0.35); });
+function playTick(){ tone(1200,0,0.07,{type:'square',gain:0.2}); }
+function playCorrect(){ // 勝利里拉琴 + 收尾和弦
+  [523,659,784,1047].forEach((f,i)=> tone(f, i*0.1, 0.42, { type:'triangle', gain:0.55 }));
+  [523,659,1047].forEach(f=> tone(f, 0.44, 0.7, { type:'sine', gain:0.33 }));
 }
-function playWrong(){
-  const ctx=getCtx(); const o=ctx.createOscillator(),g=ctx.createGain();
-  o.type='sawtooth'; o.frequency.setValueAtTime(220,ctx.currentTime); o.frequency.linearRampToValueAtTime(100,ctx.currentTime+1.3);
-  g.gain.setValueAtTime(0.6,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.3);
-  o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+1.3);
+function playWrong(){ // 聖火熄滅下沉
+  tone(220,0,1.3,{type:'sawtooth',gain:0.6,glideTo:70});
+  tone(110,0,1.3,{type:'sine',gain:0.45,glideTo:45});
 }
-function playOpenBeep(){
-  const ctx=getCtx();
-  [0,0.32,0.64,0.88].forEach(t=>{ const o=ctx.createOscillator(),g=ctx.createGain();
-    o.type='square'; o.frequency.value=t===0.88?1200:880; const dur=t===0.88?0.45:0.16;
-    g.gain.setValueAtTime(0.26,ctx.currentTime+t); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+dur);
-    o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+dur+0.05); });
+function playOpenBeep(){ // 聖火號角：上行三連音 + 收尾長音
+  tone(392,0,0.18,{type:'sawtooth',gain:0.5});
+  tone(523,0.16,0.18,{type:'sawtooth',gain:0.5});
+  tone(659,0.32,0.5,{type:'sawtooth',gain:0.55});
+  tone(659,0.32,0.5,{type:'triangle',gain:0.3});
 }
 function fireConfetti(){
   const fire=['#e8431f','#f5a623','#fde08a'];
@@ -340,6 +373,10 @@ function handleMessage(msg){
       setTimeout(()=>document.body.classList.remove('flash'),700);
       playBoom();
       break;
+    case 'buzz_registered':
+      // 後續搶答者（第 2、3…名）：輕亮「叮」聲
+      playDing();
+      break;
     case 'verify_result':
       if(msg.result==='correct'){ playCorrect(); fireConfetti(); }
       else {
@@ -359,8 +396,17 @@ function connect(){
   ws.addEventListener('close', ()=>setTimeout(connect,2000));
 }
 
-document.addEventListener('click', ()=>getCtx(), { once:true });
-document.addEventListener('keydown', ()=>getCtx(), { once:true });
+// ── 音效解鎖（瀏覽器要求互動後才能出聲）──
+let audioReady = false;
+function unlockAudio(){
+  const ctx = getCtx();
+  if(ctx.state === 'suspended') ctx.resume();
+  if(!audioReady){ audioReady = true; tone(880, 0, 0.12, { type:'triangle', gain:0.35 }); }
+  const btn = $('audio-unlock'); if(btn) btn.classList.add('hidden');
+}
+$('audio-unlock').addEventListener('click', unlockAudio);
+document.addEventListener('click', unlockAudio, { once:true });
+document.addEventListener('keydown', unlockAudio, { once:true });
 connect();
 </script>
 </body>

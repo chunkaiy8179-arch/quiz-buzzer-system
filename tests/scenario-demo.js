@@ -34,6 +34,7 @@ async function main(){
   const mob = await browser.newContext({ viewport:{width:390,height:844} });
 
   const display = await big.newPage(); await display.goto(`${BASE}/display.html`);
+  await display.evaluate(()=>document.getElementById('audio-unlock')?.classList.add('hidden'));
   const con = await big.newPage();
   await con.goto(`${BASE}/console.html`);
   await con.fill('#pin-input', PIN); await con.click('#pin-btn');
