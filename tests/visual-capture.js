@@ -40,14 +40,13 @@ async function main() {
   await con.click('#pin-btn');
   await con.waitForSelector('#pin-screen', { state: 'hidden' });
 
-  // 三組學員加入
-  const teams = ['紅隊', '藍隊', '綠隊'];
+  // 三個城鎮加入（點選城鎮）
+  const teams = ['城鎮一', '城鎮二', '城鎮三'];
   const clients = [];
   for (const t of teams) {
     const p = await mob.newPage();
     await p.goto(`${BASE}/client.html`);
-    await p.fill('#team-input', t);
-    await p.click('#join-btn');
+    await p.click(`.town-btn[data-town="${t}"]`);
     await p.waitForSelector('#game-screen', { state: 'visible' });
     clients.push(p);
   }

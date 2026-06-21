@@ -41,6 +41,8 @@ function joinedTeams() {
 }
 
 function currentFocusTeam() {
+  // 回合已結束（答對 → locked）時沒有待判 focus，避免剩餘組仍可被誤判而重開回合
+  if (state.phase === 'locked') return null;
   return state.buzzOrder.find(b => !b.verified) ?? null;
 }
 

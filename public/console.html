@@ -4,134 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>搶答燈 — 主持端</title>
+<title>聖火之夜 — 主持端</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --canvas:#0b0e11; --surface:#1e2329; --surface2:#2b3139;
-  --primary:#fcd535; --primary-active:#f0b90b; --on-primary:#181a20;
-  --body:#eaecef; --muted:#707a8a; --muted-strong:#929aa5;
-  --hairline:#2b3139; --up:#0ecb81; --down:#f6465d;
+  --gold:#d4af37; --gold-bright:#f5d77a; --gold-dim:#a67c2e; --gold-deep:#6f4f1c;
+  --flame-red:#e8431f; --flame-amber:#f5a623;
+  --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.26);
+  --up:#3fae6b; --wrong:#c0392b;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--canvas); color: var(--body);
+  font-family: 'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -5%, #1f2a55 0%, transparent 60%),
+    linear-gradient(165deg, #0a1430 0%, #160e2c 55%, #20102b 100%);
   -webkit-font-smoothing: antialiased;
 }
+.serif { font-family: 'Noto Serif TC', serif; }
+.gold-frame { position: relative; border: 2px solid var(--gold); border-radius: 14px; background: rgba(8,10,26,.6); }
+.gold-frame::before { content:''; position:absolute; inset:5px; border:1px solid rgba(212,175,55,.4); border-radius:9px; pointer-events:none; }
 
 /* ── PIN ── */
-#pin-screen {
-  position: fixed; inset: 0; z-index: 100; background: var(--canvas);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; padding: 40px 28px;
-}
+#pin-screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px 28px;
+  background: radial-gradient(ellipse 80% 40% at 50% 0%, #1f2a55 0%, transparent 60%), linear-gradient(165deg,#0a1430,#20102b); }
 #pin-screen.hidden { display: none; }
-.pin-logo {
-  width: 68px; height: 68px; border-radius: 18px; background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 900; color: var(--on-primary);
-  box-shadow: 0 8px 28px rgba(252,213,53,0.28);
-}
-.pin-title { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: #fff; }
-.pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 1px; margin-top: -6px; }
-#pin-input {
-  width: 100%; max-width: 260px; background: var(--surface); border: 1px solid var(--hairline);
-  border-radius: 8px; padding: 14px 20px; font-size: 26px; font-weight: 700; color: #fff;
-  text-align: center; outline: none; letter-spacing: 8px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-#pin-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(252,213,53,0.18); }
-#pin-btn {
-  width: 100%; max-width: 260px; background: var(--primary); color: var(--on-primary);
-  border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 2px;
-  cursor: pointer; transition: transform 0.1s, background 0.15s;
-}
-#pin-btn:active { transform: scale(0.97); background: var(--primary-active); }
-#pin-error { font-size: 13px; color: var(--down); font-weight: 600; min-height: 18px; }
+.pin-emblem { filter: drop-shadow(0 0 18px rgba(245,166,35,.4)); }
+.pin-title { font-family:'Noto Serif TC',serif; font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--gold-bright); }
+.pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 2px; }
+#pin-input { width: 100%; max-width: 260px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 10px; padding: 14px 20px; font-size: 26px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; letter-spacing: 8px; transition: border-color .15s, box-shadow .15s; }
+#pin-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+#pin-btn { width: 100%; max-width: 260px; background: linear-gradient(160deg,#f5d77a,#d4af37 55%,#a67c2e); color: #2a1c00; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; }
+#pin-btn:active { transform: scale(.97); filter: brightness(1.08); }
+#pin-error { font-size: 13px; color: #e3897f; font-weight: 600; min-height: 18px; }
 
 /* ── Top bar ── */
-.top-bar {
-  position: sticky; top: 0; z-index: 10; background: var(--canvas);
-  border-bottom: 1px solid var(--hairline); padding: 14px 20px;
-  display: flex; align-items: center; gap: 12px;
-}
-.top-title { font-size: 14px; font-weight: 800; letter-spacing: 3px; color: #fff; text-transform: uppercase; flex: 1; }
-#phase-badge {
-  font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-  padding: 5px 14px; border-radius: 8px; background: var(--surface); color: var(--muted);
-  border: 1px solid var(--hairline); transition: background 0.3s, color 0.3s, border-color 0.3s;
-}
-#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s, box-shadow 0.3s; }
-#ws-dot.on { background: var(--up); box-shadow: 0 0 8px rgba(14,203,129,0.7); }
+.top-bar { position: sticky; top: 0; z-index: 10; background: rgba(10,12,30,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+.top-title { font-family:'Noto Serif TC',serif; font-size: 17px; font-weight: 700; letter-spacing: 4px; color: var(--gold-bright); flex: 1; }
+#phase-badge { font-size: 11px; font-weight: 800; letter-spacing: 2px; padding: 5px 14px; border-radius: 8px; background: rgba(212,175,55,.08); color: var(--muted); border: 1px solid var(--gold-deep); transition: background .3s, color .3s, border-color .3s; }
+#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
+#ws-dot.on { background: var(--up); box-shadow: 0 0 8px rgba(63,174,107,.7); }
 
-/* ── Joined count strip (需求1) ── */
-.joined-strip {
-  display: flex; align-items: center; gap: 10px; padding: 10px 20px;
-  border-bottom: 1px solid var(--hairline); font-size: 13px; color: var(--muted);
-}
-.joined-strip b { color: var(--primary); font-size: 15px; }
-#joined-names { color: var(--muted-strong); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+/* ── 進場列 ── */
+.joined-strip { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.joined-strip b { color: var(--gold-bright); font-size: 15px; font-family:'Noto Serif TC',serif; }
+#joined-names { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
-/* ── Controls ── */
-.controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
-.btn-open, .btn-reset { flex: 1; border: none; border-radius: 8px; padding: 16px; font-size: 16px; font-weight: 800; letter-spacing: 2px; cursor: pointer; transition: transform 0.1s, background 0.15s, opacity 0.2s; }
-.btn-open:active:not(:disabled), .btn-reset:active { transform: scale(0.97); }
-.btn-open { background: var(--primary); color: var(--on-primary); }
-.btn-open:active:not(:disabled) { background: var(--primary-active); }
-.btn-open:disabled { background: var(--surface); color: var(--muted); cursor: not-allowed; }
-.btn-reset { background: var(--surface); color: var(--body); max-width: 100px; border: 1px solid var(--hairline); }
-.btn-reset:active { background: var(--surface2); }
+/* ── 控制 ── */
+.controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 16px; font-family:'Noto Serif TC',serif; font-size: 17px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
+.btn-open:active:not(:disabled), .btn-reset:active { transform: scale(.97); }
+.btn-open { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: 0 6px 22px rgba(232,67,31,.35); }
+.btn-open:active:not(:disabled) { filter: brightness(1.08); }
+.btn-open:disabled { background: rgba(212,175,55,.08); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+.btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 100px; border: 1px solid var(--gold-dim); }
+.btn-reset:active { background: rgba(212,175,55,.16); }
 
-/* ── Buzz list ── */
+/* ── 搶答列表 ── */
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
 #empty-msg { margin-top: 60px; text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 2px; }
 #buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-
-.buzz-row {
-  display: flex; align-items: center; gap: 14px;
-  background: var(--surface); border: 1px solid var(--hairline); border-left: 4px solid var(--hairline);
-  border-radius: 10px; padding: 14px 18px; animation: row-in 0.22s ease-out both;
-  transition: border-color 0.2s, background 0.2s;
-}
-.buzz-row.focus { background: rgba(252,213,53,0.08); border-color: var(--primary); border-left-color: var(--primary); }
-.buzz-row.verified-correct { background: rgba(14,203,129,0.07); border-color: var(--up); border-left-color: var(--up); opacity: 0.7; }
-.buzz-row.verified-wrong { background: rgba(246,70,93,0.05); border-color: var(--down); border-left-color: var(--down); opacity: 0.5; }
+.buzz-row { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; animation: row-in .22s ease-out both; transition: border-color .2s, background .2s; }
+.buzz-row.focus { background: rgba(245,166,35,.1); border-color: var(--gold-bright); border-left-color: var(--gold-bright); }
+.buzz-row.verified-correct { background: rgba(63,174,107,.08); border-color: var(--up); border-left-color: var(--up); opacity: .7; }
+.buzz-row.verified-wrong { background: rgba(192,57,43,.06); border-color: var(--wrong); border-left-color: var(--wrong); opacity: .5; }
 @keyframes row-in { from{opacity:0; transform:translateX(-12px);} to{opacity:1; transform:none;} }
-
-.rank-num { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; font-variant-numeric: tabular-nums; background: var(--surface2); color: var(--muted-strong); }
-.rank-1 { background: var(--primary); color: var(--on-primary); }
-.rank-2 { background: #c2cad6; color: #1e2329; }
-.rank-3 { background: #cd7f32; color: #1a0d00; }
-.team-name { flex: 1; font-size: 18px; font-weight: 700; color: #fff; }
-.focus .team-name { color: var(--primary); }
+.rank-num { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:'Noto Serif TC',serif; font-size: 15px; font-weight: 900; flex-shrink: 0; font-variant-numeric: tabular-nums; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); }
+.rank-1 { background: radial-gradient(circle at 40% 35%,#f5d77a,#a67c2e); color:#2a1c00; border-color:#f5d77a; }
+.rank-2 { background: linear-gradient(145deg,#e8e2cf,#b7a978); color:#2a230f; border-color:#d8cca0; }
+.rank-3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
+.team-name { flex: 1; font-family:'Noto Serif TC',serif; font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 1px; }
+.focus .team-name { color: var(--gold-bright); }
 .verified-correct .team-name { color: var(--up); text-decoration: line-through; }
-.verified-wrong .team-name { color: var(--down); text-decoration: line-through; }
-
-.focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--primary); text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--primary); border-radius: 6px; background: rgba(252,213,53,0.08); animation: blink 1s ease-in-out infinite; }
-@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
+.focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); padding: 4px 10px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 @media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} }
-
-.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; text-transform: uppercase; }
-.badge-correct { background: rgba(14,203,129,0.18); color: var(--up); }
-.badge-wrong { background: rgba(246,70,93,0.18); color: var(--down); }
-
+.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; }
+.badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
+.badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
 .verify-btns { display: flex; gap: 8px; }
-.v-btn { border: none; border-radius: 8px; padding: 10px 16px; min-height: 44px; min-width: 44px; font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer; transition: transform 0.08s, opacity 0.15s; color: #fff; }
-.v-btn:active { transform: scale(0.93); }
+.v-btn { border: none; border-radius: 8px; padding: 10px 16px; min-height: 44px; min-width: 44px; font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
+.v-btn:active { transform: scale(.93); }
 .v-correct { background: var(--up); }
-.v-wrong { background: var(--down); }
+.v-wrong { background: var(--wrong); }
 </style>
 </head>
 <body>
 
 <div id="pin-screen">
-  <div class="pin-logo">HOST</div>
-  <div class="pin-title">主持端</div>
+  <svg class="pin-emblem" viewBox="0 0 120 150" style="width:64px;height:auto">
+    <defs>
+      <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d77a"/><stop offset="1" stop-color="#a67c2e"/></linearGradient>
+      <linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8431f"/><stop offset=".55" stop-color="#f5a623"/><stop offset="1" stop-color="#fde08a"/></linearGradient>
+    </defs>
+    <path d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#pf)"/>
+    <path d="M36 84 Q60 118 84 84 Z" fill="url(#pg)"/>
+    <rect x="55" y="110" width="10" height="20" rx="2" fill="url(#pg)"/>
+    <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
+    <path d="M42 144 Q60 130 78 144 Z" fill="url(#pg)"/>
+  </svg>
+  <div class="pin-title serif">主持端</div>
   <div class="pin-sub">輸入 PIN 碼進入控制台</div>
   <input id="pin-input" type="password" placeholder="PIN" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false">
   <button id="pin-btn">進入</button>
@@ -139,18 +117,18 @@ html, body {
 </div>
 
 <div class="top-bar">
-  <span class="top-title">主持端</span>
+  <span class="top-title serif">聖火之夜 · 主持端</span>
   <span id="phase-badge">LOCKED</span>
   <div id="ws-dot"></div>
 </div>
 
 <div class="joined-strip">
-  已進場 <b id="joined-count">0</b> 組
+  已點亮 <b id="joined-count">0</b> 城
   <span id="joined-names"></span>
 </div>
 
 <div class="controls">
-  <button id="btn-open" class="btn-open">開啟搶答</button>
+  <button id="btn-open" class="btn-open">點燃聖火</button>
   <button id="btn-reset" class="btn-reset">重設</button>
 </div>
 
@@ -200,52 +178,48 @@ $('btn-reset').addEventListener('click', ()=>sendHost({ type:'host_reset' }));
 function renderState(state){
   const badge = $('phase-badge');
   const phases = {
-    locked:    ['LOCKED', 'var(--surface)',        'var(--muted)',  'var(--hairline)'],
-    open:      ['OPEN',   'rgba(252,213,53,0.16)',  'var(--primary)','var(--primary)'],
-    reviewing: ['REVIEW', 'rgba(252,213,53,0.12)',  'var(--primary)','var(--primary)'],
+    locked:    ['LOCKED', 'rgba(212,175,55,.08)', 'var(--muted)',      'var(--gold-deep)'],
+    open:      ['OPEN',   'rgba(245,166,35,.18)', 'var(--gold-bright)','var(--flame-amber)'],
+    reviewing: ['REVIEW', 'rgba(245,166,35,.12)', 'var(--gold-bright)','var(--gold)'],
   };
   const [label,bg,color,border] = phases[state.phase] ?? phases.locked;
   badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
 
-  // 進場名單 (需求1)
   const teams = state.joinedTeams || [];
   $('joined-count').textContent = teams.length;
   $('joined-names').textContent = teams.length ? teams.join('、') : '';
 
   $('btn-open').disabled = state.phase !== 'locked';
 
+  // 回合進行中（open/reviewing）才顯示判定鈕；locked 為純回顧，避免誤判重開回合
+  const canVerify = state.phase === 'open' || state.phase === 'reviewing';
+
   const list = $('buzz-list');
   list.innerHTML='';
   $('empty-msg').style.display = state.buzzOrder.length ? 'none' : '';
 
   state.buzzOrder.forEach((entry,i)=>{
-    const isFocus = state.currentFocus===entry.team && !entry.verified;
+    const isFocus = canVerify && state.currentFocus===entry.team && !entry.verified;
     const li = document.createElement('li');
     const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
     const rowClass = entry.verified ? (entry.result==='correct'?'verified-correct':'verified-wrong') : (isFocus?'focus':'');
     li.className=`buzz-row ${rowClass}`;
-    const rankLabel = i+1;
     let rightContent='';
     if(entry.verified){
       const cls = entry.result==='correct'?'badge-correct':'badge-wrong';
       const lbl = entry.result==='correct'?'正確':'錯誤';
       rightContent = `<span class="result-badge ${cls}">${lbl}</span>`;
-    } else if(isFocus){
+    } else if(canVerify){
+      const tag = isFocus ? '<span class="focus-tag">待驗證</span>' : '';
       rightContent = `
-        <span class="focus-tag">待驗證</span>
+        ${tag}
         <div class="verify-btns">
-          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O 正確</button>
-          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X 錯誤</button>
-        </div>`;
-    } else {
-      rightContent = `
-        <div class="verify-btns">
-          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O</button>
-          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X</button>
+          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O ${isFocus?'正確':''}</button>
+          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X ${isFocus?'錯誤':''}</button>
         </div>`;
     }
     li.innerHTML = `
-      <div class="rank-num ${rankClass}">${rankLabel}</div>
+      <div class="rank-num ${rankClass}">${i+1}</div>
       <span class="team-name">${escHtml(entry.team)}</span>
       ${rightContent}`;
     list.appendChild(li);

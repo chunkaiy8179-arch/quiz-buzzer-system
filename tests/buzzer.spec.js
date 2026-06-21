@@ -36,15 +36,15 @@ async function joinHost(page) {
   await expect(page.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS_TIMEOUT });
 }
 
+// 新版以「點選城鎮」加入（teamName 必須是 client.html TOWNS 之一，如 城鎮一）
 async function joinClient(page, teamName) {
   await page.goto(`${BASE}/client.html`);
-  await page.fill('#team-input', teamName);
-  await page.click('#join-btn');
+  await page.click(`.town-btn[data-town="${teamName}"]`);
   await expect(page.locator('#game-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 }
 
 test('學員端未開搶時按鈕應為 disabled', async ({ page }) => {
-  await joinClient(page, '第1組');
+  await joinClient(page, '城鎮一');
   await expect(page.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
   await expect(page.locator('#buzz-btn')).toHaveClass(/state-locked/);
 });
@@ -57,56 +57,79 @@ test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) 
 
   await joinHost(hostPage);
   await displayPage.goto(`${BASE}/display.html`);
-  await joinClient(client1, '第1組');
-  await joinClient(client2, '第2組');
+  await joinClient(client1, '城鎮一');
+  await joinClient(client2, '城鎮二');
 
-  // 確認開搶前鎖定
   await expect(client1.locator('#buzz-btn')).toBeDisabled();
   await expect(client2.locator('#buzz-btn')).toBeDisabled();
   await expect(hostPage.locator('#btn-open')).toBeEnabled();
 
-  // 主持人開搶
   await hostPage.click('#btn-open');
 
-  // 等待 WebSocket 廣播到達學員端
   await expect(client1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
   await expect(client2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
-
-  // 投影端應切換到開放畫面
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
-  // 第1組先搶，第2組後搶
+  // 城鎮一先搶，城鎮二後搶
   await client1.click('#buzz-btn');
   await client2.click('#buzz-btn');
 
-  // 第1組按鈕應顯示排名
   await expect(client1.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
   await expect(client1.locator('#buzz-btn')).toContainText('第 1 名');
 
-  // 主持端列表應顯示第1組排第一
-  await expect(hostPage.locator('#buzz-list li').first()).toContainText('第1組', { timeout: WS_TIMEOUT });
-  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('第2組', { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('#buzz-list li').first()).toContainText('城鎮一', { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('城鎮二', { timeout: WS_TIMEOUT });
 
   // 投影端開放畫面中即時順位列表（搶答時仍在 open phase，倒數移到角落）
   await expect(displayPage.locator('#open-screen')).toBeVisible();
-  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('第1組', { timeout: WS_TIMEOUT });
+  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('城鎮一', { timeout: WS_TIMEOUT });
 
-  // 主持人判第1組錯誤
+  // 判城鎮一錯誤 → 城鎮二遞補
   const wrongBtn = hostPage.locator('.v-btn[data-result="wrong"]').first();
   await expect(wrongBtn).toBeVisible({ timeout: WS_TIMEOUT });
   await wrongBtn.click();
-
-  // 第2組應成為 focus（review 狀態）
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
 
-  // 主持人判第2組正確
+  // 判城鎮二正確 → 回到 locked
   const correctBtn = hostPage.locator('.v-btn[data-result="correct"]').first();
   await expect(correctBtn).toBeVisible({ timeout: WS_TIMEOUT });
   await correctBtn.click();
 
-  // 回到 locked：開搶按鈕重新啟用
   await expect(hostPage.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
+
+  await ctx.close();
+});
+
+test('答對使回合結束後，剩餘未判定組不應再有判定鈕（bug 修正）', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const [hostPage, c1, c2, c3] = await Promise.all([
+    ctx.newPage(), ctx.newPage(), ctx.newPage(), ctx.newPage(),
+  ]);
+
+  await joinHost(hostPage);
+  await joinClient(c1, '城鎮一');
+  await joinClient(c2, '城鎮二');
+  await joinClient(c3, '城鎮三');
+
+  await hostPage.click('#btn-open');
+  await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // 三組都搶（城鎮一、二、三）
+  await c1.click('#buzz-btn');
+  await c2.click('#buzz-btn');
+  await c3.click('#buzz-btn');
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(3, { timeout: WS_TIMEOUT });
+
+  // 城鎮一錯 → 城鎮二對（回合結束，城鎮三從未被判）
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
+  await hostPage.locator('.v-btn[data-result="correct"]').first().click();
+
+  // 回合結束（LOCKED）：不應再有任何判定鈕，城鎮三不應顯示「待驗證」
+  await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('.v-btn')).toHaveCount(0, { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('#buzz-list')).not.toContainText('待驗證');
 
   await ctx.close();
 });
@@ -116,19 +139,16 @@ test('重設後回到 locked 狀態，學員按鈕文字清除', async ({ browse
   const [hostPage, client] = await Promise.all([ctx.newPage(), ctx.newPage()]);
 
   await joinHost(hostPage);
-  await joinClient(client, '測試組');
+  await joinClient(client, '城鎮三');
 
   await hostPage.click('#btn-open');
   await expect(client.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
 
-  // 搶答
   await client.click('#buzz-btn');
   await expect(client.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
 
-  // 重設
   await hostPage.click('#btn-reset');
 
-  // 按鈕應回到 BUZZ 且 disabled
   await expect(client.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
   await expect(client.locator('#buzz-btn')).toHaveText('BUZZ', { timeout: WS_TIMEOUT });
   await expect(client.locator('#buzz-btn')).toHaveClass(/state-locked/);
@@ -144,21 +164,17 @@ test('投影端在各 phase 顯示正確畫面', async ({ browser }) => {
 
   await joinHost(hostPage);
   await displayPage.goto(`${BASE}/display.html`);
-  await joinClient(client, '展示組');
+  await joinClient(client, '城鎮四');
 
-  // 初始：idle 畫面
   await expect(displayPage.locator('#idle-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
-  // 開搶 → open 畫面
   await hostPage.click('#btn-open');
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
-  // 搶答 → 仍在 open 畫面，即時順位顯示於中央列表
   await client.click('#buzz-btn');
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
-  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('展示組');
+  await expect(displayPage.locator('#open-rank-list li').first()).toContainText('城鎮四');
 
-  // 重設 → idle 畫面
   await hostPage.click('#btn-reset');
   await expect(displayPage.locator('#idle-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 

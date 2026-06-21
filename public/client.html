@@ -5,119 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>搶答燈 — 學員端</title>
+<title>聖火之夜 — 學員端</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --canvas:#0b0e11; --surface:#1e2329; --surface2:#2b3139;
-  --primary:#fcd535; --primary-active:#f0b90b; --on-primary:#181a20;
-  --body:#eaecef; --muted:#707a8a; --muted-strong:#929aa5;
-  --hairline:#2b3139; --up:#0ecb81; --down:#f6465d;
+  --gold:#d4af37; --gold-bright:#f5d77a; --gold-dim:#a67c2e; --gold-deep:#6f4f1c;
+  --flame-red:#e8431f; --flame-amber:#f5a623;
+  --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28);
+  --up:#3fae6b;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%; overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--canvas); color: var(--body);
+  font-family: 'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -5%, #233063 0%, transparent 60%),
+    radial-gradient(ellipse 90% 45% at 50% 108%, #46163a 0%, transparent 60%),
+    linear-gradient(165deg, #0a1430 0%, #160e2c 52%, #261031 100%);
   -webkit-tap-highlight-color: transparent; user-select: none;
   -webkit-font-smoothing: antialiased;
 }
+.serif { font-family: 'Noto Serif TC', serif; }
+.gold-frame { position: relative; border: 2px solid var(--gold); border-radius: 14px; background: rgba(8,10,26,.5); }
+.gold-frame::before { content:''; position:absolute; inset:5px; border:1px solid rgba(212,175,55,.4); border-radius:9px; pointer-events:none; }
 
-/* ── Login ── */
-#login-screen {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 22px; height: 100%; padding: 40px 28px;
-}
-.login-logo {
-  width: 88px; height: 88px; border-radius: 22px;
-  background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; font-weight: 900; color: var(--on-primary); letter-spacing: -1px;
-  box-shadow: 0 10px 36px rgba(252,213,53,0.28);
-}
-.login-title { font-size: 24px; font-weight: 800; letter-spacing: 3px; color: #fff; text-align: center; }
-.login-sub { font-size: 11px; color: var(--muted); letter-spacing: 4px; margin-top: -12px; text-transform: uppercase; }
+/* ── 登入 / 選城鎮 ── */
+#login-screen { display: flex; flex-direction: column; align-items: center; height: 100%; padding: 30px 22px 24px; gap: 16px; overflow-y: auto; }
+.login-emblem { filter: drop-shadow(0 0 20px rgba(245,166,35,.4)); margin-top: 8px; }
+.login-title { font-size: 30px; font-weight: 900; letter-spacing: 8px; color: var(--gold-bright); text-shadow: 0 0 24px rgba(245,166,35,.3); }
+.login-sub { font-size: 13px; color: var(--muted); letter-spacing: 4px; }
+.pick-label { font-size: 14px; color: var(--gold-bright); letter-spacing: 4px; font-weight: 700; margin-top: 6px; }
+.town-grid { width: 100%; max-width: 380px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.town-btn { position: relative; border: 1.5px solid var(--gold-dim); background: rgba(212,175,55,.06); color: var(--gold-bright); border-radius: 12px; padding: 20px 12px; font-family:'Noto Serif TC',serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: transform .1s, background .15s, border-color .15s; }
+.town-btn:active { transform: scale(.96); background: rgba(245,166,35,.16); border-color: var(--gold-bright); }
+.town-btn.taken { opacity: .4; }
+.town-btn .taken-tag { display: none; position: absolute; top: 6px; right: 8px; font-family:'Noto Sans TC'; font-size: 10px; letter-spacing: 1px; color: var(--up); font-weight: 700; }
+.town-btn.taken .taken-tag { display: block; }
 
-#team-input {
-  width: 100%; max-width: 320px;
-  background: var(--surface); border: 1px solid var(--hairline);
-  border-radius: 8px; padding: 16px 18px;
-  font-size: 20px; font-weight: 600; color: #fff; text-align: center; outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-#team-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(252,213,53,0.18); }
-#team-input::placeholder { color: var(--muted); font-weight: 400; font-size: 16px; }
-
-#join-btn {
-  width: 100%; max-width: 320px;
-  background: var(--primary); color: var(--on-primary);
-  border: none; border-radius: 8px; padding: 18px;
-  font-size: 17px; font-weight: 800; letter-spacing: 2px; cursor: pointer;
-  transition: transform 0.1s, background 0.15s;
-}
-#join-btn:active { transform: scale(0.97); background: var(--primary-active); }
-
-/* ── Game ── */
+/* ── 搶答畫面 ── */
 #game-screen { display: none; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; }
-.top-bar { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--hairline); }
-.top-bar-title { font-size: 11px; font-weight: 700; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
-#team-badge { background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 6px 14px; font-size: 15px; font-weight: 700; color: #fff; }
-#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.3s, box-shadow 0.3s; }
-#ws-dot.connected { background: var(--up); box-shadow: 0 0 8px rgba(14,203,129,0.7); }
+.top-bar { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.top-bar-title { font-size: 11px; font-weight: 700; letter-spacing: 4px; color: var(--muted); }
+#team-badge { font-family:'Noto Serif TC',serif; border: 1px solid var(--gold-dim); background: rgba(212,175,55,.08); border-radius: 8px; padding: 6px 16px; font-size: 16px; font-weight: 700; color: var(--gold-bright); }
+#ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
+#ws-dot.connected { background: var(--up); box-shadow: 0 0 8px rgba(63,174,107,.7); }
 
 .btn-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 24px; }
-#buzz-btn {
-  width: min(80vw, 330px); height: min(80vw, 330px); border-radius: 50%; border: none;
-  font-size: clamp(34px, 9vw, 52px); font-weight: 900; letter-spacing: 4px;
-  cursor: not-allowed; transition: transform 0.08s, background 0.2s, color 0.2s, box-shadow 0.2s; outline: none;
+#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:'Noto Serif TC',serif; font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .08s, background .2s, color .2s, box-shadow .2s; outline: none; }
+/* 鎖定 — 暗石 */
+#buzz-btn.state-locked { background: radial-gradient(circle at 40% 35%, #2a2740, #15131f 65%); color: var(--muted); box-shadow: inset 0 0 0 2px rgba(212,175,55,.18), inset 0 -6px 18px rgba(0,0,0,.5); }
+/* 開放 — 聖火金燄 */
+#buzz-btn.state-open { background: radial-gradient(circle at 42% 32%, #ffd96b, #f5a623 45%, #c0390f); color: #3a1900; cursor: pointer; box-shadow: 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5); animation: fire-pulse 1.3s ease-in-out infinite; }
+#buzz-btn.state-open:active { transform: scale(.9); }
+/* 已點燃 */
+#buzz-btn.state-buzzed { background: radial-gradient(circle at 42% 35%, #2a2740, #15131f 65%); color: var(--gold-bright); box-shadow: inset 0 0 0 2px var(--gold), 0 0 30px rgba(245,166,35,.3); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; }
+@keyframes fire-pulse {
+  0%,100% { box-shadow: 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5); }
+  50% { box-shadow: 0 0 0 14px rgba(245,166,35,.22), 0 0 0 36px rgba(245,166,35,.08), 0 22px 80px rgba(232,67,31,.65); }
 }
-/* Locked */
-#buzz-btn.state-locked { background: var(--surface); color: var(--muted); box-shadow: inset 0 0 0 1px var(--hairline); }
-/* Open — yellow primary (the action) */
-#buzz-btn.state-open {
-  background: var(--primary); color: var(--on-primary); cursor: pointer;
-  box-shadow: 0 0 0 8px rgba(252,213,53,0.14), 0 0 0 20px rgba(252,213,53,0.06), 0 20px 60px rgba(252,213,53,0.4);
-  animation: buzz-pulse 1.3s ease-in-out infinite;
-}
-#buzz-btn.state-open:active { transform: scale(0.9); background: var(--primary-active); }
-/* Buzzed — locked-in */
-#buzz-btn.state-buzzed {
-  background: var(--surface2); color: var(--primary);
-  box-shadow: inset 0 0 0 2px var(--primary), 0 14px 40px rgba(0,0,0,0.4);
-  font-size: clamp(22px, 6vw, 34px); letter-spacing: 1px;
-}
-@keyframes buzz-pulse {
-  0%,100% { box-shadow: 0 0 0 8px rgba(252,213,53,0.14), 0 0 0 20px rgba(252,213,53,0.06), 0 20px 60px rgba(252,213,53,0.4); }
-  50% { box-shadow: 0 0 0 14px rgba(252,213,53,0.2), 0 0 0 34px rgba(252,213,53,0.08), 0 20px 80px rgba(252,213,53,0.55); }
-}
-@keyframes body-flash { 0%{background:#fff;} 18%{background:var(--primary);} 100%{background:var(--canvas);} }
-body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
+@keyframes body-flash { 0%{background:#f5a623;} 18%{background:#e8431f;} 100%{background:#0a1430;} }
+body.buzz-flash { animation: body-flash .5s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) { #buzz-btn.state-open { animation: none; } body.buzz-flash { animation: none; } }
 
-.status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--hairline); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-#status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color 0.3s, background 0.3s; }
-#status-msg.active { color: var(--primary); background: rgba(252,213,53,0.1); }
-#phase-label { font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+#status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
+#status-msg.active { color: var(--gold-bright); background: rgba(245,166,35,.1); }
+#phase-label { font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); }
 </style>
 </head>
 <body>
 
 <div id="login-screen">
-  <div class="login-logo">BZ</div>
-  <div style="text-align:center">
-    <div class="login-title">搶答燈系統</div>
-    <div class="login-sub">Quiz Buzzer System</div>
+  <svg class="login-emblem" viewBox="0 0 120 150" style="width:78px;height:auto">
+    <defs>
+      <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d77a"/><stop offset="1" stop-color="#a67c2e"/></linearGradient>
+      <linearGradient id="f1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8431f"/><stop offset=".55" stop-color="#f5a623"/><stop offset="1" stop-color="#fde08a"/></linearGradient>
+    </defs>
+    <path d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#f1)"/>
+    <path d="M60 28 L72 50 L60 66 L48 50 Z" fill="#fde08a"/>
+    <path d="M36 84 Q60 118 84 84 Z" fill="url(#g1)"/>
+    <rect x="55" y="110" width="10" height="20" rx="2" fill="url(#g1)"/>
+    <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
+    <path d="M42 144 Q60 130 78 144 Z" fill="url(#g1)"/>
+  </svg>
+  <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px">
+    <div class="login-title serif">聖火之夜</div>
+    <div class="login-sub">點燃聖火 · 照亮長夜</div>
   </div>
-  <input id="team-input" type="text" placeholder="輸入組別名稱" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
-  <button id="join-btn">加入搶答</button>
+  <div class="pick-label">選擇你的城鎮</div>
+  <div id="town-grid" class="town-grid"></div>
 </div>
 
 <div id="game-screen">
   <div class="top-bar">
-    <span class="top-bar-title">搶答燈</span>
+    <span class="top-bar-title">聖火之夜</span>
     <span id="team-badge">—</span>
     <div id="ws-dot"></div>
   </div>
@@ -125,36 +110,53 @@ body.buzz-flash { animation: body-flash 0.5s ease-out forwards; }
     <button id="buzz-btn" class="state-locked" disabled>BUZZ</button>
   </div>
   <div class="status-bar">
-    <div id="status-msg" aria-live="polite" aria-atomic="true">等待主持人開放搶答</div>
+    <div id="status-msg" aria-live="polite" aria-atomic="true">等待主持人點燃聖火</div>
     <span id="phase-label">LOCKED</span>
   </div>
 </div>
 
 <script>
+// ── 城鎮設定：8 城鎮（要加到 10 就在陣列補上 '城鎮九','城鎮十'）──
+const TOWNS = ['城鎮一','城鎮二','城鎮三','城鎮四','城鎮五','城鎮六','城鎮七','城鎮八'];
+
 const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
-let ws, myTeam, buzzed = false;
+let ws, myTeam = null, buzzed = false, joinedTeams = [];
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
 
-$('join-btn').addEventListener('click', joinGame);
-$('team-input').addEventListener('keydown', e => { if(e.key==='Enter') joinGame(); });
-
-function joinGame(){
-  const name = $('team-input').value.trim();
-  if(!name){ $('team-input').focus(); return; }
+// 建立城鎮按鈕
+function buildTownGrid(){
+  const grid = $('town-grid');
+  grid.innerHTML = '';
+  TOWNS.forEach(name=>{
+    const b = document.createElement('button');
+    b.className = 'town-btn';
+    b.dataset.town = name;
+    b.innerHTML = `${name}<span class="taken-tag">已加入</span>`;
+    b.addEventListener('click', ()=>pickTown(name));
+    grid.appendChild(b);
+  });
+}
+function refreshTownGrid(){
+  document.querySelectorAll('.town-btn').forEach(b=>{
+    const taken = joinedTeams.includes(b.dataset.town) && b.dataset.town !== myTeam;
+    b.classList.toggle('taken', taken);
+  });
+}
+function pickTown(name){
   myTeam = name;
-  connectWS();
+  $('team-badge').textContent = name;
+  if(ws && ws.readyState===1) ws.send(JSON.stringify({ type:'join', team:myTeam }));
+  $('login-screen').style.display = 'none';
+  $('game-screen').style.display = 'flex';
 }
 
 function connectWS(){
   ws = new WebSocket(WS_URL);
   ws.addEventListener('open', ()=>{
-    ws.send(JSON.stringify({ type:'join', team:myTeam }));
-    $('login-screen').style.display='none';
-    $('game-screen').style.display='flex';
-    $('team-badge').textContent=myTeam;
     $('ws-dot').classList.add('connected');
+    if(myTeam) ws.send(JSON.stringify({ type:'join', team:myTeam }));
   });
   ws.addEventListener('message', e=>handleMessage(JSON.parse(e.data)));
   ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('connected'); setTimeout(connectWS,2000); });
@@ -162,7 +164,11 @@ function connectWS(){
 
 function handleMessage(msg){
   switch(msg.type){
-    case 'state': applyState(msg); break;
+    case 'state':
+      joinedTeams = msg.joinedTeams || [];
+      if(!myTeam){ refreshTownGrid(); }
+      else { applyState(msg); }
+      break;
     case 'first_buzz':
     case 'buzz_registered':
       if(msg.team===myTeam) setBuzzLocked(msg.rank);
@@ -174,13 +180,13 @@ function applyState(msg){
   const btn = $('buzz-btn');
   if(msg.phase==='locked'){
     buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
-    setStatus('等待主持人開放搶答', ''); $('phase-label').textContent='LOCKED';
+    setStatus('等待主持人點燃聖火', ''); $('phase-label').textContent='LOCKED';
   } else if(msg.phase==='open'){
     if(buzzed) return;
     const myEntry = msg.buzzOrder.find(b=>b.team===myTeam);
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
-    btn.disabled=false; btn.className='state-open'; btn.textContent='BUZZ';
-    setStatus('搶答開放中！', 'active'); $('phase-label').textContent='OPEN';
+    btn.disabled=false; btn.className='state-open'; btn.textContent='搶答';
+    setStatus('聖火開放中！', 'active'); $('phase-label').textContent='OPEN';
   }
 }
 
@@ -188,7 +194,7 @@ function setBuzzLocked(rank){
   buzzed=true;
   const btn=$('buzz-btn');
   btn.disabled=true; btn.className='state-buzzed'; btn.textContent=`第 ${rank} 名`;
-  setStatus('已搶答，等待驗證', 'active'); $('phase-label').textContent=`RANK ${rank}`;
+  setStatus('已點燃聖火，等待驗證', 'active'); $('phase-label').textContent=`RANK ${rank}`;
   document.body.classList.add('buzz-flash');
   setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
 }
@@ -201,6 +207,9 @@ $('buzz-btn').addEventListener('click', ()=>{
   ws.send(JSON.stringify({ type:'buzz', team:myTeam, ts:Date.now() }));
   if(navigator.vibrate) navigator.vibrate([100,50,100]);
 });
+
+buildTownGrid();
+connectWS();
 </script>
 </body>
 </html>
