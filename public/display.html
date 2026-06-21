@@ -269,33 +269,39 @@ function playOpenBeep(){ // 回合開始：明亮上行鐘聲琶音（do-mi-sol 
   [523.25,659.25,783.99].forEach((f,i)=> bell(f, t+i*0.12, 0.55, 0.4));
   bell(1046.5, t+0.4, 1.0, 0.5);
 }
-function playBoom(){ // 第一個搶到：響亮「DING!」鐘聲 + 低頻撞擊
-  const t=getCtx().currentTime+0.005;
-  bell(880, t, 1.4, 0.8);
-  bell(1318.5, t+0.005, 0.9, 0.32);
-  voice(140, t, 0.34, { type:'sine', gain:0.9, glideTo:55, send:0.08 }); // 撞擊感
-}
-function playDing(){ // 後續搶到：單顆柔和鐘聲
+function playDing(){ // 後續搶到：單顆柔和鐘聲（一聲叮）
   bell(1174.7, getCtx().currentTime+0.005, 0.7, 0.4);
 }
-function playTick(){ // 倒數：乾淨短「tok」
-  voice(900, getCtx().currentTime, 0.05, { type:'sine', gain:0.28, lp:2200, send:0 });
+// 倒數 tick：頻率（音高）依剩餘秒數而變——越接近歸零越高越急
+function playTick(s){
+  const urgent = s<=3;
+  const freq = 600 + (11 - Math.min(s,10)) * 36; // s=10→636Hz … s=1→960Hz
+  voice(freq, getCtx().currentTime, urgent?0.085:0.055,
+    { type:'square', gain:urgent?0.34:0.24, lp:urgent?3200:2400, send:0 });
+  if(urgent) voice(freq*1.5, getCtx().currentTime+0.01, 0.05, { type:'square', gain:0.14, lp:3600, send:0 });
 }
-function playCorrect(){ // 答對：上行明亮鐘聲琶音「叮叮叮！」
-  const t=getCtx().currentTime+0.02;
-  [659.25,830.61,987.77,1318.51].forEach((f,i)=> bell(f, t+i*0.11, 0.95, 0.5));
+function playTimeUp(){ // 時間到：低沉雙音收尾
+  const t=getCtx().currentTime;
+  voice(330, t, 0.18, { type:'sine', gain:0.4, lp:1800, send:0.1 });
+  voice(220, t+0.14, 0.34, { type:'sine', gain:0.42, lp:1400, send:0.12 });
 }
-function playWrong(){ // 答錯：經典遊戲節目蜂鳴器（雙失諧鋸齒 + 顫音 + 低通）
-  const ctx=getCtx(), t=ctx.currentTime+0.005, dur=0.6;
-  [146,154].forEach(f=>{
-    const o=ctx.createOscillator(), g=ctx.createGain(), lp=ctx.createBiquadFilter();
-    o.type='sawtooth'; o.frequency.value=f; lp.type='lowpass'; lp.frequency.value=1200;
-    const lfo=ctx.createOscillator(), lg=ctx.createGain(); // 顫音
-    lfo.type='square'; lfo.frequency.value=24; lg.gain.value=0.16; lfo.connect(lg); lg.connect(g.gain);
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.42,t+0.008);
-    g.gain.setValueAtTime(0.42,t+dur-0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-    o.connect(lp); lp.connect(g); g.connect(dest());
-    o.start(t); o.stop(t+dur+0.05); lfo.start(t); lfo.stop(t+dur+0.05);
+
+// ── 取樣音檔（MP3）：第一搶=遊戲節目蜂鳴器、答對/答錯=Mixkit 現成音效 ──
+const sfx = {
+  firstBuzz: new Audio('/sounds/first-buzz.mp3'),
+  correct:   new Audio('/sounds/correct.mp3'),
+  wrong:     new Audio('/sounds/wrong.mp3'),
+};
+Object.values(sfx).forEach(a=>{ a.preload='auto'; a.volume=0.92; });
+function playSfx(name){
+  const a = sfx[name]; if(!a) return;
+  try { a.currentTime = 0; const p = a.play(); if(p) p.catch(()=>{}); } catch(e){}
+}
+function primeSfx(){ // 解鎖手勢內先靜音播一次，確保之後可程式化播放
+  Object.values(sfx).forEach(a=>{
+    a.muted = true;
+    const p = a.play();
+    if(p) p.then(()=>{ a.pause(); a.currentTime=0; a.muted=false; }).catch(()=>{ a.muted=false; });
   });
 }
 function fireConfetti(){
@@ -310,16 +316,21 @@ function showScreen(name){
   const el=$(`${name}-screen`); if(el) el.classList.add('active');
 }
 
-function startCountdown(){
+function startCountdown(remainSec){
   clearInterval(countdownInterval); countdownInterval=null;
-  let s=COUNT_FROM;
+  let s = (remainSec!=null && remainSec>=0) ? remainSec : COUNT_FROM;
   const badge=$('count-badge'), numEl=$('count-badge-num');
-  numEl.textContent=s; badge.classList.remove('low');
+  numEl.textContent=s; badge.classList.toggle('low', s<=5);
   countdownInterval=setInterval(()=>{
     s--; numEl.textContent=Math.max(s,0);
-    if(s<=5 && s>0){ badge.classList.add('low'); playTick(); }
-    if(s<=0){ clearInterval(countdownInterval); countdownInterval=null; }
+    if(s<=5 && s>0) badge.classList.add('low');
+    if(s<=10 && s>0) playTick(s); // 最後 10 秒逐秒提示，音高隨秒數升高
+    if(s<=0){ clearInterval(countdownInterval); countdownInterval=null; badge.classList.add('low'); }
   },1000);
+}
+function stopCountdownAtZero(){
+  clearInterval(countdownInterval); countdownInterval=null;
+  $('count-badge-num').textContent='0'; $('count-badge').classList.add('low');
 }
 
 function renderChips(container, teams){
@@ -356,7 +367,12 @@ function applyState(state){
   const teams = state.joinedTeams || [];
   if(state.phase==='open'){
     showScreen('open');
-    if(!countdownInterval && lastPhase!=='open') startCountdown();
+    // 倒數續跑：第一個拍燈不再暫停；以伺服器剩餘秒數驅動，歸零（closed）即定格 0
+    if(state.closed){
+      stopCountdownAtZero();
+    } else if(!countdownInterval){
+      startCountdown(state.remainingMs!=null ? Math.round(state.remainingMs/1000) : COUNT_FROM);
+    }
     const hasBuzz = state.buzzOrder.length>0;
     $('open-waiting').style.display = hasBuzz ? 'none' : 'flex';
     $('open-rank-list').style.display = hasBuzz ? 'flex' : 'none';
@@ -387,24 +403,28 @@ function applyState(state){
 function handleMessage(msg){
   switch(msg.type){
     case 'state':
-      if(lastPhase!=='open' && msg.phase==='open'){ playOpenBeep(); startCountdown(); }
+      if(lastPhase!=='open' && msg.phase==='open') playOpenBeep();
       lastPhase=msg.phase;
       applyState(msg);
       break;
     case 'first_buzz':
-      clearInterval(countdownInterval); countdownInterval=null;
+      // 倒數「不」停（續跑到歸零）；第一搶播放遊戲節目蜂鳴器 mp3 + 火光閃爍
       document.body.classList.add('flash');
       setTimeout(()=>document.body.classList.remove('flash'),700);
-      playBoom();
+      playSfx('firstBuzz');
       break;
     case 'buzz_registered':
-      // 後續搶答者（第 2、3…名）：輕亮「叮」聲
+      // 後續搶答者（第 2、3…名）：一聲叮
       playDing();
       break;
+    case 'time_up':
+      stopCountdownAtZero();
+      playTimeUp();
+      break;
     case 'verify_result':
-      if(msg.result==='correct'){ playCorrect(); fireConfetti(); }
+      if(msg.result==='correct'){ playSfx('correct'); fireConfetti(); }
       else {
-        playWrong();
+        playSfx('wrong');
         const overlay=$('x-overlay'), icon=$('x-icon');
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
@@ -425,7 +445,7 @@ let audioReady = false;
 function unlockAudio(){
   const ctx = getCtx();
   if(ctx.state === 'suspended') ctx.resume();
-  if(!audioReady){ audioReady = true; bell(880, getCtx().currentTime+0.01, 0.5, 0.35); }
+  if(!audioReady){ audioReady = true; primeSfx(); bell(880, getCtx().currentTime+0.01, 0.5, 0.35); }
   const btn = $('audio-unlock'); if(btn) btn.classList.add('hidden');
 }
 $('audio-unlock').addEventListener('click', unlockAudio);

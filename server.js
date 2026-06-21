@@ -22,11 +22,20 @@ app.get('/', (req, res) => res.redirect('/client.html'));
 const HOST_PIN = process.env.HOST_PIN || Math.random().toString(36).slice(2, 6).toUpperCase();
 
 // ── State ──────────────────────────────────────────────────────────────────
+const COUNT_FROM = Number(process.env.COUNT_FROM) || 30; // 搶答視窗秒數（伺服器權威，倒數歸零即關閉搶答）
 let state = {
   phase: 'locked',
   buzzOrder: [],
   currentFocus: null,
+  deadline: null, // open 期間的關閉時間戳（epoch ms）
+  closed: false,  // 倒數歸零 → 搶答視窗關閉（仍可顯示順位與判定）
 };
+
+let countdownTimer = null;
+function clearCountdown() {
+  if (countdownTimer) { clearTimeout(countdownTimer); countdownTimer = null; }
+  state.deadline = null;
+}
 
 // 已加入的學員端：ws → 組別名稱（投影端/主持端不會 join，故不計入）
 const sockets = new Map();
@@ -76,6 +85,11 @@ function stateMsg() {
     buzzOrder: state.buzzOrder,
     currentFocus: focus ? focus.team : null,
     joinedTeams: joinedTeams(),
+    closed: state.closed,
+    // 以剩餘毫秒下發，避免投影端與伺服器時鐘差造成倒數不準
+    remainingMs: (state.phase === 'open' && state.deadline)
+      ? Math.max(0, state.deadline - Date.now()) : null,
+    countFrom: COUNT_FROM,
   };
 }
 
@@ -128,10 +142,12 @@ wss.on('connection', (ws) => {
       // 主持「清空所有連線」：清掉所有進場名單與回合，要求全部學員重新選城鎮
       case 'host_clear': {
         if (!checkPin()) return;
+        clearCountdown();
         sockets.clear();
         state.phase = 'locked';
         state.buzzOrder = [];
         state.currentFocus = null;
+        state.closed = false;
         broadcast({ type: 'force_reselect' });
         broadcastState();
         break;
@@ -143,21 +159,37 @@ wss.on('connection', (ws) => {
         state.phase = 'open';
         state.buzzOrder = [];
         state.currentFocus = null;
+        state.closed = false;
+        // 伺服器權威倒數：到時即關閉搶答視窗（buzzOrder/順位仍保留供判定）
+        clearCountdown();
+        state.deadline = Date.now() + COUNT_FROM * 1000;
+        countdownTimer = setTimeout(() => {
+          countdownTimer = null;
+          state.deadline = null;
+          if (state.phase === 'open' && !state.closed) {
+            state.closed = true;
+            broadcast({ type: 'time_up' });
+            broadcastState();
+          }
+        }, COUNT_FROM * 1000);
         broadcastState();
         break;
       }
 
       case 'host_reset': {
         if (!checkPin()) return;
+        clearCountdown();
         state.phase = 'locked';
         state.buzzOrder = [];
         state.currentFocus = null;
+        state.closed = false;
         broadcastState();
         break;
       }
 
       case 'buzz': {
-        if (state.phase !== 'open') return;
+        // 僅在 open 且未到時才接受；倒數歸零（closed）後拒絕，達成「歸零後不能拍燈」
+        if (state.phase !== 'open' || state.closed) return;
         const team = cleanTeam(msg.team);
         if (!team) return;
         if (state.buzzOrder.find(b => b.team === team)) return;
@@ -187,6 +219,9 @@ wss.on('connection', (ws) => {
         entry.verified = true;
         entry.result = result;
         state.phase = result === 'correct' ? 'locked' : 'reviewing';
+        // 已進入判定階段，搶答視窗結束 → 停掉倒數，避免殘餘 timer 後續覆蓋狀態
+        clearCountdown();
+        state.closed = false;
 
         const next = currentFocusTeam();
         broadcast({
