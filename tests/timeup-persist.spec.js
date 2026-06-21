@@ -5,6 +5,7 @@
 const { test, expect } = require('@playwright/test');
 const { spawn } = require('child_process');
 const path = require('path');
+const WebSocket = require('ws');
 
 let serverProc;
 const PORT = 3100;
@@ -44,6 +45,25 @@ async function joinClient(ctx, town) {
   await p.click('#join-btn');
   await expect(p.locator('#game-screen')).toBeVisible({ timeout: WS });
   return p;
+}
+
+// 原生 WebSocket 連線（直接測伺服器 join/接管邏輯，不經瀏覽器儲存）
+function rawConn() {
+  const sock = new WebSocket(`ws://localhost:${PORT}`);
+  const inbox = [];
+  sock.on('message', d => { try { inbox.push(JSON.parse(d)); } catch (e) {} });
+  const ready = new Promise((res, rej) => { sock.on('open', res); sock.on('error', rej); });
+  return { sock, inbox, ready };
+}
+function waitMsg(inbox, type, timeout = 3000) {
+  return new Promise((res, rej) => {
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      const m = inbox.find(x => x.type === type);
+      if (m) { clearInterval(iv); res(m); }
+      else if (Date.now() - t0 > timeout) { clearInterval(iv); rej(new Error('timeout waiting ' + type)); }
+    }, 25);
+  });
 }
 
 test('倒數歸零後關閉搶答：學員顯示「時間到」、再拍燈不計入', async ({ browser }) => {
@@ -114,4 +134,37 @@ test('F5 記憶：重整後自動回到原本城鎮，不需重選', async ({ br
 
   await host.click('#btn-reset');
   await ctx.close();
+});
+
+test('Token 接管：帶對 token 的新連線踢掉殘留舊連線、接管原城鎮（模擬 Render F5）', async () => {
+  const a = rawConn(); await a.ready;
+  a.sock.send(JSON.stringify({ type: 'join', team: '城鎮七' }));
+  const okA = await waitMsg(a.inbox, 'join_ok');
+  expect(okA.team).toBe('城鎮七');
+  expect(typeof okA.token).toBe('string');
+
+  // 舊連線 a 不關閉（模擬 Render 上舊 ws 殘留）；新連線 b 帶同一 token 重連
+  const b = rawConn(); await b.ready;
+  b.sock.send(JSON.stringify({ type: 'join', team: '城鎮七', token: okA.token }));
+  const okB = await waitMsg(b.inbox, 'join_ok');
+  expect(okB.team).toBe('城鎮七');
+  // 舊連線被踢、收到 force_reselect
+  const kicked = await waitMsg(a.inbox, 'force_reselect');
+  expect(kicked.type).toBe('force_reselect');
+
+  a.sock.close(); b.sock.close();
+});
+
+test('撞同名仍被拒：無 token 的新連線不能搶走使用中的城鎮', async () => {
+  const a = rawConn(); await a.ready;
+  a.sock.send(JSON.stringify({ type: 'join', team: '城鎮八' }));
+  await waitMsg(a.inbox, 'join_ok');
+
+  // 不同裝置（無 token）撞同名 → 應被拒
+  const b = rawConn(); await b.ready;
+  b.sock.send(JSON.stringify({ type: 'join', team: '城鎮八' }));
+  const errB = await waitMsg(b.inbox, 'join_error');
+  expect(errB.reason).toBe('duplicate');
+
+  a.sock.close(); b.sock.close();
 });
