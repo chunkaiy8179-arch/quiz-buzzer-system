@@ -26,6 +26,7 @@ async function main() {
   const display = await big.newPage();
   const con = await big.newPage();
   await display.goto(`${BASE}/display.html`);
+  await display.evaluate(()=>document.getElementById('audio-unlock')?.classList.add('hidden'));
 
   // 學員登入畫面（先截一張未加入的）
   const loginPeek = await mob.newPage();
