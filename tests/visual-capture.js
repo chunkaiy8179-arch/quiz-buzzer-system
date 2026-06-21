@@ -47,6 +47,7 @@ async function main() {
     const p = await mob.newPage();
     await p.goto(`${BASE}/client.html`);
     await p.click(`.town-btn[data-town="${t}"]`);
+    await p.click('#join-btn');
     await p.waitForSelector('#game-screen', { state: 'visible' });
     clients.push(p);
   }
