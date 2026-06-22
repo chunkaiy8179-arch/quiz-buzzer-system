@@ -145,6 +145,12 @@ body { background: transparent; }
 .v-btn:active { transform: scale(.88); filter: brightness(1.18); box-shadow: 0 0 0 4px rgba(255,255,255,.18), 0 0 16px rgba(255,255,255,.25); }
 .v-correct { background: var(--up); }
 .v-wrong { background: var(--wrong); }
+
+/* ── 點擊水波回饋（ripple）── */
+button, .town-btn { position: relative; overflow: hidden; }
+.ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.24) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,0) 70%); animation: ripple-anim .58s ease-out forwards; }
+@keyframes ripple-anim { from { transform: scale(0); opacity: .5; } to { transform: scale(2.3); opacity: 0; } }
+@media (prefers-reduced-motion: reduce){ .ripple { display: none; } }
 </style>
 </head>
 <body>
@@ -305,6 +311,25 @@ function renderState(state){
 
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+</script>
+<script>
+(function(){
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.addEventListener('pointerdown', function(e){
+    var t = e.target.closest && e.target.closest('button, .town-btn');
+    if(!t || t.disabled) return;
+    var rect = t.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height);
+    size = Math.min(size, Math.max(rect.height * 2.6, 220)); // 寬扁按鈕限制水波尺寸，呈現「波」而非整片覆蓋
+    var s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.width = s.style.height = size + 'px';
+    s.style.left = (e.clientX - rect.left - size/2) + 'px';
+    s.style.top  = (e.clientY - rect.top  - size/2) + 'px';
+    t.appendChild(s);
+    s.addEventListener('animationend', function(){ s.remove(); });
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>
