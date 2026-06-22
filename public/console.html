@@ -60,8 +60,8 @@ html, body {
 #pin-screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px 28px;
   background: radial-gradient(ellipse 80% 40% at 50% 0%, #1f2a55 0%, transparent 60%), linear-gradient(165deg,#0a1430,#20102b); }
 #pin-screen.hidden { display: none; }
-.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 18px rgba(245,166,35,.4)); }
-.emblem-wrap .laurel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 168px; height: auto; pointer-events: none; filter: drop-shadow(0 0 6px rgba(245,166,35,.22)); }
+.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 168px; height: 168px; filter: drop-shadow(0 0 18px rgba(245,166,35,.4)); }
+.emblem-wrap .laurel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 0 6px rgba(245,166,35,.22)); }
 .pin-emblem { position: relative; }
 .pin-title { font-family:var(--font-title); font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--gold-bright); }
 .pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 2px; }
