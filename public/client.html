@@ -76,6 +76,7 @@ body { background: transparent; }
 
 /* ── 登入 / 選城鎮 ── */
 #login-screen { display: flex; flex-direction: column; align-items: center; height: 100%; padding: 26px 22px 24px; gap: 14px; overflow-y: auto; }
+#login-screen > * { flex-shrink: 0; }  /* 防止矮螢幕把按鈕等元素壓扁，改為可捲動 */
 .emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 138px; height: 138px; margin: 4px 0 8px; filter: drop-shadow(0 0 18px rgba(245,166,35,.4)); }
 .emblem-wrap .laurel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 0 6px rgba(245,166,35,.22)); }
 .login-emblem { position: relative; }
