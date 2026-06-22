@@ -104,16 +104,16 @@ body { background: transparent; }
 #joined-names { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
 /* ── 控制 ── */
-.controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
-.btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 16px; font-family:var(--font-title); font-size: 17px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
+.controls { display: flex; gap: 8px; padding: 14px 14px; border-bottom: 1px solid var(--line); }
+.btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 15px 8px; font-family:var(--font-title); font-size: clamp(15px,4vw,17px); font-weight: 800; letter-spacing: 1.5px; white-space: nowrap; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
 .btn-open:active:not(:disabled), .btn-reset:active { transform: scale(.97); }
 .btn-open { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: inset 0 1px 0 rgba(255,240,200,.55), inset 0 -3px 7px rgba(120,40,0,.45), 0 8px 22px rgba(232,67,31,.4); text-shadow: 0 1px 0 rgba(255,225,160,.4); }
 .btn-open:active:not(:disabled) { filter: brightness(1.08); }
 .btn-open:disabled { background: rgba(212,175,55,.08); color: var(--muted); cursor: not-allowed; box-shadow: none; }
-.btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 100px; border: 1px solid var(--gold-dim); }
+.btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 82px; border: 1px solid var(--gold-dim); }
 .btn-reset:active { background: rgba(212,175,55,.16); }
 /* 清空連線：危險操作——精緻紅金邊框、含「清空」圖示，與其他控制鈕同高同圓角 */
-.btn-clear { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; max-width: 132px; padding: 16px 16px; border: 1px solid rgba(192,57,43,.6); border-radius: 10px; font-family: var(--font-title); font-size: 15px; font-weight: 800; letter-spacing: 2px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s, box-shadow .15s, color .15s; }
+.btn-clear { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; max-width: 108px; padding: 15px 8px; border: 1px solid rgba(192,57,43,.6); border-radius: 10px; font-family: var(--font-title); font-size: clamp(13px,3.4vw,15px); font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s, box-shadow .15s, color .15s; }
 .btn-clear:hover { filter: brightness(1.1); color: #f3b8ae; }
 .btn-clear:active { transform: scale(.97); background: linear-gradient(160deg, rgba(192,57,43,.34), rgba(192,57,43,.16)); box-shadow: 0 0 0 3px rgba(192,57,43,.2); }
 
@@ -121,7 +121,7 @@ body { background: transparent; }
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
 #empty-msg { margin-top: 60px; text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 2px; }
 #buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.buzz-row { display: flex; align-items: center; gap: 14px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.22); animation: row-in .4s cubic-bezier(.16,1,.3,1) both; transition: border-color .2s, background .2s; }
+.buzz-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.22); animation: row-in .4s cubic-bezier(.16,1,.3,1) both; transition: border-color .2s, background .2s; }
 .buzz-row.focus { background: rgba(245,166,35,.1); border-color: var(--gold-bright); border-left-color: var(--gold-bright); }
 .buzz-row.verified-correct { background: rgba(63,174,107,.08); border-color: var(--up); border-left-color: var(--up); opacity: .7; }
 .buzz-row.verified-wrong { background: rgba(192,57,43,.06); border-color: var(--wrong); border-left-color: var(--wrong); opacity: .5; }
@@ -130,18 +130,18 @@ body { background: transparent; }
 .rank-1 { background: radial-gradient(circle at 40% 35%,#f5d77a,#a67c2e); color:#2a1c00; border-color:#f5d77a; }
 .rank-2 { background: linear-gradient(145deg,#e8e2cf,#b7a978); color:#2a230f; border-color:#d8cca0; }
 .rank-3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
-.team-name { flex: 1; font-family:var(--font-title); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 1px; }
+.team-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family:var(--font-title); font-size: clamp(16px,4.6vw,19px); font-weight: 700; color: var(--ink); letter-spacing: 1px; }
 .focus .team-name { color: var(--gold-bright); }
 .verified-correct .team-name { color: var(--up); text-decoration: line-through; }
 .verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
-.focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); padding: 4px 10px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
+.focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; color: var(--gold-bright); padding: 4px 8px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 @media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #pin-screen .emblem-wrap, #pin-screen .pin-title, #pin-screen .pin-sub, #pin-screen #pin-input, #pin-screen #pin-btn { animation: none; } }
-.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; }
+.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; padding: 5px 12px; border-radius: 6px; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
-.verify-btns { display: flex; gap: 8px; }
-.v-btn { border: none; border-radius: 8px; padding: 10px 16px; min-height: 44px; min-width: 44px; font-size: 14px; font-weight: 800; letter-spacing: 1px; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
+.verify-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.v-btn { border: none; border-radius: 8px; width: 46px; height: 46px; min-width: 46px; font-size: 19px; font-weight: 900; line-height: 1; flex-shrink: 0; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
 .v-btn:active { transform: scale(.93); }
 .v-correct { background: var(--up); }
 .v-wrong { background: var(--wrong); }
@@ -157,14 +157,23 @@ body { background: transparent; }
 <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4c6"/><stop offset=".5" stop-color="#e7c25a"/><stop offset="1" stop-color="#9c7328"/></linearGradient></defs>
 <g><g fill="url(#lg)"><ellipse cx="100.7" cy="198.5" rx="8.4" ry="3.0" transform="rotate(216.0 100.7 198.5)"/><ellipse cx="101.7" cy="188.6" rx="7.2" ry="2.6" transform="rotate(164.0 101.7 188.6)"/><ellipse cx="80.3" cy="193.9" rx="9.6" ry="3.5" transform="rotate(229.5 80.3 193.9)"/><ellipse cx="83.6" cy="184.5" rx="8.2" ry="3.0" transform="rotate(177.5 83.6 184.5)"/><ellipse cx="61.5" cy="184.6" rx="10.8" ry="3.9" transform="rotate(243.0 61.5 184.6)"/><ellipse cx="67.0" cy="176.3" rx="9.2" ry="3.4" transform="rotate(191.0 67.0 176.3)"/><ellipse cx="45.4" cy="171.3" rx="11.7" ry="4.2" transform="rotate(256.5 45.4 171.3)"/><ellipse cx="52.7" cy="164.4" rx="10.1" ry="3.7" transform="rotate(204.5 52.7 164.4)"/><ellipse cx="32.9" cy="154.5" rx="12.5" ry="4.5" transform="rotate(270.0 32.9 154.5)"/><ellipse cx="41.6" cy="149.5" rx="10.7" ry="3.9" transform="rotate(218.0 41.6 149.5)"/><ellipse cx="24.7" cy="135.3" rx="13.0" ry="4.7" transform="rotate(283.5 24.7 135.3)"/><ellipse cx="34.3" cy="132.4" rx="11.1" ry="4.1" transform="rotate(231.5 34.3 132.4)"/><ellipse cx="21.1" cy="114.7" rx="13.1" ry="4.8" transform="rotate(297.0 21.1 114.7)"/><ellipse cx="31.1" cy="114.1" rx="11.3" ry="4.1" transform="rotate(245.0 31.1 114.1)"/><ellipse cx="22.5" cy="93.8" rx="13.0" ry="4.7" transform="rotate(310.5 22.5 93.8)"/><ellipse cx="32.3" cy="95.6" rx="11.1" ry="4.1" transform="rotate(258.5 32.3 95.6)"/><ellipse cx="28.7" cy="73.8" rx="12.5" ry="4.5" transform="rotate(324.0 28.7 73.8)"/><ellipse cx="37.8" cy="77.9" rx="10.7" ry="3.9" transform="rotate(272.0 37.8 77.9)"/><ellipse cx="39.4" cy="55.8" rx="11.7" ry="4.2" transform="rotate(337.5 39.4 55.8)"/><ellipse cx="47.3" cy="61.9" rx="10.1" ry="3.7" transform="rotate(285.5 47.3 61.9)"/><ellipse cx="54.0" cy="40.8" rx="10.8" ry="3.9" transform="rotate(351.0 54.0 40.8)"/><ellipse cx="60.3" cy="48.6" rx="9.2" ry="3.4" transform="rotate(299.0 60.3 48.6)"/><ellipse cx="71.7" cy="29.7" rx="9.6" ry="3.5" transform="rotate(364.5 71.7 29.7)"/><ellipse cx="76.0" cy="38.7" rx="8.2" ry="3.0" transform="rotate(312.5 76.0 38.7)"/><ellipse cx="91.5" cy="22.9" rx="8.4" ry="3.0" transform="rotate(378.0 91.5 22.9)"/><ellipse cx="93.6" cy="32.7" rx="7.2" ry="2.6" transform="rotate(326.0 93.6 32.7)"/><circle cx="101.2" cy="193.5" r="3"/></g><path d="M 101.2 193.5 A 84 84 0 0 0 92.5 27.8" fill="none" stroke="url(#lg)" stroke-width="2.2"/></g><g transform="translate(220,0) scale(-1,1)"><g fill="url(#lg)"><ellipse cx="100.7" cy="198.5" rx="8.4" ry="3.0" transform="rotate(216.0 100.7 198.5)"/><ellipse cx="101.7" cy="188.6" rx="7.2" ry="2.6" transform="rotate(164.0 101.7 188.6)"/><ellipse cx="80.3" cy="193.9" rx="9.6" ry="3.5" transform="rotate(229.5 80.3 193.9)"/><ellipse cx="83.6" cy="184.5" rx="8.2" ry="3.0" transform="rotate(177.5 83.6 184.5)"/><ellipse cx="61.5" cy="184.6" rx="10.8" ry="3.9" transform="rotate(243.0 61.5 184.6)"/><ellipse cx="67.0" cy="176.3" rx="9.2" ry="3.4" transform="rotate(191.0 67.0 176.3)"/><ellipse cx="45.4" cy="171.3" rx="11.7" ry="4.2" transform="rotate(256.5 45.4 171.3)"/><ellipse cx="52.7" cy="164.4" rx="10.1" ry="3.7" transform="rotate(204.5 52.7 164.4)"/><ellipse cx="32.9" cy="154.5" rx="12.5" ry="4.5" transform="rotate(270.0 32.9 154.5)"/><ellipse cx="41.6" cy="149.5" rx="10.7" ry="3.9" transform="rotate(218.0 41.6 149.5)"/><ellipse cx="24.7" cy="135.3" rx="13.0" ry="4.7" transform="rotate(283.5 24.7 135.3)"/><ellipse cx="34.3" cy="132.4" rx="11.1" ry="4.1" transform="rotate(231.5 34.3 132.4)"/><ellipse cx="21.1" cy="114.7" rx="13.1" ry="4.8" transform="rotate(297.0 21.1 114.7)"/><ellipse cx="31.1" cy="114.1" rx="11.3" ry="4.1" transform="rotate(245.0 31.1 114.1)"/><ellipse cx="22.5" cy="93.8" rx="13.0" ry="4.7" transform="rotate(310.5 22.5 93.8)"/><ellipse cx="32.3" cy="95.6" rx="11.1" ry="4.1" transform="rotate(258.5 32.3 95.6)"/><ellipse cx="28.7" cy="73.8" rx="12.5" ry="4.5" transform="rotate(324.0 28.7 73.8)"/><ellipse cx="37.8" cy="77.9" rx="10.7" ry="3.9" transform="rotate(272.0 37.8 77.9)"/><ellipse cx="39.4" cy="55.8" rx="11.7" ry="4.2" transform="rotate(337.5 39.4 55.8)"/><ellipse cx="47.3" cy="61.9" rx="10.1" ry="3.7" transform="rotate(285.5 47.3 61.9)"/><ellipse cx="54.0" cy="40.8" rx="10.8" ry="3.9" transform="rotate(351.0 54.0 40.8)"/><ellipse cx="60.3" cy="48.6" rx="9.2" ry="3.4" transform="rotate(299.0 60.3 48.6)"/><ellipse cx="71.7" cy="29.7" rx="9.6" ry="3.5" transform="rotate(364.5 71.7 29.7)"/><ellipse cx="76.0" cy="38.7" rx="8.2" ry="3.0" transform="rotate(312.5 76.0 38.7)"/><ellipse cx="91.5" cy="22.9" rx="8.4" ry="3.0" transform="rotate(378.0 91.5 22.9)"/><ellipse cx="93.6" cy="32.7" rx="7.2" ry="2.6" transform="rotate(326.0 93.6 32.7)"/><circle cx="101.2" cy="193.5" r="3"/></g><path d="M 101.2 193.5 A 84 84 0 0 0 92.5 27.8" fill="none" stroke="url(#lg)" stroke-width="2.2"/></g></svg><svg class="pin-emblem" viewBox="0 0 120 150" style="width:48px;height:auto;top:2px">
     <defs>
-      <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d77a"/><stop offset="1" stop-color="#a67c2e"/></linearGradient>
-      <linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8431f"/><stop offset=".55" stop-color="#f5a623"/><stop offset="1" stop-color="#fde08a"/></linearGradient>
+      <radialGradient id="gl_k" cx="50%" cy="42%" r="55%"><stop offset="0" stop-color="#ffcaa0" stop-opacity=".55"/><stop offset="45%" stop-color="#f5a623" stop-opacity=".22"/><stop offset="100%" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
+      <linearGradient id="cg_k" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fbeab0"/><stop offset=".5" stop-color="#d8b347"/><stop offset="1" stop-color="#7c5a1f"/></linearGradient>
+      <linearGradient id="ff_k" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e23a14"/><stop offset=".5" stop-color="#f5891f"/><stop offset="1" stop-color="#ffd066"/></linearGradient>
+      <linearGradient id="fi_k" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f5a623"/><stop offset=".6" stop-color="#ffdf8a"/><stop offset="1" stop-color="#fffbe9"/></linearGradient>
     </defs>
-    <path class="flame" d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#pf)"/>
-    <path d="M36 84 Q60 118 84 84 Z" fill="url(#pg)"/>
-    <rect x="55" y="110" width="10" height="20" rx="2" fill="url(#pg)"/>
-    <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
-    <path d="M42 144 Q60 130 78 144 Z" fill="url(#pg)"/>
+    <ellipse cx="60" cy="56" rx="40" ry="50" fill="url(#gl_k)"/>
+    <g fill="url(#cg_k)">
+      <path d="M40 139 Q60 127 80 139 Q60 133.5 40 139 Z"/>
+      <rect x="58.5" y="120" width="3" height="6"/>
+      <path d="M55 106 Q56.5 114 52 121 L68 121 Q63.5 114 65 106 Z"/>
+      <ellipse cx="60" cy="108.5" rx="5.2" ry="3.6"/>
+      <path d="M41 88 Q60 92 79 88 Q76 104 60 106 Q44 104 41 88 Z"/>
+      <path d="M41 88 Q60 94 79 88 L77.5 91 Q60 96 42.5 91 Z" fill="#fff3cf" opacity=".5"/>
+    </g>
+    <path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_k)"/>
+    <path class="flame" d="M60 40 C67 54 67 70 60 84 C53 70 53 54 60 40 Z" fill="url(#fi_k)"/>
+    <path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/>
   </svg></span>
   <div class="pin-title serif gold-foil-shine">主持端</div>
   <div class="pin-sub">輸入 PIN 碼進入控制台</div>
@@ -276,8 +285,8 @@ function renderState(state){
       rightContent = `
         ${tag}
         <div class="verify-btns">
-          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct">O ${isFocus?'正確':''}</button>
-          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong">X ${isFocus?'錯誤':''}</button>
+          <button class="v-btn v-correct" data-team="${escAttr(entry.team)}" data-result="correct" aria-label="正確">O</button>
+          <button class="v-btn v-wrong" data-team="${escAttr(entry.team)}" data-result="wrong" aria-label="錯誤">X</button>
         </div>`;
     }
     li.innerHTML = `
