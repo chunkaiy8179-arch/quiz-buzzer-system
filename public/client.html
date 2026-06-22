@@ -133,6 +133,18 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
 #status-msg.active { color: var(--gold-bright); background: rgba(245,166,35,.1); }
 #phase-label { font-family: var(--font-latin); font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); }
+
+/* ── 小機型（矮螢幕）登入頁壓縮，確保「加入」免捲動可見 ── */
+@media (max-height: 700px) {
+  #login-screen { gap: 9px; padding: 14px 22px 18px; }
+  .emblem-wrap { width: 100px; height: 100px; margin: 0 0 2px; }
+  .login-title { font-size: 23px; letter-spacing: 6px; }
+  .login-latin { font-size: 11px; }
+  .pick-label { margin-top: 0; }
+  .town-btn { padding: 11px 10px; font-size: 18px; }
+  #name-input { padding: 11px 14px; }
+  #join-btn { padding: 13px; }
+}
 </style>
 </head>
 <body>

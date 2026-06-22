@@ -75,6 +75,16 @@ body::before{
 /* ── 希臘神殿剪影：底部建築意象背景 ── */
 .temple { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(1120px,98vw); color: #d0a85f; opacity: .3; pointer-events: none; z-index: -1; filter: drop-shadow(0 0 26px rgba(245,166,35,.18)); }
 .temple svg { display: block; width: 100%; height: auto; }
+.temple.glow { animation: temple-glow 1.1s ease-out; }
+@keyframes temple-glow { 0%{ opacity:.3; filter:drop-shadow(0 0 26px rgba(245,166,35,.18)); } 30%{ opacity:.62; filter:drop-shadow(0 0 54px rgba(245,166,35,.65)); } 100%{ opacity:.3; filter:drop-shadow(0 0 26px rgba(245,166,35,.18)); } }
+/* ── 答對：金光爆發（放射光芒 + 中央閃光）── */
+#burst { position: fixed; inset: 0; z-index: 25; pointer-events: none; display: none; overflow: hidden; }
+#burst.show { display: block; }
+#burst .rays, #burst .flash { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%); mix-blend-mode: screen; opacity: 0; }
+#burst .rays { width: 240vmax; height: 240vmax; background: repeating-conic-gradient(from 0deg, rgba(245,205,120,.26) 0deg 5deg, transparent 5deg 13deg); animation: burst-rays 1.1s ease-out forwards; }
+#burst .flash { width: 72vmax; height: 72vmax; border-radius: 50%; background: radial-gradient(circle, rgba(255,249,230,.98), rgba(245,166,35,.5) 40%, transparent 72%); animation: burst-flash 1s ease-out forwards; }
+@keyframes burst-rays { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.2) rotate(0); } 25%{ opacity:.9; } 60%{ opacity:.5; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1) rotate(22deg); } }
+@keyframes burst-flash { 0%{ opacity:0; transform:translate(-50%,-50%) scale(.25); } 20%{ opacity:1; } 45%{ opacity:.8; } 100%{ opacity:0; transform:translate(-50%,-50%) scale(1.2); } }
 /* ── 入場動畫：上浮淡入 ── */
 @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 #idle-screen .emblem-wrap { animation: rise .8s cubic-bezier(.16,1,.3,1) both .04s; }
@@ -222,6 +232,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   .x-stamp { animation: none; opacity: 1; transform: none; }
   body::before, .flame, .rank-num.r1::after, .rank-num.r2::after, .rank-num.r3::after, .count-badge.low, .gold-foil-shine { animation: none; }
   #idle-screen .emblem-wrap, #idle-screen .idle-headings, #idle-screen .idle-divider, #idle-screen .joined-panel { animation: none; }
+  #burst .rays, #burst .flash, .temple.glow { animation: none; }
 }
 </style>
 </head>
@@ -314,6 +325,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   <ol id="rank-list" class="order-list"></ol>
 </div>
 
+<div id="burst"><div class="rays"></div><div class="flash"></div></div>
 <div id="x-overlay"><div id="x-icon" class="x-mark">✕</div></div>
 
 <script>
@@ -416,6 +428,10 @@ function fireConfetti(){
   setTimeout(()=>confetti({ particleCount:90, spread:110, origin:{y:0.35}, colors:fire }),350);
 }
 
+function celebrate(){ // 答對：金光爆發 + 神殿短暫發光
+  const b=$('burst'); if(b){ b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),1150); }
+  const t=document.querySelector('.temple'); if(t){ t.classList.remove('glow'); void t.offsetWidth; t.classList.add('glow'); setTimeout(()=>t.classList.remove('glow'),1100); }
+}
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=$(`${name}-screen`); if(el) el.classList.add('active');
@@ -527,7 +543,7 @@ function handleMessage(msg){
       playTimeUp();
       break;
     case 'verify_result':
-      if(msg.result==='correct'){ playSfx('correct'); fireConfetti(); }
+      if(msg.result==='correct'){ playSfx('correct'); celebrate(); fireConfetti(); }
       else {
         playSfx('wrong');
         const overlay=$('x-overlay'), icon=$('x-icon');
