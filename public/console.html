@@ -51,7 +51,7 @@ body { background: transparent; }
 .temple svg { display: block; width: 100%; height: auto; }
 /* ── 金屬光澤掃過 ── */
 .metal { position: relative; overflow: hidden; }
-.metal::before { content:''; position: absolute; top: 0; left: -75%; width: 55%; height: 100%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-18deg); animation: metal-sheen 5s ease-in-out infinite; }
+.metal::before { content:''; position: absolute; top: 0; left: -75%; width: 42%; height: 100%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,.3), transparent); transform: skewX(-18deg); animation: metal-sheen 5.5s ease-in-out infinite; }
 .metal:disabled::before { display: none; }
 @keyframes metal-sheen { 0%,20% { left: -75%; } 42%,100% { left: 150%; } }
 /* ── 入場動畫：上浮淡入 ── */
