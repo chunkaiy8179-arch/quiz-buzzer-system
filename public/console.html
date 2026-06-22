@@ -8,25 +8,29 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --gold:#d4af37; --gold-bright:#f5d77a; --gold-dim:#a67c2e; --gold-deep:#6f4f1c;
   --flame-red:#e8431f; --flame-amber:#f5a623;
   --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.26);
   --up:#3fae6b; --wrong:#c0392b;
+  /* 統一字體系統（典雅文藝風）：標題=霞鶩文楷、內文=Noto Sans TC、拉丁字/數字=Cinzel */
+  --font-body:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
+  --font-title:'LXGW WenKai TC', 'Noto Serif TC', serif;
+  --font-latin:'Cinzel', 'LXGW WenKai TC', serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
-  font-family: 'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
   background:
     radial-gradient(ellipse 80% 40% at 50% -5%, #1f2a55 0%, transparent 60%),
     linear-gradient(165deg, #0a1430 0%, #160e2c 55%, #20102b 100%);
   -webkit-font-smoothing: antialiased;
 }
-.serif { font-family: 'Noto Serif TC', serif; }
+.serif { font-family: var(--font-title); }
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
 @keyframes flame-flicker {
@@ -43,9 +47,9 @@ html, body {
   background: radial-gradient(ellipse 80% 40% at 50% 0%, #1f2a55 0%, transparent 60%), linear-gradient(165deg,#0a1430,#20102b); }
 #pin-screen.hidden { display: none; }
 .pin-emblem { filter: drop-shadow(0 0 18px rgba(245,166,35,.4)); }
-.pin-title { font-family:'Noto Serif TC',serif; font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--gold-bright); }
+.pin-title { font-family:var(--font-title); font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--gold-bright); }
 .pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 2px; }
-#pin-input { width: 100%; max-width: 260px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 10px; padding: 14px 20px; font-size: 26px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; letter-spacing: 8px; transition: border-color .15s, box-shadow .15s; }
+#pin-input { width: 100%; max-width: 260px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 10px; padding: 14px 20px; font-family: var(--font-latin); font-size: 26px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; letter-spacing: 8px; transition: border-color .15s, box-shadow .15s; }
 #pin-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
 #pin-btn { width: 100%; max-width: 260px; background: linear-gradient(160deg,#f5d77a,#d4af37 55%,#a67c2e); color: #2a1c00; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; }
 #pin-btn:active { transform: scale(.97); filter: brightness(1.08); }
@@ -53,8 +57,8 @@ html, body {
 
 /* ── Top bar ── */
 .top-bar { position: sticky; top: 0; z-index: 10; background: rgba(10,12,30,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
-.top-title { font-family:'Noto Serif TC',serif; font-size: 17px; font-weight: 700; letter-spacing: 4px; color: var(--gold-bright); flex: 1; }
-#phase-badge { font-size: 11px; font-weight: 800; letter-spacing: 2px; padding: 5px 14px; border-radius: 8px; background: rgba(212,175,55,.08); color: var(--muted); border: 1px solid var(--gold-deep); transition: background .3s, color .3s, border-color .3s; }
+.top-title { font-family:var(--font-title); font-size: 17px; font-weight: 700; letter-spacing: 4px; color: var(--gold-bright); flex: 1; }
+#phase-badge { font-family: var(--font-latin); font-size: 11px; font-weight: 800; letter-spacing: 2px; padding: 5px 14px; border-radius: 8px; background: rgba(212,175,55,.08); color: var(--muted); border: 1px solid var(--gold-deep); transition: background .3s, color .3s, border-color .3s; }
 #phase-badge.open-live { animation: badge-glow 1.4s ease-in-out infinite; }
 @keyframes badge-glow { 0%,100%{ box-shadow: 0 0 0 0 rgba(245,166,35,0); } 50%{ box-shadow: 0 0 14px rgba(245,166,35,.5); } }
 #ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
@@ -64,20 +68,23 @@ html, body {
 
 /* ── 進場列 ── */
 .joined-strip { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-.joined-strip b { color: var(--gold-bright); font-size: 15px; font-family:'Noto Serif TC',serif; }
+.joined-strip b { color: var(--gold-bright); font-size: 15px; font-family:var(--font-title); }
 #joined-names { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
 /* ── 控制 ── */
 .controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
-.btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 16px; font-family:'Noto Serif TC',serif; font-size: 17px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
+.btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 16px; font-family:var(--font-title); font-size: 17px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
 .btn-open:active:not(:disabled), .btn-reset:active { transform: scale(.97); }
 .btn-open { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: 0 6px 22px rgba(232,67,31,.35); }
 .btn-open:active:not(:disabled) { filter: brightness(1.08); }
 .btn-open:disabled { background: rgba(212,175,55,.08); color: var(--muted); cursor: not-allowed; box-shadow: none; }
 .btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 100px; border: 1px solid var(--gold-dim); }
 .btn-reset:active { background: rgba(212,175,55,.16); }
-.btn-clear { background: rgba(192,57,43,.1); color: #e3897f; max-width: 120px; border: 1px solid rgba(192,57,43,.5); }
-.btn-clear:active { background: rgba(192,57,43,.2); }
+/* 清空連線：危險操作——精緻紅金邊框、含「清空」圖示，與其他控制鈕同高同圓角 */
+.btn-clear { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; max-width: 132px; padding: 16px 16px; border: 1px solid rgba(192,57,43,.6); border-radius: 10px; font-family: var(--font-title); font-size: 15px; font-weight: 800; letter-spacing: 2px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s, box-shadow .15s, color .15s; }
+.btn-clear svg { width: 16px; height: 16px; flex-shrink: 0; }
+.btn-clear:hover { filter: brightness(1.1); color: #f3b8ae; }
+.btn-clear:active { transform: scale(.97); background: linear-gradient(160deg, rgba(192,57,43,.34), rgba(192,57,43,.16)); box-shadow: 0 0 0 3px rgba(192,57,43,.2); }
 
 /* ── 搶答列表 ── */
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
@@ -88,11 +95,11 @@ html, body {
 .buzz-row.verified-correct { background: rgba(63,174,107,.08); border-color: var(--up); border-left-color: var(--up); opacity: .7; }
 .buzz-row.verified-wrong { background: rgba(192,57,43,.06); border-color: var(--wrong); border-left-color: var(--wrong); opacity: .5; }
 @keyframes row-in { from{opacity:0; transform:translateX(-12px);} to{opacity:1; transform:none;} }
-.rank-num { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:'Noto Serif TC',serif; font-size: 15px; font-weight: 900; flex-shrink: 0; font-variant-numeric: tabular-nums; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); }
+.rank-num { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:var(--font-latin); font-size: 15px; font-weight: 900; flex-shrink: 0; font-variant-numeric: tabular-nums; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); }
 .rank-1 { background: radial-gradient(circle at 40% 35%,#f5d77a,#a67c2e); color:#2a1c00; border-color:#f5d77a; }
 .rank-2 { background: linear-gradient(145deg,#e8e2cf,#b7a978); color:#2a230f; border-color:#d8cca0; }
 .rank-3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
-.team-name { flex: 1; font-family:'Noto Serif TC',serif; font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 1px; }
+.team-name { flex: 1; font-family:var(--font-title); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 1px; }
 .focus .team-name { color: var(--gold-bright); }
 .verified-correct .team-name { color: var(--up); text-decoration: line-through; }
 .verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
@@ -144,7 +151,10 @@ html, body {
 <div class="controls">
   <button id="btn-open" class="btn-open">點燃聖火</button>
   <button id="btn-reset" class="btn-reset">重設</button>
-  <button id="btn-clear" class="btn-clear">清空連線</button>
+  <button id="btn-clear" class="btn-clear" title="清空所有連線，所有學員退回選城鎮">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.64 5.64 18.36 18.36"/></svg>
+    清空連線
+  </button>
 </div>
 
 <div id="main">
