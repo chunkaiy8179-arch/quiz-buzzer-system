@@ -68,6 +68,18 @@ body::before{
 
 /* ── Idle ── */
 #idle-screen { align-items: center; justify-content: center; gap: clamp(18px,2.4vw,30px); padding: 48px; }
+/* 金箔角落紋飾：L 形雙線框角，襯托舞台儀式感 */
+.corner-frame { position: absolute; inset: clamp(18px,2.6vw,40px); z-index: 0; pointer-events: none; }
+.corner-frame .corner { position: absolute; width: clamp(30px,3.6vw,58px); height: clamp(30px,3.6vw,58px); border: 2px solid var(--gold); opacity: .55; box-shadow: 0 0 14px rgba(212,175,55,.12); }
+.corner-frame .corner::before { content:''; position: absolute; inset: 5px; border: 1px solid rgba(212,175,55,.5); }
+.corner.tl { top:0; left:0; border-right:none; border-bottom:none; border-top-left-radius:6px; }
+.corner.tl::before { border-right:none; border-bottom:none; }
+.corner.tr { top:0; right:0; border-left:none; border-bottom:none; border-top-right-radius:6px; }
+.corner.tr::before { border-left:none; border-bottom:none; }
+.corner.bl { bottom:0; left:0; border-right:none; border-top:none; border-bottom-left-radius:6px; }
+.corner.bl::before { border-right:none; border-top:none; }
+.corner.br { bottom:0; right:0; border-left:none; border-top:none; border-bottom-right-radius:6px; }
+.corner.br::before { border-left:none; border-top:none; }
 .idle-title { font-size: clamp(40px, 6.5vw, 88px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.15; }
 .idle-sub { font-size: clamp(13px, 1.8vw, 20px); letter-spacing: clamp(5px,1.2vw,12px); color: var(--muted); }
 .idle-divider { width: clamp(180px,30vw,360px); }
@@ -105,8 +117,8 @@ body::before{
 .order-list { list-style: none; width: 100%; flex: 1; display: flex; flex-direction: column; gap: clamp(8px,1.2vw,14px); overflow-y: auto; }
 .rank-row { display: flex; align-items: center; gap: clamp(16px,2.2vw,28px); border-radius: 12px; padding: clamp(14px,2vw,24px) clamp(20px,2.6vw,34px); background: rgba(255,255,255,.025); border: 1px solid var(--line); border-left: 4px solid var(--line); animation: slide-up .28s ease-out both; flex-shrink: 0; transition: background .3s, border-color .3s, opacity .3s; }
 .order-list > li:nth-child(1).rank-row { border-color: var(--gold); border-left-color: var(--gold); background: rgba(212,175,55,.09); }
-.order-list > li:nth-child(2).rank-row { border-left-color: rgba(212,175,55,.55); }
-.order-list > li:nth-child(3).rank-row { border-left-color: var(--gold-deep); }
+.order-list > li:nth-child(2).rank-row { border-color: rgba(212,175,55,.4); border-left-color: rgba(212,175,55,.55); background: rgba(212,175,55,.05); }
+.order-list > li:nth-child(3).rank-row { border-left-color: var(--gold-deep); background: rgba(212,175,55,.03); }
 .rank-row.focus { border-color: var(--gold-bright) !important; border-left-color: var(--gold-bright) !important; background: rgba(245,166,35,.12) !important; box-shadow: 0 0 30px rgba(245,166,35,.15); }
 .rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: rgba(63,174,107,.1) !important; opacity: .75; }
 .rank-row.wrong { border-color: var(--wrong) !important; border-left-color: var(--wrong) !important; background: rgba(192,57,43,.08) !important; opacity: .5; }
@@ -115,8 +127,10 @@ body::before{
 @keyframes just-buzzed { 0%{transform:scale(1);} 30%{transform:scale(1.025);} 100%{transform:scale(1);} }
 .rank-num { position: relative; overflow: hidden; width: clamp(46px,5.6vw,66px); height: clamp(46px,5.6vw,66px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:'Noto Serif TC',serif; font-size: clamp(18px,2.1vw,28px); font-weight: 900; flex-shrink: 0; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); font-variant-numeric: tabular-nums; }
 .rank-num.r1 { background: radial-gradient(circle at 40% 35%, var(--gold-bright), var(--gold-dim)); color: #2a1c00; border-color: var(--gold-bright); box-shadow: 0 0 18px rgba(245,166,35,.5); }
-/* 第一名牌位：金箔流光緩緩掃過 */
+/* 牌位金箔流光：第一名最亮最快，二三名漸次收斂 */
 .rank-num.r1::after { content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.6) 50%, transparent 68%); background-size:220% 100%; animation: gold-shimmer 2.8s linear infinite; }
+.rank-num.r2::after { content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; background:linear-gradient(115deg, transparent 36%, rgba(255,255,255,.42) 50%, transparent 64%); background-size:220% 100%; animation: gold-shimmer 3.4s linear infinite; }
+.rank-num.r3::after { content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; background:linear-gradient(115deg, transparent 38%, rgba(255,255,255,.28) 50%, transparent 62%); background-size:220% 100%; animation: gold-shimmer 4.2s linear infinite; }
 @keyframes gold-shimmer { from{background-position:160% 0;} to{background-position:-160% 0;} }
 .rank-num.r2 { background: linear-gradient(145deg,#e8e2cf,#b7a978); color:#2a230f; border-color:#d8cca0; }
 .rank-num.r3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
@@ -165,7 +179,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
   .x-stamp { animation: none; opacity: 1; transform: none; }
-  body::before, .flame, .rank-num.r1::after, .count-badge.low { animation: none; }
+  body::before, .flame, .rank-num.r1::after, .rank-num.r2::after, .rank-num.r3::after, .count-badge.low { animation: none; }
 }
 </style>
 </head>
@@ -186,6 +200,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 </svg>
 
 <div id="idle-screen" class="screen active">
+  <div class="corner-frame"><span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span></div>
   <div class="emblem-wrap">
     <svg class="emblem" viewBox="0 0 120 150" style="width:clamp(110px,14vw,170px);height:auto">
       <path class="flame" d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#flameGrad)"/>
