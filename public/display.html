@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 /* ── 聖火之夜：希臘金箔暗夜主題 token ── */
 :root{
@@ -15,10 +15,11 @@
   --flame-red:#e8431f; --flame-amber:#f5a623;
   --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28);
   --wrong:#c0392b; --up:#3fae6b;
-  /* 統一字體系統：中文=Noto Sans TC、拉丁字/數字=Marcellus（希臘古典羅馬體） */
+  /* 字體：中文=Noto Sans TC、英文小標/數字=Cinzel、大標展示=Cinzel Decorative（希臘碑刻花飾） */
   --font-body:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
   --font-title:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
-  --font-latin:'Marcellus', 'Noto Sans TC', serif;
+  --font-latin:'Cinzel', serif;
+  --font-display:'Cinzel Decorative', 'Cinzel', serif;
   --meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='18' viewBox='0 0 44 18'%3E%3Cg fill='none' stroke='%23d4af37' stroke-width='2'%3E%3Cpath d='M2 16 V2 H20 V12 H10 V8 H16'/%3E%3Cpath d='M24 16 V2 H42 V12 H32 V8 H38'/%3E%3C/g%3E%3C/svg%3E");
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,6 +87,7 @@ body::before{
 .corner.br::before { border-left:none; border-top:none; }
 .idle-title { font-size: clamp(40px, 6.5vw, 88px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.15; }
 .idle-sub { font-size: clamp(13px, 1.8vw, 20px); letter-spacing: clamp(5px,1.2vw,12px); color: var(--muted); }
+.idle-latin { font-family: var(--font-display); font-size: clamp(13px,1.9vw,22px); font-weight: 700; letter-spacing: clamp(2px,.55vw,6px); color: var(--gold); text-shadow: 0 0 22px rgba(245,166,35,.25); }
 .idle-divider { width: clamp(180px,30vw,360px); }
 .joined-panel { width: min(86vw, 1080px); padding: clamp(20px,2.6vw,30px) clamp(24px,3.4vw,40px); display: flex; flex-direction: column; gap: 16px; }
 .joined-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
@@ -107,7 +109,7 @@ body::before{
 @keyframes flicker { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.15);opacity:.85;} }
 .count-badge { display: flex; align-items: center; gap: 14px; padding: clamp(8px,1vw,12px) clamp(18px,2vw,26px); }
 .count-badge .cb-label { font-size: clamp(10px,1.1vw,13px); font-weight: 700; letter-spacing: 4px; color: var(--muted); }
-#count-badge-num { font-family:var(--font-latin); font-size: clamp(30px,3.6vw,54px); font-weight: 900; color: var(--gold-bright); line-height: 1; }
+#count-badge-num { font-family:var(--font-display); font-size: clamp(30px,3.6vw,54px); font-weight: 900; color: var(--gold-bright); line-height: 1; }
 .count-badge.low #count-badge-num { color: var(--flame-red); }
 .count-badge.low { animation: badge-low-pulse 1s ease-in-out infinite; }
 @keyframes badge-low-pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(232,67,31,0); } 50%{ box-shadow: 0 0 26px rgba(232,67,31,.45); } }
@@ -217,6 +219,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   </div>
   <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px">
     <div class="idle-title serif">聖火之夜</div>
+    <div class="idle-latin">NIGHT OF THE SACRED FLAME</div>
     <div class="idle-sub">點燃聖火 · 照亮長夜</div>
   </div>
   <div class="meander-band idle-divider"></div>

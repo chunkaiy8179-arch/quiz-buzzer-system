@@ -9,17 +9,18 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --gold:#d4af37; --gold-bright:#f5d77a; --gold-dim:#a67c2e; --gold-deep:#6f4f1c;
   --flame-red:#e8431f; --flame-amber:#f5a623;
   --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28);
   --up:#3fae6b; --wrong:#c0392b;
-  /* 統一字體系統：中文=Noto Sans TC、拉丁字/數字=Marcellus（希臘古典羅馬體） */
+  /* 字體：中文=Noto Sans TC、英文小標/數字=Cinzel、大標展示=Cinzel Decorative（希臘碑刻花飾） */
   --font-body:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
   --font-title:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
-  --font-latin:'Marcellus', 'Noto Sans TC', serif;
+  --font-latin:'Cinzel', serif;
+  --font-display:'Cinzel Decorative', 'Cinzel', serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -49,6 +50,7 @@ html, body {
 .login-emblem { filter: drop-shadow(0 0 20px rgba(245,166,35,.4)); margin-top: 4px; }
 .login-title { font-size: 28px; font-weight: 900; letter-spacing: 8px; color: var(--gold-bright); text-shadow: 0 0 24px rgba(245,166,35,.3); }
 .login-sub { font-size: 12px; color: var(--muted); letter-spacing: 4px; }
+.login-latin { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--gold); text-shadow: 0 0 18px rgba(245,166,35,.25); }
 .pick-label { font-size: 14px; color: var(--gold-bright); letter-spacing: 4px; font-weight: 700; margin-top: 4px; }
 .town-grid { width: 100%; max-width: 380px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .town-btn { position: relative; border: 1.5px solid var(--gold-dim); background: rgba(212,175,55,.06); color: var(--gold-bright); border-radius: 12px; padding: 16px 10px; font-family:var(--font-title); font-size: 20px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: transform .1s, background .15s, border-color .15s; }
@@ -117,6 +119,7 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
   </svg>
   <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px">
     <div class="login-title serif">聖火之夜</div>
+    <div class="login-latin">NIGHT OF THE SACRED FLAME</div>
     <div class="login-sub">點燃聖火 · 照亮長夜</div>
   </div>
   <div class="pick-label">選擇你的城鎮</div>
