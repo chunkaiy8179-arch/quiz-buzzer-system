@@ -31,6 +31,7 @@ html, body {
     linear-gradient(165deg, #0a1430 0%, #160e2c 55%, #20102b 100%);
   -webkit-font-smoothing: antialiased;
 }
+body { background: transparent; }
 .serif { font-family: var(--font-title); }
 /* ── 金箔金屬質感文字 ── */
 .gold-foil, .gold-foil-shine { -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; }
@@ -45,6 +46,21 @@ html, body {
 .grain { position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px 170px; }
+/* ── 希臘神殿剪影背景 ── */
+.temple { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(620px,110vw); color: #c2a05a; opacity: .09; pointer-events: none; z-index: -1; }
+.temple svg { display: block; width: 100%; height: auto; }
+/* ── 金屬光澤掃過 ── */
+.metal { position: relative; overflow: hidden; }
+.metal::before { content:''; position: absolute; top: 0; left: -75%; width: 55%; height: 100%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-18deg); animation: metal-sheen 5s ease-in-out infinite; }
+.metal:disabled::before { display: none; }
+@keyframes metal-sheen { 0%,20% { left: -75%; } 42%,100% { left: 150%; } }
+/* ── 入場動畫：上浮淡入 ── */
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+#pin-screen .emblem-wrap { animation: rise .7s cubic-bezier(.16,1,.3,1) both .04s; }
+#pin-screen .pin-title { animation: rise .7s cubic-bezier(.16,1,.3,1) both .14s; }
+#pin-screen .pin-sub { animation: rise .7s cubic-bezier(.16,1,.3,1) both .22s; }
+#pin-screen #pin-input { animation: rise .7s cubic-bezier(.16,1,.3,1) both .3s; }
+#pin-screen #pin-btn { animation: rise .7s cubic-bezier(.16,1,.3,1) both .38s; }
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
 @keyframes flame-flicker {
@@ -67,7 +83,7 @@ html, body {
 .pin-sub { font-size: 13px; color: var(--muted); letter-spacing: 2px; }
 #pin-input { width: 100%; max-width: 260px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 10px; padding: 14px 20px; font-family: var(--font-latin); font-size: 26px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; letter-spacing: 8px; transition: border-color .15s, box-shadow .15s; }
 #pin-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
-#pin-btn { width: 100%; max-width: 260px; background: linear-gradient(160deg,#f5d77a,#d4af37 55%,#a67c2e); color: #2a1c00; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; }
+#pin-btn { width: 100%; max-width: 260px; background: linear-gradient(160deg,#fff3c0,#f5d77a 30%,#d4af37 60%,#a67c2e 100%); color: #2a1c00; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; box-shadow: inset 0 1px 0 rgba(255,250,225,.7), inset 0 -3px 6px rgba(120,80,10,.5), 0 7px 18px rgba(0,0,0,.35); text-shadow: 0 1px 0 rgba(255,245,210,.5); }
 #pin-btn:active { transform: scale(.97); filter: brightness(1.08); }
 #pin-error { font-size: 13px; color: #e3897f; font-weight: 600; min-height: 18px; }
 
@@ -91,7 +107,7 @@ html, body {
 .controls { display: flex; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .btn-open, .btn-reset { flex: 1; border: none; border-radius: 10px; padding: 16px; font-family:var(--font-title); font-size: 17px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s, opacity .2s; }
 .btn-open:active:not(:disabled), .btn-reset:active { transform: scale(.97); }
-.btn-open { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: 0 6px 22px rgba(232,67,31,.35); }
+.btn-open { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: inset 0 1px 0 rgba(255,240,200,.55), inset 0 -3px 7px rgba(120,40,0,.45), 0 8px 22px rgba(232,67,31,.4); text-shadow: 0 1px 0 rgba(255,225,160,.4); }
 .btn-open:active:not(:disabled) { filter: brightness(1.08); }
 .btn-open:disabled { background: rgba(212,175,55,.08); color: var(--muted); cursor: not-allowed; box-shadow: none; }
 .btn-reset { background: rgba(212,175,55,.08); color: var(--gold-bright); max-width: 100px; border: 1px solid var(--gold-dim); }
@@ -105,7 +121,7 @@ html, body {
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
 #empty-msg { margin-top: 60px; text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 2px; }
 #buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.buzz-row { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,.025); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; animation: row-in .22s ease-out both; transition: border-color .2s, background .2s; }
+.buzz-row { display: flex; align-items: center; gap: 14px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.22); animation: row-in .4s cubic-bezier(.16,1,.3,1) both; transition: border-color .2s, background .2s; }
 .buzz-row.focus { background: rgba(245,166,35,.1); border-color: var(--gold-bright); border-left-color: var(--gold-bright); }
 .buzz-row.verified-correct { background: rgba(63,174,107,.08); border-color: var(--up); border-left-color: var(--up); opacity: .7; }
 .buzz-row.verified-wrong { background: rgba(192,57,43,.06); border-color: var(--wrong); border-left-color: var(--wrong); opacity: .5; }
@@ -120,7 +136,7 @@ html, body {
 .verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
 .focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); padding: 4px 10px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting, .gold-foil-shine{animation:none;} }
+@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #pin-screen .emblem-wrap, #pin-screen .pin-title, #pin-screen .pin-sub, #pin-screen #pin-input, #pin-screen #pin-btn { animation: none; } }
 .result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
@@ -133,6 +149,8 @@ html, body {
 </head>
 <body>
 <div class="grain"></div>
+<div class="temple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" preserveAspectRatio="xMidYMax meet" class="temple-svg" fill="currentColor">
+<polygon points="500,22 52,128 948,128"/><polygon points="500,34 66,126 934,126" opacity="0.0"/><rect x="62" y="128" width="876" height="18"/><rect x="78.0" y="158" width="42" height="162"/><rect x="72.0" y="146" width="54" height="12"/><rect x="71.0" y="320" width="56" height="10"/><rect x="88.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="99.0" y="158" width="1.5" height="162" opacity="0.5"/><rect x="109.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="192.6" y="158" width="42" height="162"/><rect x="186.6" y="146" width="54" height="12"/><rect x="185.6" y="320" width="56" height="10"/><rect x="203.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="213.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="224.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="307.1" y="158" width="42" height="162"/><rect x="301.1" y="146" width="54" height="12"/><rect x="300.1" y="320" width="56" height="10"/><rect x="317.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="328.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="338.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="421.7" y="158" width="42" height="162"/><rect x="415.7" y="146" width="54" height="12"/><rect x="414.7" y="320" width="56" height="10"/><rect x="432.2" y="158" width="1.5" height="162" opacity="0.5"/><rect x="442.7" y="158" width="1.5" height="162" opacity="0.5"/><rect x="453.2" y="158" width="1.5" height="162" opacity="0.5"/><rect x="536.3" y="158" width="42" height="162"/><rect x="530.3" y="146" width="54" height="12"/><rect x="529.3" y="320" width="56" height="10"/><rect x="546.8" y="158" width="1.5" height="162" opacity="0.5"/><rect x="557.3" y="158" width="1.5" height="162" opacity="0.5"/><rect x="567.8" y="158" width="1.5" height="162" opacity="0.5"/><rect x="650.9" y="158" width="42" height="162"/><rect x="644.9" y="146" width="54" height="12"/><rect x="643.9" y="320" width="56" height="10"/><rect x="661.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="671.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="682.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="765.4" y="158" width="42" height="162"/><rect x="759.4" y="146" width="54" height="12"/><rect x="758.4" y="320" width="56" height="10"/><rect x="775.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="786.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="796.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="880.0" y="158" width="42" height="162"/><rect x="874.0" y="146" width="54" height="12"/><rect x="873.0" y="320" width="56" height="10"/><rect x="890.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="901.0" y="158" width="1.5" height="162" opacity="0.5"/><rect x="911.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="58" y="330" width="884" height="9"/><rect x="42" y="339" width="916" height="9"/><rect x="26" y="348" width="948" height="9"/></svg></div>
 
 <div id="pin-screen">
   <span class="emblem-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" class="laurel" aria-hidden="true">
@@ -151,7 +169,7 @@ html, body {
   <div class="pin-title serif gold-foil-shine">主持端</div>
   <div class="pin-sub">輸入 PIN 碼進入控制台</div>
   <input id="pin-input" type="password" placeholder="PIN" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false">
-  <button id="pin-btn">進入</button>
+  <button id="pin-btn" class="metal">進入</button>
   <div id="pin-error"></div>
 </div>
 
@@ -167,7 +185,7 @@ html, body {
 </div>
 
 <div class="controls">
-  <button id="btn-open" class="btn-open">點燃聖火</button>
+  <button id="btn-open" class="btn-open metal">點燃聖火</button>
   <button id="btn-reset" class="btn-reset">重設</button>
   <button id="btn-clear" class="btn-clear" title="清空所有連線，所有學員退回選城鎮">清空連線</button>
 </div>

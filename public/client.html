@@ -34,6 +34,7 @@ html, body {
   -webkit-tap-highlight-color: transparent; user-select: none;
   -webkit-font-smoothing: antialiased;
 }
+body { background: transparent; }
 .serif { font-family: var(--font-title); }
 
 /* ── 金箔金屬質感文字 ── */
@@ -50,6 +51,19 @@ html, body {
 .grain { position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 170px 170px; }
+/* ── 希臘神殿剪影背景 ── */
+.temple { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(560px,108vw); color: #c2a05a; opacity: .1; pointer-events: none; z-index: -1; }
+.temple svg { display: block; width: 100%; height: auto; }
+/* ── 金屬光澤掃過（按鈕浮雕反光）── */
+.metal { position: relative; overflow: hidden; }
+.metal::before { content:''; position: absolute; top: 0; left: -75%; width: 55%; height: 100%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-18deg); animation: metal-sheen 5s ease-in-out infinite; }
+@keyframes metal-sheen { 0%,20% { left: -75%; } 42%,100% { left: 150%; } }
+/* ── 入場動畫：上浮淡入 ── */
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+#login-screen .emblem-wrap { animation: rise .7s cubic-bezier(.16,1,.3,1) both .04s; }
+#login-screen .login-headings { animation: rise .7s cubic-bezier(.16,1,.3,1) both .14s; }
+#login-screen .pick-label { animation: rise .7s cubic-bezier(.16,1,.3,1) both .24s; }
+#login-screen .town-grid { animation: rise .7s cubic-bezier(.16,1,.3,1) both .32s; }
 
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
@@ -80,7 +94,7 @@ html, body {
 #name-input { width: 100%; max-width: 380px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 12px; padding: 14px 16px; font-size: 18px; font-weight: 700; color: var(--ink); text-align: center; outline: none; transition: border-color .15s, box-shadow .15s; }
 #name-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
 #name-input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; }
-#join-btn { width: 100%; max-width: 380px; background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; border: none; border-radius: 12px; padding: 16px; font-family:var(--font-title); font-size: 18px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; }
+#join-btn { width: 100%; max-width: 380px; background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; border: none; border-radius: 12px; padding: 16px; font-family:var(--font-title); font-size: 18px; font-weight: 800; letter-spacing: 3px; cursor: pointer; transition: transform .1s, filter .15s; box-shadow: inset 0 1px 0 rgba(255,240,200,.55), inset 0 -3px 7px rgba(120,40,0,.45), 0 8px 22px rgba(232,67,31,.4); text-shadow: 0 1px 0 rgba(255,225,160,.4); }
 #join-btn:active { transform: scale(.97); filter: brightness(1.08); }
 #join-error { font-size: 13px; color: #e3897f; font-weight: 600; min-height: 18px; letter-spacing: 1px; }
 
@@ -113,7 +127,7 @@ html, body {
 }
 @keyframes body-flash { 0%{background:#f5a623;} 18%{background:#e8431f;} 100%{background:#0a1430;} }
 body.buzz-flash { animation: body-flash .5s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, .flame, #ws-dot.reconnecting, .gold-foil-shine { animation: none; } body.buzz-flash { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash { animation: none; } }
 
 .status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
@@ -123,6 +137,8 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
 </head>
 <body>
 <div class="grain"></div>
+<div class="temple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 380" preserveAspectRatio="xMidYMax meet" class="temple-svg" fill="currentColor">
+<polygon points="500,22 52,128 948,128"/><polygon points="500,34 66,126 934,126" opacity="0.0"/><rect x="62" y="128" width="876" height="18"/><rect x="78.0" y="158" width="42" height="162"/><rect x="72.0" y="146" width="54" height="12"/><rect x="71.0" y="320" width="56" height="10"/><rect x="88.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="99.0" y="158" width="1.5" height="162" opacity="0.5"/><rect x="109.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="192.6" y="158" width="42" height="162"/><rect x="186.6" y="146" width="54" height="12"/><rect x="185.6" y="320" width="56" height="10"/><rect x="203.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="213.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="224.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="307.1" y="158" width="42" height="162"/><rect x="301.1" y="146" width="54" height="12"/><rect x="300.1" y="320" width="56" height="10"/><rect x="317.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="328.1" y="158" width="1.5" height="162" opacity="0.5"/><rect x="338.6" y="158" width="1.5" height="162" opacity="0.5"/><rect x="421.7" y="158" width="42" height="162"/><rect x="415.7" y="146" width="54" height="12"/><rect x="414.7" y="320" width="56" height="10"/><rect x="432.2" y="158" width="1.5" height="162" opacity="0.5"/><rect x="442.7" y="158" width="1.5" height="162" opacity="0.5"/><rect x="453.2" y="158" width="1.5" height="162" opacity="0.5"/><rect x="536.3" y="158" width="42" height="162"/><rect x="530.3" y="146" width="54" height="12"/><rect x="529.3" y="320" width="56" height="10"/><rect x="546.8" y="158" width="1.5" height="162" opacity="0.5"/><rect x="557.3" y="158" width="1.5" height="162" opacity="0.5"/><rect x="567.8" y="158" width="1.5" height="162" opacity="0.5"/><rect x="650.9" y="158" width="42" height="162"/><rect x="644.9" y="146" width="54" height="12"/><rect x="643.9" y="320" width="56" height="10"/><rect x="661.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="671.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="682.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="765.4" y="158" width="42" height="162"/><rect x="759.4" y="146" width="54" height="12"/><rect x="758.4" y="320" width="56" height="10"/><rect x="775.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="786.4" y="158" width="1.5" height="162" opacity="0.5"/><rect x="796.9" y="158" width="1.5" height="162" opacity="0.5"/><rect x="880.0" y="158" width="42" height="162"/><rect x="874.0" y="146" width="54" height="12"/><rect x="873.0" y="320" width="56" height="10"/><rect x="890.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="901.0" y="158" width="1.5" height="162" opacity="0.5"/><rect x="911.5" y="158" width="1.5" height="162" opacity="0.5"/><rect x="58" y="330" width="884" height="9"/><rect x="42" y="339" width="916" height="9"/><rect x="26" y="348" width="948" height="9"/></svg></div>
 
 <div id="login-screen">
   <span class="emblem-wrap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" class="laurel" aria-hidden="true">
@@ -139,7 +155,7 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
     <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
     <path d="M42 144 Q60 130 78 144 Z" fill="url(#g1)"/>
   </svg></span>
-  <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px">
+  <div class="login-headings" style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px">
     <div class="login-title serif gold-foil-shine">聖火之夜</div>
     <div class="login-latin">NIGHT OF THE SACRED FLAME</div>
     <div class="login-sub">點燃聖火 · 照亮長夜</div>
@@ -148,7 +164,7 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
   <div id="town-grid" class="town-grid"></div>
   <input id="name-input" type="text" placeholder="可自訂隊名（10 字內，中英文皆可）"
     autocomplete="off" autocorrect="off" spellcheck="false">
-  <button id="join-btn">加入</button>
+  <button id="join-btn" class="metal">加入</button>
   <div id="join-error"></div>
 </div>
 
