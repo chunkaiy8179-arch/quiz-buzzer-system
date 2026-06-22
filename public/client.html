@@ -36,6 +36,21 @@ html, body {
 }
 .serif { font-family: var(--font-title); }
 
+/* ── 金箔金屬質感文字 ── */
+.gold-foil, .gold-foil-shine { -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; }
+.gold-foil { background-image: linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 14px rgba(245,166,35,.22)); }
+.gold-foil-shine { background-repeat: no-repeat; background-size: 250% 100%, 100% 100%; background-position: 180% 0, 0 0;
+  background-image: linear-gradient(115deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%),
+                    linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 18px rgba(245,166,35,.26));
+  animation: gold-sheen 6s ease-in-out infinite; }
+@keyframes gold-sheen { 0%,100%{ background-position:180% 0,0 0; } 55%{ background-position:-80% 0,0 0; } }
+/* ── 電影顆粒紋理 ── */
+.grain { position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px; }
+
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
 @keyframes flame-flicker {
@@ -94,7 +109,7 @@ html, body {
 }
 @keyframes body-flash { 0%{background:#f5a623;} 18%{background:#e8431f;} 100%{background:#0a1430;} }
 body.buzz-flash { animation: body-flash .5s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, .flame, #ws-dot.reconnecting { animation: none; } body.buzz-flash { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, .flame, #ws-dot.reconnecting, .gold-foil-shine { animation: none; } body.buzz-flash { animation: none; } }
 
 .status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
@@ -103,6 +118,7 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
 </style>
 </head>
 <body>
+<div class="grain"></div>
 
 <div id="login-screen">
   <svg class="login-emblem" viewBox="0 0 120 150" style="width:64px;height:auto">
@@ -118,7 +134,7 @@ body.buzz-flash { animation: body-flash .5s ease-out forwards; }
     <path d="M42 144 Q60 130 78 144 Z" fill="url(#g1)"/>
   </svg>
   <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px">
-    <div class="login-title serif">聖火之夜</div>
+    <div class="login-title serif gold-foil-shine">聖火之夜</div>
     <div class="login-latin">NIGHT OF THE SACRED FLAME</div>
     <div class="login-sub">點燃聖火 · 照亮長夜</div>
   </div>

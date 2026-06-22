@@ -48,6 +48,29 @@ body::before{
 .screen { position: relative; z-index: 1; }
 .serif { font-family: var(--font-title); }
 
+/* ── 金箔金屬質感文字（多色階漸層 + clip 到字 + 立體光暈）── */
+.gold-foil, .gold-foil-shine {
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  text-shadow: none;
+}
+.gold-foil { background-image: linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 16px rgba(245,166,35,.22)); }
+.gold-foil-shine { background-repeat: no-repeat; background-size: 250% 100%, 100% 100%; background-position: 180% 0, 0 0;
+  background-image: linear-gradient(115deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%),
+                    linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 20px rgba(245,166,35,.26));
+  animation: gold-sheen 6s ease-in-out infinite; }
+@keyframes gold-sheen { 0%,100%{ background-position:180% 0,0 0; } 55%{ background-position:-80% 0,0 0; } }
+
+/* ── 電影顆粒紋理：極淡雜訊疊加，消色帶、添高級感 ── */
+.grain { position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px; }
+/* ── 暈影：邊緣壓暗，視覺聚焦中央 ── */
+.vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  background: radial-gradient(ellipse 92% 92% at 50% 48%, transparent 56%, rgba(0,0,0,.42) 100%); }
+
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
 @keyframes flame-flicker {
@@ -185,11 +208,13 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
   .x-stamp { animation: none; opacity: 1; transform: none; }
-  body::before, .flame, .rank-num.r1::after, .rank-num.r2::after, .rank-num.r3::after, .count-badge.low { animation: none; }
+  body::before, .flame, .rank-num.r1::after, .rank-num.r2::after, .rank-num.r3::after, .count-badge.low, .gold-foil-shine { animation: none; }
 }
 </style>
 </head>
 <body>
+<div class="grain"></div>
+<div class="vignette"></div>
 
 <button id="audio-unlock">🔊 點我啟用音效</button>
 
@@ -218,7 +243,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
     </svg>
   </div>
   <div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px">
-    <div class="idle-title serif">聖火之夜</div>
+    <div class="idle-title serif gold-foil-shine">聖火之夜</div>
     <div class="idle-latin">NIGHT OF THE SACRED FLAME</div>
     <div class="idle-sub">點燃聖火 · 照亮長夜</div>
   </div>
@@ -243,7 +268,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   </div>
   <div class="open-body">
     <div id="open-waiting" class="open-waiting">
-      <div class="open-waiting-title serif">聖火開放！</div>
+      <div class="open-waiting-title serif gold-foil">聖火開放！</div>
       <div class="open-waiting-sub">衝五步 · 拍燈搶答</div>
       <div id="open-waiting-chips" class="chips"></div>
     </div>
@@ -253,7 +278,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 
 <div id="rank-screen" class="screen">
   <div class="rank-head">
-    <div class="rank-title serif">聖火順位</div>
+    <div class="rank-title serif gold-foil">聖火順位</div>
     <div class="meander-band"></div>
   </div>
   <ol id="rank-list" class="order-list"></ol>

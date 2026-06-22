@@ -32,6 +32,19 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 .serif { font-family: var(--font-title); }
+/* ── 金箔金屬質感文字 ── */
+.gold-foil, .gold-foil-shine { -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; }
+.gold-foil { background-image: linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 14px rgba(245,166,35,.22)); }
+.gold-foil-shine { background-repeat: no-repeat; background-size: 250% 100%, 100% 100%; background-position: 180% 0, 0 0;
+  background-image: linear-gradient(115deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%),
+                    linear-gradient(180deg,#fff4c6 0%,#f5d77a 24%,#d4af37 50%,#9c7328 74%,#f3d271 100%);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 0 18px rgba(245,166,35,.26));
+  animation: gold-sheen 6s ease-in-out infinite; }
+@keyframes gold-sheen { 0%,100%{ background-position:180% 0,0 0; } 55%{ background-position:-80% 0,0 0; } }
+.grain { position: fixed; inset: 0; z-index: 9990; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px; }
 /* 聖杯火焰：搖曳的活火（三端共用語彙） */
 .flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
 @keyframes flame-flicker {
@@ -105,7 +118,7 @@ html, body {
 .verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
 .focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); padding: 4px 10px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting{animation:none;} }
+@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting, .gold-foil-shine{animation:none;} }
 .result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
@@ -117,6 +130,7 @@ html, body {
 </style>
 </head>
 <body>
+<div class="grain"></div>
 
 <div id="pin-screen">
   <svg class="pin-emblem" viewBox="0 0 120 150" style="width:64px;height:auto">
@@ -130,7 +144,7 @@ html, body {
     <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
     <path d="M42 144 Q60 130 78 144 Z" fill="url(#pg)"/>
   </svg>
-  <div class="pin-title serif">主持端</div>
+  <div class="pin-title serif gold-foil-shine">主持端</div>
   <div class="pin-sub">輸入 PIN 碼進入控制台</div>
   <input id="pin-input" type="password" placeholder="PIN" maxlength="10" autocomplete="off" autocorrect="off" spellcheck="false">
   <button id="pin-btn">進入</button>
@@ -138,7 +152,7 @@ html, body {
 </div>
 
 <div class="top-bar">
-  <span class="top-title serif">聖火之夜 · 主持端</span>
+  <span class="top-title serif gold-foil">聖火之夜 · 主持端</span>
   <span id="phase-badge">LOCKED</span>
   <div id="ws-dot"></div>
 </div>
