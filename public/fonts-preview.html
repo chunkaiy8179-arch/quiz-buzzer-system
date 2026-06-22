@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聖火之夜 — 字體挑選對照</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Marcellus&family=Cormorant+Garamond:wght@400;500;600;700&family=Cormorant+SC:wght@400;600;700&family=Philosopher:wght@400;700&family=Noto+Serif+HK:wght@400;700;900&family=Chiron+Sung+HK:wght@400;600;700&family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#d4af37; --gold-bright:#f5d77a; --gold-dim:#a67c2e; --gold-deep:#6f4f1c;
+  --flame-red:#e8431f; --flame-amber:#f5a623;
+  --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28); --up:#3fae6b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Noto Sans TC',sans-serif; color:var(--ink); min-height:100%;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%, #233063 0%, transparent 60%),
+    radial-gradient(ellipse 80% 45% at 50% 105%, #46163a 0%, transparent 60%),
+    linear-gradient(165deg,#0a1430 0%,#160e2c 55%,#261031 100%);
+  padding:28px 18px 80px;
+}
+.page-head{max-width:920px;margin:0 auto 26px;text-align:center;}
+.page-head h1{font-family:'Noto Serif TC',serif;font-size:clamp(24px,5vw,38px);font-weight:900;color:var(--gold-bright);letter-spacing:4px;text-shadow:0 0 26px rgba(245,166,35,.3);}
+.page-head p{margin-top:12px;font-size:15px;line-height:1.9;color:var(--ink);}
+.page-head .how{margin-top:16px;display:inline-block;text-align:left;background:rgba(212,175,55,.08);border:1px solid var(--gold-dim);border-radius:12px;padding:14px 18px;font-size:14px;line-height:1.9;color:var(--ink);}
+.page-head .how b{color:var(--gold-bright);}
+
+.card{max-width:920px;margin:0 auto 22px;border:2px solid var(--gold);border-radius:16px;background:rgba(8,10,26,.55);box-shadow:0 0 50px rgba(212,175,55,.06);padding:clamp(18px,3vw,30px);position:relative;}
+.opt-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px;}
+.opt-num{font-family:'Cinzel',serif;font-weight:900;font-size:22px;color:#2a1c00;background:radial-gradient(circle at 40% 35%,var(--gold-bright),var(--gold-dim));border-radius:9px;padding:4px 14px;letter-spacing:1px;}
+.opt-name{font-family:'Noto Serif TC',serif;font-size:20px;font-weight:700;color:var(--gold-bright);letter-spacing:2px;}
+.opt-fonts{font-size:13px;color:var(--muted);letter-spacing:.5px;margin-left:auto;}
+
+.hero{text-align:center;padding:8px 0 18px;}
+.hero-latin{font-family:var(--l);font-size:clamp(18px,3.4vw,30px);font-weight:700;letter-spacing:clamp(2px,.6vw,6px);color:var(--gold);line-height:1.2;}
+.hero-cjk{font-family:var(--t);font-size:clamp(44px,9vw,84px);font-weight:900;letter-spacing:clamp(4px,1.4vw,14px);color:var(--gold-bright);text-shadow:0 0 30px rgba(245,166,35,.3);line-height:1.1;margin:6px 0;}
+.hero-sub{font-family:var(--t);font-size:clamp(13px,1.8vw,17px);letter-spacing:5px;color:var(--muted);}
+
+.demo-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px 20px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.phase{font-family:var(--l);font-weight:700;font-size:15px;letter-spacing:3px;color:var(--gold-bright);border:1px solid var(--gold);border-radius:8px;padding:6px 14px;background:rgba(245,166,35,.12);}
+.phase.lock{color:var(--muted);border-color:var(--gold-deep);background:rgba(212,175,55,.08);}
+.count{font-family:var(--l);font-weight:900;font-size:clamp(34px,6vw,52px);color:var(--gold-bright);line-height:1;}
+.count.low{color:var(--flame-red);}
+.buzz{font-family:var(--t);font-weight:900;font-size:20px;letter-spacing:3px;color:#3a1900;background:radial-gradient(circle at 42% 32%,#ffd96b,#f5a623 50%,#c0390f);border:none;border-radius:50px;padding:14px 30px;}
+.buzz.lat{font-family:var(--l);letter-spacing:4px;}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:16px 0;}
+.chips span{font-family:var(--t);font-size:19px;font-weight:700;color:var(--gold-bright);border:1px solid var(--gold-dim);background:rgba(212,175,55,.08);border-radius:8px;padding:8px 16px;}
+
+.ranks{list-style:none;display:flex;flex-direction:column;gap:8px;padding:6px 0 16px;}
+.ranks li{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:12px 16px;background:rgba(255,255,255,.025);}
+.ranks li:first-child{border-color:var(--gold);border-left-color:var(--gold);background:rgba(212,175,55,.08);}
+.ranks b{font-family:var(--l);font-weight:900;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:rgba(212,175,55,.12);color:var(--muted);border:1px solid var(--gold-deep);flex-shrink:0;}
+.ranks b.r1{background:radial-gradient(circle at 40% 35%,var(--gold-bright),var(--gold-dim));color:#2a1c00;border-color:var(--gold-bright);}
+.ranks .team{font-family:var(--t);font-size:24px;font-weight:700;color:var(--ink);flex:1;letter-spacing:1px;}
+.ranks em{font-style:normal;font-size:13px;font-weight:700;color:#7fe0a4;background:rgba(63,174,107,.18);border-radius:8px;padding:5px 12px;}
+
+.clear-demo{font-family:var(--t);font-size:15px;font-weight:800;letter-spacing:2px;color:#eaa399;background:linear-gradient(160deg,rgba(192,57,43,.2),rgba(192,57,43,.07));border:1px solid rgba(192,57,43,.6);border-radius:10px;padding:14px 18px;}
+
+/* ── 五種配對方案 ── */
+.opt1{--l:'Cinzel',serif;            --t:'Noto Serif HK',serif;}
+.opt2{--l:'Marcellus',serif;         --t:'Chiron Sung HK',serif;}
+.opt3{--l:'Cormorant SC',serif;      --t:'Noto Serif TC',serif;}
+.opt4{--l:'Cinzel Decorative',serif; --t:'Chiron Sung HK',serif;}
+.opt5{--l:'Philosopher',sans-serif;  --t:'Noto Sans TC',sans-serif;}
+.opt3 .hero-latin{font-size:clamp(22px,4vw,36px);letter-spacing:clamp(1px,.4vw,4px);}
+.opt4 .hero-latin{font-weight:900;}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>聖火之夜 · 字體挑選</h1>
+  <p>下面 5 種都是希臘神話／古典主題網站常用的字體配對。<br>每個方案都用你畫面真實會出現的文字呈現，直接看著挑。</p>
+  <div class="how">
+    每個方案 = <b>一款希臘風拉丁字</b>（用在 OPEN／英文標語／數字）＋ <b>一款古典中文字</b>（用在聖火之夜／隊名／搶答）。<br>
+    選好後跟我說「<b>我要方案 N</b>」，我就套用到三端並更新線上版。也可以混搭，例如「方案 2 的中文 + 方案 1 的英文」。
+  </div>
+</div>
+
+<section class="card opt1">
+  <div class="opt-head"><span class="opt-num">方案 1</span><span class="opt-name">史詩神殿</span><span class="opt-fonts">Cinzel ＋ Noto Serif HK（厚重明體）</span></div>
+  <div class="hero">
+    <div class="hero-latin">NIGHT OF THE SACRED FLAME</div>
+    <div class="hero-cjk">聖火之夜</div>
+    <div class="hero-sub">點燃聖火 · 照亮長夜</div>
+  </div>
+  <div class="demo-row"><span class="phase">OPEN</span><span class="phase lock">LOCKED</span><span class="count">30</span><span class="count low">5</span><button class="buzz">搶答</button><button class="buzz lat">BUZZ</button></div>
+  <div class="chips"><span>城鎮一</span><span>雅典</span><span>斯巴達</span><span>奧林帕斯</span></div>
+  <ol class="ranks"><li><b class="r1">1</b><span class="team">城鎮三</span><em>正確</em></li><li><b>2</b><span class="team">斯巴達</span></li></ol>
+  <button class="clear-demo">清空連線</button>
+</section>
+
+<section class="card opt2">
+  <div class="opt-head"><span class="opt-num">方案 2</span><span class="opt-name">優雅神諭</span><span class="opt-fonts">Marcellus ＋ Chiron Sung HK（現代明體）</span></div>
+  <div class="hero">
+    <div class="hero-latin">NIGHT OF THE SACRED FLAME</div>
+    <div class="hero-cjk">聖火之夜</div>
+    <div class="hero-sub">點燃聖火 · 照亮長夜</div>
+  </div>
+  <div class="demo-row"><span class="phase">OPEN</span><span class="phase lock">LOCKED</span><span class="count">30</span><span class="count low">5</span><button class="buzz">搶答</button><button class="buzz lat">BUZZ</button></div>
+  <div class="chips"><span>城鎮一</span><span>雅典</span><span>斯巴達</span><span>奧林帕斯</span></div>
+  <ol class="ranks"><li><b class="r1">1</b><span class="team">城鎮三</span><em>正確</em></li><li><b>2</b><span class="team">斯巴達</span></li></ol>
+  <button class="clear-demo">清空連線</button>
+</section>
+
+<section class="card opt3">
+  <div class="opt-head"><span class="opt-num">方案 3</span><span class="opt-name">文藝戲劇</span><span class="opt-fonts">Cormorant SC ＋ Noto Serif TC（明體）</span></div>
+  <div class="hero">
+    <div class="hero-latin">NIGHT OF THE SACRED FLAME</div>
+    <div class="hero-cjk">聖火之夜</div>
+    <div class="hero-sub">點燃聖火 · 照亮長夜</div>
+  </div>
+  <div class="demo-row"><span class="phase">OPEN</span><span class="phase lock">LOCKED</span><span class="count">30</span><span class="count low">5</span><button class="buzz">搶答</button><button class="buzz lat">BUZZ</button></div>
+  <div class="chips"><span>城鎮一</span><span>雅典</span><span>斯巴達</span><span>奧林帕斯</span></div>
+  <ol class="ranks"><li><b class="r1">1</b><span class="team">城鎮三</span><em>正確</em></li><li><b>2</b><span class="team">斯巴達</span></li></ol>
+  <button class="clear-demo">清空連線</button>
+</section>
+
+<section class="card opt4">
+  <div class="opt-head"><span class="opt-num">方案 4</span><span class="opt-name">華麗史詩</span><span class="opt-fonts">Cinzel Decorative ＋ Chiron Sung HK</span></div>
+  <div class="hero">
+    <div class="hero-latin">NIGHT OF THE SACRED FLAME</div>
+    <div class="hero-cjk">聖火之夜</div>
+    <div class="hero-sub">點燃聖火 · 照亮長夜</div>
+  </div>
+  <div class="demo-row"><span class="phase">OPEN</span><span class="phase lock">LOCKED</span><span class="count">30</span><span class="count low">5</span><button class="buzz">搶答</button><button class="buzz lat">BUZZ</button></div>
+  <div class="chips"><span>城鎮一</span><span>雅典</span><span>斯巴達</span><span>奧林帕斯</span></div>
+  <ol class="ranks"><li><b class="r1">1</b><span class="team">城鎮三</span><em>正確</em></li><li><b>2</b><span class="team">斯巴達</span></li></ol>
+  <button class="clear-demo">清空連線</button>
+</section>
+
+<section class="card opt5">
+  <div class="opt-head"><span class="opt-num">方案 5</span><span class="opt-name">哲思現代</span><span class="opt-fonts">Philosopher ＋ Noto Sans TC（黑體）</span></div>
+  <div class="hero">
+    <div class="hero-latin">NIGHT OF THE SACRED FLAME</div>
+    <div class="hero-cjk">聖火之夜</div>
+    <div class="hero-sub">點燃聖火 · 照亮長夜</div>
+  </div>
+  <div class="demo-row"><span class="phase">OPEN</span><span class="phase lock">LOCKED</span><span class="count">30</span><span class="count low">5</span><button class="buzz">搶答</button><button class="buzz lat">BUZZ</button></div>
+  <div class="chips"><span>城鎮一</span><span>雅典</span><span>斯巴達</span><span>奧林帕斯</span></div>
+  <ol class="ranks"><li><b class="r1">1</b><span class="team">城鎮三</span><em>正確</em></li><li><b>2</b><span class="team">斯巴達</span></li></ol>
+  <button class="clear-demo">清空連線</button>
+</section>
+
+</body>
+</html>
