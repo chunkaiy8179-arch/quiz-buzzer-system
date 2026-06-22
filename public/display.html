@@ -29,6 +29,7 @@ html, body {
   color: var(--ink);
   background:
     radial-gradient(ellipse 70% 50% at 50% -8%, #233063 0%, transparent 58%),
+    radial-gradient(ellipse 62% 30% at 50% 100%, rgba(245,166,35,.12) 0%, transparent 70%),
     radial-gradient(ellipse 80% 55% at 50% 108%, #46163a 0%, transparent 60%),
     linear-gradient(165deg, #0a1430 0%, #160e2c 52%, #261031 100%);
   -webkit-font-smoothing: antialiased;
@@ -72,7 +73,7 @@ body::before{
 .vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none;
   background: radial-gradient(ellipse 96% 96% at 50% 42%, transparent 60%, rgba(0,0,0,.34) 100%); }
 /* ── 希臘神殿剪影：底部建築意象背景 ── */
-.temple { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(1120px,98vw); color: #caa45f; opacity: .22; pointer-events: none; z-index: -1; }
+.temple { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(1120px,98vw); color: #d0a85f; opacity: .3; pointer-events: none; z-index: -1; filter: drop-shadow(0 0 26px rgba(245,166,35,.18)); }
 .temple svg { display: block; width: 100%; height: auto; }
 /* ── 入場動畫：上浮淡入 ── */
 @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
