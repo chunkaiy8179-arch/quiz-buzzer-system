@@ -27,6 +27,14 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 .serif { font-family: 'Noto Serif TC', serif; }
+/* 聖杯火焰：搖曳的活火（三端共用語彙） */
+.flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
+@keyframes flame-flicker {
+  0%,100% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  25% { opacity: .9; transform: scaleY(1.06) scaleX(.98) translateY(-0.4px); }
+  50% { opacity: .96; transform: scaleY(.97) scaleX(1.02); }
+  75% { opacity: .92; transform: scaleY(1.04) scaleX(.99); }
+}
 .gold-frame { position: relative; border: 2px solid var(--gold); border-radius: 14px; background: rgba(8,10,26,.6); }
 .gold-frame::before { content:''; position:absolute; inset:5px; border:1px solid rgba(212,175,55,.4); border-radius:9px; pointer-events:none; }
 
@@ -47,8 +55,12 @@ html, body {
 .top-bar { position: sticky; top: 0; z-index: 10; background: rgba(10,12,30,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
 .top-title { font-family:'Noto Serif TC',serif; font-size: 17px; font-weight: 700; letter-spacing: 4px; color: var(--gold-bright); flex: 1; }
 #phase-badge { font-size: 11px; font-weight: 800; letter-spacing: 2px; padding: 5px 14px; border-radius: 8px; background: rgba(212,175,55,.08); color: var(--muted); border: 1px solid var(--gold-deep); transition: background .3s, color .3s, border-color .3s; }
+#phase-badge.open-live { animation: badge-glow 1.4s ease-in-out infinite; }
+@keyframes badge-glow { 0%,100%{ box-shadow: 0 0 0 0 rgba(245,166,35,0); } 50%{ box-shadow: 0 0 14px rgba(245,166,35,.5); } }
 #ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s, box-shadow .3s; }
 #ws-dot.on { background: var(--up); box-shadow: 0 0 8px rgba(63,174,107,.7); }
+#ws-dot.reconnecting { background: var(--flame-amber); box-shadow: 0 0 8px rgba(245,166,35,.7); animation: dot-pulse 1s ease-in-out infinite; }
+@keyframes dot-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
 
 /* ── 進場列 ── */
 .joined-strip { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
@@ -86,7 +98,7 @@ html, body {
 .verified-wrong .team-name { color: #e3897f; text-decoration: line-through; }
 .focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); padding: 4px 10px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} }
+@media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting{animation:none;} }
 .result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; padding: 5px 12px; border-radius: 6px; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
@@ -105,7 +117,7 @@ html, body {
       <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d77a"/><stop offset="1" stop-color="#a67c2e"/></linearGradient>
       <linearGradient id="pf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8431f"/><stop offset=".55" stop-color="#f5a623"/><stop offset="1" stop-color="#fde08a"/></linearGradient>
     </defs>
-    <path d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#pf)"/>
+    <path class="flame" d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#pf)"/>
     <path d="M36 84 Q60 118 84 84 Z" fill="url(#pg)"/>
     <rect x="55" y="110" width="10" height="20" rx="2" fill="url(#pg)"/>
     <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
@@ -163,8 +175,8 @@ function showPinError(msg){
 
 function connect(){
   ws = new WebSocket(WS_URL);
-  ws.addEventListener('open', ()=>{ $('ws-dot').classList.add('on'); });
-  ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('on'); setTimeout(connect,2000); });
+  ws.addEventListener('open', ()=>{ $('ws-dot').classList.remove('reconnecting'); $('ws-dot').classList.add('on'); });
+  ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('on'); $('ws-dot').classList.add('reconnecting'); setTimeout(connect,2000); });
   ws.addEventListener('message', e=>{
     const msg = JSON.parse(e.data);
     if(msg.type==='state') renderState(msg);
@@ -190,6 +202,7 @@ function renderState(state){
   };
   const [label,bg,color,border] = phases[state.phase] ?? phases.locked;
   badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
+  badge.classList.toggle('open-live', state.phase==='open');
 
   const teams = state.joinedTeams || [];
   $('joined-count').textContent = teams.length;

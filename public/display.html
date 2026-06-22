@@ -28,7 +28,29 @@ html, body {
     linear-gradient(165deg, #0a1430 0%, #160e2c 52%, #261031 100%);
   -webkit-font-smoothing: antialiased;
 }
+/* 環境火光：極淡、緩慢漂移的暖色霧氣，讓暗夜舞台有呼吸感 */
+body::before{
+  content:''; position: fixed; inset: -25%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 42% 32% at 22% 24%, rgba(245,166,35,.07), transparent 60%),
+    radial-gradient(ellipse 46% 36% at 80% 76%, rgba(232,67,31,.06), transparent 62%);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  from { transform: translate3d(-1.5%,-1%,0) scale(1); }
+  to   { transform: translate3d(2%,1.5%,0) scale(1.07); }
+}
+.screen { position: relative; z-index: 1; }
 .serif { font-family: 'Noto Serif TC', serif; }
+
+/* 聖杯火焰：搖曳的活火（三端共用語彙） */
+.flame { transform-box: fill-box; transform-origin: 50% 82%; animation: flame-flicker 2.4s ease-in-out infinite; }
+@keyframes flame-flicker {
+  0%,100% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  25% { opacity: .9; transform: scaleY(1.06) scaleX(.98) translateY(-0.4px); }
+  50% { opacity: .96; transform: scaleY(.97) scaleX(1.02); }
+  75% { opacity: .92; transform: scaleY(1.04) scaleX(.99); }
+}
 .num { font-variant-numeric: tabular-nums; }
 
 /* 金箔雙框 */
@@ -71,6 +93,8 @@ html, body {
 .count-badge .cb-label { font-size: clamp(10px,1.1vw,13px); font-weight: 700; letter-spacing: 4px; color: var(--muted); }
 #count-badge-num { font-family:'Noto Serif TC',serif; font-size: clamp(30px,3.6vw,54px); font-weight: 900; color: var(--gold-bright); line-height: 1; }
 .count-badge.low #count-badge-num { color: var(--flame-red); }
+.count-badge.low { animation: badge-low-pulse 1s ease-in-out infinite; }
+@keyframes badge-low-pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(232,67,31,0); } 50%{ box-shadow: 0 0 26px rgba(232,67,31,.45); } }
 .open-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .open-waiting { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-align: center; }
 .open-waiting-title { font-family:'Noto Serif TC',serif; font-size: clamp(30px,4.2vw,60px); font-weight: 900; color: var(--gold-bright); letter-spacing: 4px; text-shadow: 0 0 30px rgba(245,166,35,.3); }
@@ -89,8 +113,11 @@ html, body {
 .rank-row.just-buzzed { animation: just-buzzed .5s ease-out; }
 @keyframes slide-up { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
 @keyframes just-buzzed { 0%{transform:scale(1);} 30%{transform:scale(1.025);} 100%{transform:scale(1);} }
-.rank-num { width: clamp(46px,5.6vw,66px); height: clamp(46px,5.6vw,66px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:'Noto Serif TC',serif; font-size: clamp(18px,2.1vw,28px); font-weight: 900; flex-shrink: 0; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); font-variant-numeric: tabular-nums; }
+.rank-num { position: relative; overflow: hidden; width: clamp(46px,5.6vw,66px); height: clamp(46px,5.6vw,66px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family:'Noto Serif TC',serif; font-size: clamp(18px,2.1vw,28px); font-weight: 900; flex-shrink: 0; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); font-variant-numeric: tabular-nums; }
 .rank-num.r1 { background: radial-gradient(circle at 40% 35%, var(--gold-bright), var(--gold-dim)); color: #2a1c00; border-color: var(--gold-bright); box-shadow: 0 0 18px rgba(245,166,35,.5); }
+/* 第一名牌位：金箔流光緩緩掃過 */
+.rank-num.r1::after { content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none; mix-blend-mode:screen; background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.6) 50%, transparent 68%); background-size:220% 100%; animation: gold-shimmer 2.8s linear infinite; }
+@keyframes gold-shimmer { from{background-position:160% 0;} to{background-position:-160% 0;} }
 .rank-num.r2 { background: linear-gradient(145deg,#e8e2cf,#b7a978); color:#2a230f; border-color:#d8cca0; }
 .rank-num.r3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
 .rank-team { flex: 1; font-family:'Noto Serif TC',serif; font-size: clamp(26px,4vw,52px); font-weight: 700; color: var(--ink); letter-spacing: 2px; }
@@ -138,6 +165,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
   .x-stamp { animation: none; opacity: 1; transform: none; }
+  body::before, .flame, .rank-num.r1::after, .count-badge.low { animation: none; }
 }
 </style>
 </head>
@@ -160,8 +188,8 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 <div id="idle-screen" class="screen active">
   <div class="emblem-wrap">
     <svg class="emblem" viewBox="0 0 120 150" style="width:clamp(110px,14vw,170px);height:auto">
-      <path d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#flameGrad)"/>
-      <path d="M60 28 L72 50 L60 66 L48 50 Z" fill="#fde08a"/>
+      <path class="flame" d="M60 6 L82 46 L60 74 L38 46 Z" fill="url(#flameGrad)"/>
+      <path class="flame" d="M60 28 L72 50 L60 66 L48 50 Z" fill="#fde08a"/>
       <path d="M36 84 Q60 118 84 84 Z" fill="url(#goldGrad)"/>
       <rect x="55" y="110" width="10" height="20" rx="2" fill="url(#goldGrad)"/>
       <ellipse cx="60" cy="110" rx="7" ry="5.5" fill="#f5d77a"/>
