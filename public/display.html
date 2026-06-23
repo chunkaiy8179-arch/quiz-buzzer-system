@@ -208,9 +208,11 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 /* ── 答錯 X ── */
 #x-overlay { display: none; position: fixed; inset: 0; z-index: 30; align-items: center; justify-content: center; pointer-events: none; }
 #x-overlay.show { display: flex; }
-.x-mark { font-family:var(--font-title); font-size: clamp(180px,36vw,360px); font-weight: 900; color: var(--wrong); line-height: 1; text-shadow: 0 0 60px rgba(192,57,43,.7); }
-@keyframes x-stamp { 0%{transform:scale(2.2) rotate(-15deg); opacity:0;} 100%{transform:scale(1) rotate(0); opacity:1;} }
-.x-stamp { animation: x-stamp .32s cubic-bezier(.22,.61,.36,1) both; }
+#x-overlay::before { content:''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(192,57,43,.34), rgba(192,57,43,.06) 38%, transparent 60%); animation: x-flash .7s ease-out forwards; }
+@keyframes x-flash { 0%{opacity:0;} 18%{opacity:1;} 100%{opacity:0;} }
+.x-mark { width: clamp(180px,34vw,340px); height: auto; filter: drop-shadow(0 0 40px rgba(192,57,43,.6)); }
+@keyframes x-stamp { 0%{transform:scale(2.2) rotate(-15deg); opacity:0;} 60%{opacity:1;} 100%{transform:scale(1) rotate(0); opacity:1;} }
+.x-stamp { animation: x-stamp .36s cubic-bezier(.22,.61,.36,1) both; }
 
 /* ── 啟用音效按鈕 ── */
 #audio-unlock {
@@ -230,6 +232,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
   .x-stamp { animation: none; opacity: 1; transform: none; }
+  #x-overlay::before { animation: none; opacity: .45; }
   body::before, .flame, .rank-num.r1::after, .rank-num.r2::after, .rank-num.r3::after, .count-badge.low, .gold-foil-shine { animation: none; }
   #idle-screen .emblem-wrap, #idle-screen .idle-headings, #idle-screen .idle-divider, #idle-screen .joined-panel { animation: none; }
   #burst .rays, #burst .flash, .temple.glow { animation: none; }
@@ -332,7 +335,11 @@ button, .town-btn { position: relative; overflow: hidden; }
 </div>
 
 <div id="burst"><div class="rays"></div><div class="flash"></div></div>
-<div id="x-overlay"><div id="x-icon" class="x-mark">✕</div></div>
+<div id="x-overlay"><svg id="x-icon" class="x-mark" viewBox="0 0 100 100" aria-label="錯誤">
+  <defs><linearGradient id="xGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a3d"/><stop offset="1" stop-color="#b21f12"/></linearGradient></defs>
+  <line x1="26" y1="26" x2="74" y2="74" stroke="url(#xGrad)" stroke-width="13" stroke-linecap="round"/>
+  <line x1="74" y1="26" x2="26" y2="74" stroke="url(#xGrad)" stroke-width="13" stroke-linecap="round"/>
+</svg></div>
 
 <script>
 const $ = id => document.getElementById(id);
