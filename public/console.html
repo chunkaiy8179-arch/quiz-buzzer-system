@@ -137,7 +137,8 @@ body { background: transparent; }
 .focus-tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; color: var(--gold-bright); padding: 4px 8px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(212,175,55,.1); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 @media (prefers-reduced-motion: reduce) { .focus-tag{animation:none;opacity:1;} .buzz-row{animation:none;} .flame, #phase-badge.open-live, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #pin-screen .emblem-wrap, #pin-screen .pin-title, #pin-screen .pin-sub, #pin-screen #pin-input, #pin-screen #pin-btn { animation: none; } }
-.result-badge { font-size: 12px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; padding: 5px 12px; border-radius: 6px; }
+.result-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; flex-shrink: 0; padding: 5px 10px; border-radius: 6px; }
+.result-badge .ic { width: 1.1em; height: 1.1em; flex-shrink: 0; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
 .verify-btns { display: flex; gap: 6px; flex-shrink: 0; }
@@ -285,7 +286,10 @@ function renderState(state){
     if(entry.verified){
       const cls = entry.result==='correct'?'badge-correct':'badge-wrong';
       const lbl = entry.result==='correct'?'正確':'錯誤';
-      rightContent = `<span class="result-badge ${cls}">${lbl}</span>`;
+      const ic = entry.result==='correct'
+        ? '<svg class="ic" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        : '<svg class="ic" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+      rightContent = `<span class="result-badge ${cls}">${ic}${lbl}</span>`;
     } else if(canVerify){
       const tag = isFocus ? '<span class="focus-tag">待驗證</span>' : '';
       rightContent = `

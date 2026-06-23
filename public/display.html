@@ -165,13 +165,14 @@ body::before{
 .open-waiting .chips { justify-content: center; max-width: 80vw; }
 
 /* ── 順位列表（open 即時 / rank 回顧 共用）── */
-.order-list { list-style: none; width: 100%; flex: 1; display: flex; flex-direction: column; gap: clamp(8px,1.2vw,14px); overflow-y: auto; }
+.order-list { list-style: none; width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(8px,1.2vw,14px); overflow-y: auto; padding: 6px 0; }
+.order-list.few { justify-content: center; }  /* 隊伍少時垂直置中，多時回頂端可捲動 */
 .rank-row { display: flex; align-items: center; gap: clamp(16px,2.2vw,28px); border-radius: 14px; padding: clamp(14px,2vw,24px) clamp(20px,2.6vw,34px); background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 8px 22px rgba(0,0,0,.3); animation: slide-up .45s cubic-bezier(.16,1,.3,1) both; flex-shrink: 0; transition: background .3s, border-color .3s, opacity .3s, box-shadow .3s; }
 .order-list > li:nth-child(1).rank-row { border-color: var(--gold); border-left-color: var(--gold); background: linear-gradient(180deg, rgba(212,175,55,.2), rgba(212,175,55,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 30px rgba(245,166,35,.16); }
 .order-list > li:nth-child(2).rank-row { border-color: rgba(212,175,55,.4); border-left-color: rgba(212,175,55,.55); background: rgba(212,175,55,.05); }
 .order-list > li:nth-child(3).rank-row { border-left-color: var(--gold-deep); background: rgba(212,175,55,.03); }
 .rank-row.focus { border-color: var(--gold-bright) !important; border-left-color: var(--gold-bright) !important; background: rgba(245,166,35,.12) !important; box-shadow: 0 0 30px rgba(245,166,35,.15); }
-.rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: rgba(63,174,107,.1) !important; opacity: .75; }
+.rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: linear-gradient(180deg, rgba(63,174,107,.22), rgba(63,174,107,.06)) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 30px rgba(63,174,107,.3) !important; transform: scale(1.015); }
 .rank-row.wrong { border-color: var(--wrong) !important; border-left-color: var(--wrong) !important; background: rgba(192,57,43,.08) !important; opacity: .5; }
 .rank-row.just-buzzed { animation: just-buzzed .5s ease-out; }
 @keyframes slide-up { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
@@ -187,12 +188,13 @@ body::before{
 .rank-num.r3 { background: linear-gradient(145deg,#caa15e,#8a6a34); color:#241600; border-color:#b98e4e; }
 .rank-team { flex: 1; font-family:var(--font-title); font-size: clamp(26px,4vw,52px); font-weight: 700; color: var(--ink); letter-spacing: 2px; }
 .rank-row.focus .rank-team { color: var(--gold-bright); }
-.rank-row.correct .rank-team { color: var(--up); text-decoration: line-through; }
+.rank-row.correct .rank-team { color: #8ff0b8; font-weight: 900; }
 .rank-row.wrong .rank-team { color: #e3897f; text-decoration: line-through; }
 .focus-indicator { font-size: clamp(12px,1.3vw,16px); font-weight: 700; letter-spacing: 3px; color: var(--gold-bright); padding: 7px 16px; border: 1px solid var(--gold); border-radius: 8px; background: rgba(212,175,55,.1); white-space: nowrap; animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.35;} }
-.result-tag { font-size: clamp(13px,1.4vw,17px); font-weight: 700; letter-spacing: 2px; padding: 8px 18px; border-radius: 8px; white-space: nowrap; }
-.tag-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
+.result-tag { display: inline-flex; align-items: center; gap: 6px; font-size: clamp(13px,1.4vw,17px); font-weight: 700; letter-spacing: 2px; padding: 8px 18px; border-radius: 8px; white-space: nowrap; }
+.result-tag .ic { width: 1.05em; height: 1.05em; flex-shrink: 0; }
+.tag-correct { background: rgba(63,174,107,.2); color: #8ff0b8; }
 .tag-wrong { background: rgba(192,57,43,.2); color: #e3897f; }
 
 /* ── Rank 回顧 ── */
@@ -344,6 +346,8 @@ button, .town-btn { position: relative; overflow: hidden; }
 <script>
 const $ = id => document.getElementById(id);
 const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const IC_CHECK = '<svg class="ic" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const IC_CROSS = '<svg class="ic" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
 
 let ws, audioCtx, countdownInterval = null, lastPhase = 'locked', prevBuzzCount = 0;
 const COUNT_FROM = 30;
@@ -475,6 +479,7 @@ function renderChips(container, teams){
 
 function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
   listEl.innerHTML='';
+  listEl.classList.toggle('few', buzzOrder.length <= 5);
   buzzOrder.forEach((entry,i)=>{
     const isFocus = currentFocus===entry.team && !entry.verified;
     const rowCls = entry.verified ? (entry.result==='correct'?'correct':'wrong') : (isFocus?'focus':'');
@@ -485,8 +490,8 @@ function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
     let badge='';
     if(entry.verified){
       badge = entry.result==='correct'
-        ? '<span class="result-tag tag-correct">正確</span>'
-        : '<span class="result-tag tag-wrong">錯誤</span>';
+        ? `<span class="result-tag tag-correct">${IC_CHECK}正確</span>`
+        : `<span class="result-tag tag-wrong">${IC_CROSS}錯誤</span>`;
     } else if(isFocus){ badge='<span class="focus-indicator">待驗證</span>'; }
     const numCls = i<3 ? `r${i+1}` : '';
     li.innerHTML=`
