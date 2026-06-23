@@ -102,6 +102,10 @@ body { background: transparent; }
 .joined-strip { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
 .joined-strip b { color: var(--gold-bright); font-size: 15px; font-family:var(--font-title); }
 #joined-names { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.wake-note { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-align: center; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+.wake-note:empty { display: none; }
+.wake-note.ok { color: var(--up); }
+.wake-note.warn { color: var(--flame-amber); }
 
 /* ── 控制 ── */
 .controls { display: flex; gap: 8px; padding: 14px 14px; border-bottom: 1px solid var(--line); }
@@ -206,6 +210,8 @@ button, .town-btn { position: relative; overflow: hidden; }
   <button id="btn-clear" class="btn-clear" title="清空所有連線，所有學員退回選城鎮">清空連線</button>
 </div>
 
+<div id="wake-note" class="wake-note"></div>
+
 <div id="main">
   <div id="empty-msg">尚無搶答記錄</div>
   <ol id="buzz-list"></ol>
@@ -218,6 +224,25 @@ let ws, hostPin = '';
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
 
+// ── 螢幕恆亮（Screen Wake Lock）：主持手機長時間控場不鎖屏變暗 ──
+let wakeLock = null, wakeWanted = false;
+const wakeSupported = ('wakeLock' in navigator);
+function setWakeNote(cls, txt){ const el=$('wake-note'); if(el){ el.className='wake-note '+(cls||''); el.textContent=txt||''; } }
+async function requestScreenWake(){
+  if(!wakeSupported){ setWakeNote('warn','⚠ 此瀏覽器無法自動防鎖屏 · 請手動關閉自動鎖屏'); return; }
+  wakeWanted = true;
+  if(wakeLock) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    setWakeNote('ok','🔆 螢幕保持恆亮中');
+    wakeLock.addEventListener('release', ()=>{ wakeLock = null; });
+  } catch(e) {
+    wakeLock = null;
+    setWakeNote('warn','⚠ 無法保持螢幕恆亮 · 建議手動關閉自動鎖屏');
+  }
+}
+document.addEventListener('visibilitychange', ()=>{ if(wakeWanted && document.visibilityState==='visible') requestScreenWake(); });
+
 $('pin-btn').addEventListener('click', submitPin);
 $('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') submitPin(); });
 
@@ -225,6 +250,7 @@ function submitPin(){
   const val = $('pin-input').value.trim();
   if(!val){ $('pin-input').focus(); return; }
   hostPin = val; $('pin-error').textContent=''; $('pin-screen').classList.add('hidden');
+  requestScreenWake();   // 進入控制台即保持螢幕恆亮
   connect();
 }
 function showPinError(msg){

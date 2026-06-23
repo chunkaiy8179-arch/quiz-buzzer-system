@@ -1,4 +1,4 @@
-const CACHE = 'buzzer-v30';
+const CACHE = 'buzzer-v31';
 const SHELL = ['/', '/client.html', '/console.html', '/display.html', '/manifest.json',
   '/sounds/first-buzz.mp3', '/sounds/correct.mp3', '/sounds/wrong.mp3'];
 
