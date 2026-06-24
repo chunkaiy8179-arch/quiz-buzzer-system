@@ -5,3 +5,6 @@ playwright-report/
 .screenshots/
 *.png
 *.log
+
+# Claude Code 本地設定（agent / 指令等，不進 repo）
+.claude/
