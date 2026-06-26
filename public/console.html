@@ -379,7 +379,7 @@ button, .town-btn { position: relative; overflow: hidden; }
 
 <script>
 const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
-let ws, hostPin = '';
+let ws, hostPin = '', pendingPin = '';
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
@@ -448,23 +448,42 @@ $('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') submitPin(
 function submitPin(){
   const val = $('pin-input').value.trim();
   if(!val){ $('pin-input').focus(); return; }
-  hostPin = val; $('pin-error').textContent=''; $('pin-screen').classList.add('hidden');
-  requestScreenWake();   // 進入控制台即保持螢幕恆亮
+  // 不立即進主控：存起來、停在 PIN 畫面等 server 回 auth_ok 才放行
+  pendingPin = val; $('pin-error').textContent=''; setPinPending(true);
   connect();
 }
+// 驗證中：送出鈕暫時 disable 並改字，避免重複送
+function setPinPending(busy){
+  const btn = $('pin-btn');
+  btn.disabled = busy;
+  btn.textContent = busy ? '驗證中…' : '進入';
+}
 function showPinError(msg){
-  hostPin=''; $('pin-input').value=''; $('pin-error').textContent=msg;
+  hostPin=''; pendingPin=''; setPinPending(false);
+  $('pin-input').value=''; $('pin-error').textContent=msg;
   $('pin-screen').classList.remove('hidden'); $('pin-input').focus();
 }
 
 function connect(){
   ws = new WebSocket(WS_URL);
-  ws.addEventListener('open', ()=>{ $('ws-dot').classList.remove('reconnecting'); $('ws-dot').classList.add('on'); });
+  ws.addEventListener('open', ()=>{
+    $('ws-dot').classList.remove('reconnecting'); $('ws-dot').classList.add('on');
+    // 進場先驗：首次用 pendingPin；重連時 hostPin 已有值，重送驗證以維持授權狀態
+    ws.send(JSON.stringify({ type:'host_auth', pin: pendingPin || hostPin }));
+  });
   ws.addEventListener('close', ()=>{ $('ws-dot').classList.remove('on'); $('ws-dot').classList.add('reconnecting'); setTimeout(connect,2000); });
   ws.addEventListener('message', e=>{
     const msg = JSON.parse(e.data);
+    if(msg.type==='auth_ok'){
+      // 驗對才真正進主控（首次進場；重連時 pin-screen 已隱藏，此處為冪等）
+      hostPin = pendingPin || hostPin; pendingPin='';
+      setPinPending(false);
+      $('pin-screen').classList.add('hidden');
+      requestScreenWake();
+      return;
+    }
+    if(msg.type==='auth_error'){ showPinError('PIN 錯誤，請重新輸入'); return; }
     if(msg.type==='state') renderState(msg);
-    if(msg.type==='auth_error') showPinError('PIN 錯誤，請重新輸入');
   });
 }
 

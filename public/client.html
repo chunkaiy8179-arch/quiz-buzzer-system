@@ -16,6 +16,11 @@
   --flame-red:#e8431f; --flame-amber:#f5a623;
   --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28);
   --up:#3fae6b; --wrong:#c0392b;
+  /* 石板：暖白大理石（浮起）→ 灰大理石（待命/時間到）；脈絡用極淡灰；底座暗影/亮邊做 neumorphism */
+  --slab-warm:#ece6d8; --slab-warm-hi:#fbf8f0; --slab-warm-lo:#cabfa8;
+  --slab-gray:#9a958c; --slab-gray-hi:#bdb8ad; --slab-gray-lo:#5e5a52;
+  --slab-vein:rgba(120,108,84,.16);
+  --slab-shadow-dark:rgba(40,30,18,.55); --slab-shadow-light:rgba(255,250,238,.85);
   /* 字體：標題/隊名=Noto Serif HK（厚重明體）、內文=Noto Sans TC、英文小標/數字=Cinzel、大標=Cinzel Decorative */
   --font-body:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
   --font-title:'Noto Serif HK', 'Noto Serif TC', serif;
@@ -111,78 +116,90 @@ body { background: transparent; }
 @keyframes dot-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
 
 .btn-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 24px; }
-#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .08s, background .2s, color .2s, box-shadow .2s; outline: none; touch-action: manipulation; }
-#buzz-btn.state-locked { background: radial-gradient(circle at 40% 35%, #2a2740, #15131f 65%); color: var(--muted); box-shadow: inset 0 0 0 2px rgba(212,175,55,.18), inset 0 -6px 18px rgba(0,0,0,.5); animation: locked-breath 3.6s ease-in-out infinite; }
+/* ── 石板搶答鈕：希臘白大理石板 + 金箔刻字（neumorphism 浮起／按壓下凹）── */
+#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .12s cubic-bezier(.2,.7,.3,1), background .2s, color .2s, box-shadow .2s; outline: none; touch-action: manipulation; }
+/* 大理石脈絡：所有石板共用的極淡灰脈絡 + noise，疊在各狀態底色之上 */
+#buzz-btn::after { content:''; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; z-index: 0; opacity: .5; mix-blend-mode: multiply;
+  background:
+    radial-gradient(ellipse 60% 18% at 32% 30%, var(--slab-vein) 0%, transparent 60%),
+    radial-gradient(ellipse 14% 52% at 68% 58%, var(--slab-vein) 0%, transparent 62%),
+    linear-gradient(118deg, transparent 42%, var(--slab-vein) 47%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)' opacity='0.45'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 130px 130px; }
+/* 灰大理石板：待命 / 時間到——沉穩、僅微浮、不亮起 */
+#buzz-btn.state-locked { color: var(--slab-gray-lo);
+  background: radial-gradient(circle at 38% 32%, var(--slab-gray-hi) 0%, var(--slab-gray) 58%, var(--slab-gray-lo) 100%);
+  text-shadow: 0 1px 0 rgba(255,255,255,.3), 0 -1px 1px rgba(0,0,0,.35);
+  box-shadow: inset 4px 4px 9px rgba(255,255,255,.28), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 16px rgba(0,0,0,.45), -4px -4px 12px rgba(255,250,238,.06);
+  animation: locked-breath 4.2s ease-in-out infinite; }
 @keyframes locked-breath {
-  0%,100% { box-shadow: inset 0 0 0 2px rgba(212,175,55,.18), inset 0 -6px 18px rgba(0,0,0,.5); }
-  50% { box-shadow: inset 0 0 0 2px rgba(212,175,55,.32), inset 0 -6px 18px rgba(0,0,0,.5), 0 0 26px rgba(212,175,55,.10); }
+  0%,100% { box-shadow: inset 4px 4px 9px rgba(255,255,255,.26), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 16px rgba(0,0,0,.45), -4px -4px 12px rgba(255,250,238,.05); }
+  50% { box-shadow: inset 4px 4px 9px rgba(255,255,255,.34), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 18px rgba(0,0,0,.5), -4px -4px 14px rgba(255,250,238,.1); }
 }
-#buzz-btn.state-open { background: radial-gradient(circle at 42% 30%, #fff1c0 0%, #ffd96b 16%, #f5a623 46%, #e8431f 78%, #b3300d 100%); color: #4a2300; cursor: pointer;
-  box-shadow: inset 0 12px 28px rgba(255,243,200,.5), inset 0 -18px 34px rgba(120,18,0,.55), 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5);
-  animation: fire-pulse 1.3s ease-in-out infinite; }
-#buzz-btn.state-open:active { transform: scale(.9); }
-#buzz-btn.state-buzzed { background: radial-gradient(circle at 50% 42%, rgba(245,166,35,.22), transparent 58%), radial-gradient(circle at 42% 35%, #2a2740, #15131f 65%); color: var(--gold-bright); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 44px rgba(245,166,35,.16), 0 0 36px rgba(245,166,35,.35); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; }
+/* 白大理石板浮起 + 金箔刻「搶答」（letterpress：一道亮上、一道暗下模擬凹刻浮雕）*/
+#buzz-btn.state-open { cursor: pointer;
+  background: radial-gradient(circle at 38% 30%, var(--slab-warm-hi) 0%, var(--slab-warm) 56%, var(--slab-warm-lo) 100%);
+  color: var(--gold-deep);
+  text-shadow: 0 2px 0 rgba(255,250,235,.85), 0 -1px 1px rgba(90,60,15,.7), 0 0 12px rgba(245,215,122,.35);
+  box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 6px rgba(212,175,55,.12);
+  animation: slab-float 2.6s ease-in-out infinite; }
+/* 金箔刻字：用漸層裁切到文字（state-open / state-buzzed 共用）*/
+#buzz-btn.state-open, #buzz-btn.state-buzzed { background-clip: padding-box; }
+@keyframes slab-float {
+  0%,100% { box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 6px rgba(212,175,55,.12); }
+  50% { box-shadow: inset 6px 6px 12px rgba(255,253,246,.78), inset -7px -8px 16px rgba(120,98,60,.46), 12px 15px 30px rgba(0,0,0,.55), -8px -8px 22px rgba(255,250,238,.24), 0 0 0 9px rgba(212,175,55,.18); }
+}
+/* 按壓下凹：石板被壓進底座——inset 內陰影 + 下沉縮小 */
+#buzz-btn.state-open:active { transform: translateY(5px) scale(.97);
+  box-shadow: inset 8px 9px 20px rgba(120,98,60,.55), inset -6px -6px 14px rgba(255,253,246,.5), 3px 4px 10px rgba(0,0,0,.4), 0 0 0 5px rgba(212,175,55,.14);
+  animation: none; }
+/* 已搶到：白大理石板浮起 + 金箔刻「第N名」（保留浮起感、金邊更深，與可搶區隔）*/
+#buzz-btn.state-buzzed { color: var(--gold-deep); font-size: clamp(22px,6vw,34px); letter-spacing: 2px;
+  background: radial-gradient(circle at 38% 30%, var(--slab-warm-hi) 0%, var(--slab-warm) 56%, var(--slab-warm-lo) 100%);
+  text-shadow: 0 2px 0 rgba(255,250,235,.85), 0 -1px 1px rgba(90,60,15,.7), 0 0 14px rgba(245,215,122,.45);
+  box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 7px rgba(212,175,55,.28), 0 0 30px rgba(245,215,122,.3); }
 /* 搶到瞬間：周圍金光爆裂（一次性，由 JS 加 .buzz-burst 觸發後移除）*/
 #buzz-btn { position: relative; }
 #buzz-btn.buzz-burst::before { content:''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; z-index: 2;
   background: radial-gradient(circle, rgba(255,243,200,.85) 0%, rgba(245,166,35,.5) 35%, rgba(245,166,35,0) 68%);
   animation: buzz-burst .55s cubic-bezier(.18,.9,.32,1) forwards; }
 @keyframes buzz-burst { 0% { opacity: .95; transform: scale(.55); } 100% { opacity: 0; transform: scale(1.7); } }
-/* 出局：餘燼冷卻——炭灰覆灰底 + 散布橘紅餘燼微光 + 暗金襯托，聖火已熄，整題不可玩 */
-#buzz-btn.state-out { color: var(--muted); opacity: .82; font-size: clamp(20px,5.4vw,30px); letter-spacing: 1px; cursor: not-allowed;
-  /* 炭塊：暗炭底 + 中下部暖橘餘溫（從 .10 提至 ~.18） */
+/* 出局：裂痕石板——灰大理石深陷卡死 + 1-2 道裂縫，比正常更低，整題不可玩 */
+#buzz-btn.state-out { color: var(--slab-gray-lo); font-size: clamp(20px,5.4vw,30px); letter-spacing: 1px; cursor: not-allowed;
+  background: radial-gradient(circle at 40% 34%, var(--slab-gray-hi) 0%, var(--slab-gray) 56%, var(--slab-gray-lo) 100%);
+  /* 深 inset 下陷：比待命更陷，卡死感 */
+  box-shadow: inset 9px 10px 22px rgba(20,16,10,.6), inset -6px -7px 16px rgba(255,250,238,.16), 2px 3px 8px rgba(0,0,0,.35); }
+/* 裂縫石板覆層：覆寫全域脈絡 ::after，改放兩道鋸齒裂縫 + 淡石粉脈絡 */
+#buzz-btn.state-out::after { content:''; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; z-index: 0; opacity: 1; mix-blend-mode: normal;
   background:
-    radial-gradient(circle at 50% 80%, rgba(245,166,35,.18) 0%, rgba(192,86,15,.08) 34%, transparent 62%),
-    radial-gradient(circle at 42% 38%, #1c1610 0%, #0d0a08 66%);
-  box-shadow: inset 0 0 0 2px rgba(166,124,46,.24), inset 0 -10px 28px rgba(245,166,35,.16), inset 0 -2px 10px rgba(0,0,0,.6);
-  animation: ember-fade 4.2s ease-in-out infinite; }
-/* 灰燼覆層：極淡灰階霧化罩在炭面，增加「覆灰」厚度（不光禿）*/
-#buzz-btn.state-out::after { content:''; position: absolute; inset: 2px; border-radius: 50%; pointer-events: none; z-index: 1; mix-blend-mode: screen; opacity: .5;
-  background:
-    radial-gradient(circle at 32% 30%, rgba(169,154,118,.14) 0%, transparent 24%),
-    radial-gradient(circle at 70% 24%, rgba(169,154,118,.10) 0%, transparent 22%),
-    radial-gradient(circle at 60% 64%, rgba(169,154,118,.08) 0%, transparent 30%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)' opacity='0.5'/%3E%3C/svg%3E");
-  background-size: auto, auto, auto, 120px 120px; }
-@keyframes ember-fade {
-  0%,100% { box-shadow: inset 0 0 0 2px rgba(166,124,46,.22), inset 0 -10px 28px rgba(245,166,35,.14), inset 0 -2px 10px rgba(0,0,0,.6); }
-  50% { box-shadow: inset 0 0 0 2px rgba(166,124,46,.30), inset 0 -10px 32px rgba(245,166,35,.20), inset 0 -2px 10px rgba(0,0,0,.6); }
-}
-#buzz-btn.state-out .out-mark { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 7px; font-family: var(--font-title); }
-#buzz-btn.state-out .out-flame { display: block; width: 1.4em; height: auto; filter: drop-shadow(0 0 7px rgba(245,166,35,.18)); }
-#buzz-btn.state-out .out-text { display: block; font-size: .52em; letter-spacing: 4px; color: var(--gold-dim); text-shadow: 0 0 10px rgba(245,166,35,.18); }
-/* 散布餘燼微光：炭塊中下部數點橘紅/琥珀微光，各自緩慢錯開明滅（快熄的炭火）*/
-#buzz-btn.state-out .embers { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-#buzz-btn.state-out .ember { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: ember-flicker 3.4s ease-in-out infinite; }
-#buzz-btn.state-out .ember.e1 { left: 34%; top: 62%; width: 14%; height: 14%; background: radial-gradient(circle, rgba(255,176,72,.9) 0%, rgba(232,67,31,.4) 40%, transparent 70%); animation-duration: 3.1s; animation-delay: -.2s; }
-#buzz-btn.state-out .ember.e2 { left: 58%; top: 70%; width: 11%; height: 11%; background: radial-gradient(circle, rgba(245,166,35,.85) 0%, rgba(192,86,15,.35) 42%, transparent 70%); animation-duration: 4.3s; animation-delay: -1.6s; }
-#buzz-btn.state-out .ember.e3 { left: 47%; top: 52%; width: 8%; height: 8%; background: radial-gradient(circle, rgba(255,210,120,.8) 0%, rgba(245,120,30,.3) 45%, transparent 72%); animation-duration: 2.6s; animation-delay: -.9s; }
-#buzz-btn.state-out .ember.e4 { left: 64%; top: 56%; width: 6.5%; height: 6.5%; background: radial-gradient(circle, rgba(255,150,60,.75) 0%, rgba(192,57,30,.28) 48%, transparent 74%); animation-duration: 5.0s; animation-delay: -2.7s; }
-@keyframes ember-flicker {
-  0%,100% { opacity: .2; transform: scale(.82); }
-  35% { opacity: .85; transform: scale(1.04); }
-  60% { opacity: .42; transform: scale(.9); }
-}
-/* 驗證中：琥珀微光 + 緩慢脈動，和 state-locked（灰待命）區分——正在判定、可能放我再搶 */
-#buzz-btn.state-review { background: radial-gradient(circle at 42% 35%, #3a2f1a, #1d1710 65%); color: var(--flame-amber); box-shadow: inset 0 0 0 2px rgba(245,166,35,.32), inset 0 -6px 18px rgba(0,0,0,.5); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed; animation: review-pulse 1.8s ease-in-out infinite; }
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M50 2 L46 22 L55 34 L48 50 L57 64 L50 82 L54 98' stroke='rgba(30,24,16,.5)' stroke-width='1.4'/%3E%3Cpath d='M50 2 L46 22 L55 34 L48 50 L57 64 L50 82 L54 98' stroke='rgba(255,250,238,.28)' stroke-width='.5' transform='translate(.8,.8)'/%3E%3Cpath d='M20 40 L34 46 L44 43 L58 51 L72 47 L86 55' stroke='rgba(30,24,16,.4)' stroke-width='1.1'/%3E%3Cpath d='M20 40 L34 46 L44 43 L58 51 L72 47 L86 55' stroke='rgba(255,250,238,.22)' stroke-width='.4' transform='translate(.7,.7)'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='o'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23o)' opacity='0.3'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 130px 130px; }
+#buzz-btn.state-out .out-mark { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: var(--font-title); }
+#buzz-btn.state-out .out-crack { display: block; width: 1.5em; height: auto; filter: drop-shadow(0 1px 1px rgba(255,250,238,.4)); }
+/* 放大答錯提示字 + 石刻陰影（letterpress 凹刻）*/
+#buzz-btn.state-out .out-text { display: block; font-size: .74em; letter-spacing: 4px; font-weight: 900; color: #46423a;
+  text-shadow: 0 1px 0 rgba(255,250,238,.5), 0 -1px 1px rgba(20,16,10,.55); }
+/* 驗證中：微亮石板 + 金邊呼吸微光，和 state-locked（灰待命沉穩）區分——正在判定、可能放我再搶 */
+#buzz-btn.state-review { color: var(--gold-dim); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed;
+  background: radial-gradient(circle at 38% 33%, var(--slab-warm) 0%, var(--slab-warm-lo) 60%, var(--slab-gray) 100%);
+  text-shadow: 0 1px 0 rgba(255,250,235,.55), 0 -1px 1px rgba(90,60,15,.5);
+  box-shadow: inset 5px 5px 11px rgba(255,253,246,.5), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 18px rgba(0,0,0,.42), 0 0 0 4px rgba(245,215,122,.2);
+  animation: review-pulse 1.9s ease-in-out infinite; }
 @keyframes review-pulse {
-  0%,100% { box-shadow: inset 0 0 0 2px rgba(245,166,35,.30), inset 0 -6px 18px rgba(0,0,0,.5), 0 0 18px rgba(245,166,35,.10); }
-  50% { box-shadow: inset 0 0 0 2px rgba(245,166,35,.52), inset 0 -6px 18px rgba(0,0,0,.5), 0 0 34px rgba(245,166,35,.28); }
+  0%,100% { box-shadow: inset 5px 5px 11px rgba(255,253,246,.5), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 18px rgba(0,0,0,.42), 0 0 0 4px rgba(245,215,122,.16); }
+  50% { box-shadow: inset 5px 5px 11px rgba(255,253,246,.58), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 20px rgba(0,0,0,.46), 0 0 0 7px rgba(245,215,122,.3), 0 0 24px rgba(245,215,122,.28); }
 }
 #buzz-btn.state-review .review-dots::after { content:'…'; display: inline-block; font-size: .7em; letter-spacing: 2px; animation: review-dots 1.4s steps(4,end) infinite; width: 1.4em; text-align: left; overflow: hidden; vertical-align: bottom; }
 @keyframes review-dots { 0%{ clip-path: inset(0 100% 0 0); } 100%{ clip-path: inset(0 0 0 0); } }
-@keyframes fire-pulse {
-  0%,100% { box-shadow: inset 0 12px 28px rgba(255,243,200,.5), inset 0 -18px 34px rgba(120,18,0,.55), 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5); }
-  50% { box-shadow: inset 0 12px 28px rgba(255,243,200,.6), inset 0 -18px 34px rgba(120,18,0,.6), 0 0 0 14px rgba(245,166,35,.22), 0 0 0 36px rgba(245,166,35,.08), 0 22px 80px rgba(232,67,31,.65); }
-}
-@keyframes body-flash { 0%{background:#f5a623;} 18%{background:#e8431f;} 100%{background:#0a1430;} }
+@keyframes body-flash { 0%{background:rgba(245,215,122,.5);} 18%{background:rgba(212,175,55,.32);} 100%{background:transparent;} }
 body.buzz-flash { animation: body-flash .5s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, #buzz-btn.state-out, #buzz-btn.state-out .ember, #buzz-btn.state-review, #buzz-btn.state-review .review-dots::after, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } #buzz-btn.state-out .ember { opacity: .5; } body.buzz-flash, #buzz-btn.buzz-burst::before { animation: none; } #buzz-btn.buzz-burst::before { display: none; } }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, #buzz-btn.state-out, #buzz-btn.state-buzzed, #buzz-btn.state-review, #buzz-btn.state-review .review-dots::after, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash, #buzz-btn.buzz-burst::before { animation: none; } #buzz-btn.buzz-burst::before { display: none; } }
 
 .status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
 #status-msg.active { color: var(--gold-bright); background: rgba(245,166,35,.1); }
-#status-msg.out { color: var(--gold-dim); background: linear-gradient(180deg, rgba(166,124,46,.16), rgba(28,22,16,.55)); box-shadow: inset 0 0 0 1px rgba(166,124,46,.30), inset 0 -6px 12px rgba(245,166,35,.08); text-shadow: 0 0 8px rgba(245,166,35,.16); }
+#status-msg.out { color: #d8d2c6; background: linear-gradient(180deg, rgba(154,149,140,.22), rgba(40,36,30,.5)); box-shadow: inset 0 1px 0 rgba(255,250,238,.18), inset 0 0 0 1px rgba(120,108,84,.3); text-shadow: 0 1px 1px rgba(20,16,10,.5); }
 #phase-label { font-family: var(--font-latin); font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); }
 .wake-note { font-size: 11px; letter-spacing: .5px; font-weight: 600; min-height: 14px; line-height: 1.3; text-align: center; padding: 0 12px; transition: color .3s; }
 .wake-note.ok { color: var(--up); }
@@ -276,26 +293,17 @@ let ws, myTeam = null, buzzed = false, myEliminated = false, joinedTeams = [];
 let buzzFeedbackDone = false;
 let lastState = null; // 最近一次 state 廣播快取：收到 buzz_rejected 解鎖後立即用它重繪
 
-// 出局／驗證中鈕面文案（含圖示），集中定義避免兩處出局分支重複
-const OUT_HTML = '<span class="embers">'
-  + '<span class="ember e1"></span><span class="ember e2"></span>'
-  + '<span class="ember e3"></span><span class="ember e4"></span></span>'
-  + '<span class="out-mark">'
-  + '<svg class="out-flame" viewBox="0 0 120 110" aria-hidden="true">'
-  + '<defs>'
-  + '<linearGradient id="ember_ash" x1="0" y1="1" x2="0" y2="0">'
-  + '<stop offset="0" stop-color="#3a2c1c"/><stop offset=".55" stop-color="#5c452a"/><stop offset="1" stop-color="#8a6a3c"/>'
-  + '</linearGradient>'
-  + '<radialGradient id="ember_warm" cx="50%" cy="86%" r="42%">'
-  + '<stop offset="0" stop-color="#f5a623" stop-opacity=".5"/><stop offset="60%" stop-color="#c0560f" stop-opacity=".18"/><stop offset="100%" stop-color="#c0560f" stop-opacity="0"/>'
-  + '</radialGradient>'
-  + '</defs>'
-  + '<ellipse cx="60" cy="92" rx="30" ry="14" fill="url(#ember_warm)"/>'
-  + '<path d="M60 18 C72 40 74 62 60 82 C46 62 48 40 60 18 Z" fill="url(#ember_ash)"/>'
-  + '<path d="M60 36 C67 50 67 66 60 80 C53 66 53 50 60 36 Z" fill="#2a2018"/>'
-  + '<path d="M48 84 q12 6 24 0" fill="none" stroke="#7a5c34" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>'
+// 出局鈕面：裂痕石板圖示 + 放大「答錯出局」字，集中定義避免兩處出局分支重複
+const OUT_HTML = '<span class="out-mark">'
+  + '<svg class="out-crack" viewBox="0 0 120 120" aria-hidden="true">'
+  + '<g fill="none" stroke-linecap="round">'
+  + '<path d="M60 8 L54 36 L67 56 L51 82 L60 112" stroke="#3a352d" stroke-width="3.2"/>'
+  + '<path d="M60 8 L54 36 L67 56 L51 82 L60 112" stroke="#efeae0" stroke-width="1.1" transform="translate(1.5,1.5)" opacity=".75"/>'
+  + '<path d="M67 56 L88 50 L104 60" stroke="#3a352d" stroke-width="2.4"/>'
+  + '<path d="M67 56 L88 50 L104 60" stroke="#efeae0" stroke-width=".8" transform="translate(1.2,1.2)" opacity=".7"/>'
+  + '</g>'
   + '</svg>'
-  + '<span class="out-text">聖火已熄</span></span>';
+  + '<span class="out-text">答錯出局</span></span>';
 const REVIEW_HTML = '驗證中<span class="review-dots"></span>';
 
 // 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
@@ -447,6 +455,17 @@ function handleMessage(msg){
       if(msg.team===myTeam) setBuzzLocked(msg.rank);
       else lockForReview();
       break;
+    // 主持人判定結果（答對/答錯均廣播）：解除樂觀鎖並立即用快取 state 重繪，
+    // 消除「等下一個 state 才更新」的時間差，避免答錯重開卡在舊名次/驗證中。
+    case 'verify_result':
+      buzzed=false; buzzFeedbackDone=false;
+      if(lastState) applyState(lastState);
+      break;
+    // 時間到（server 已 broadcast）：不論當前何狀態一律強制切「時間到」，
+    // 搶到/出局者皆不例外。
+    case 'time_up':
+      forceTimeUp();
+      break;
   }
 }
 
@@ -467,15 +486,15 @@ function applyState(msg){
       setStatus('已出局，等待下一題', 'out'); $('phase-label').textContent='OUT';
       return;
     }
-    if(buzzed) return;
+    // 樂觀鎖通用防線：buzzed 與 server 不符就強制解鎖，避免答錯重開卡死整回合。
+    if(buzzed && myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
+    if(buzzed && !myEntry){ buzzed=false; buzzFeedbackDone=false; } // 樂觀鎖與 server 不符→解鎖往下走重置成可搶
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
     btn.disabled=false; btn.className='state-open'; btn.textContent='搶答';
     setStatus('聖火開放中！', 'active'); $('phase-label').textContent='OPEN';
   } else if(msg.phase==='open' && msg.closed){
-    // 倒數歸零：搶答視窗關閉
-    if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
-    buzzed=false; buzzFeedbackDone=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
-    setStatus('搶答時間結束', ''); $('phase-label').textContent='TIME UP';
+    // 倒數歸零：搶答視窗關閉。拍板：搶到/出局者一律切時間到，不再保留名次例外。
+    forceTimeUp();
   } else if(msg.phase==='reviewing'){
     // 出局守衛同樣須在 myEntry 之前，避免出局組停在「第N名」
     if(myEliminated){
@@ -520,6 +539,14 @@ function lockForReview(){
   const btn=$('buzz-btn');
   btn.disabled=true; btn.className='state-review'; btn.innerHTML=REVIEW_HTML;
   setStatus('主持人驗證中…', ''); $('phase-label').textContent='REVIEW';
+}
+
+// 時間到：不論當前何狀態（可搶/搶到/驗證中/出局）一律強制切「時間到」灰板，整題鎖死。
+function forceTimeUp(){
+  buzzed=false; buzzFeedbackDone=false;
+  const btn=$('buzz-btn');
+  btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
+  setStatus('搶答時間結束', ''); $('phase-label').textContent='TIME UP';
 }
 
 function setStatus(text, cls){ const el=$('status-msg'); el.textContent=text; el.className=cls; }

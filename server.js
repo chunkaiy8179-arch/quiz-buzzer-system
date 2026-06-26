@@ -37,6 +37,9 @@ let state = {
 
 // 分數獨立於 state：整場累計，host_reset 不歸零（僅 host_clear / host_score_reset 清）
 let scores = {};
+// 各組「達到當前分數」的時間戳（組名 → epoch ms），供投影端平手排序：
+// 0 分組記加入時間、有分組記最後一次加分到該分的時間（撤銷視為當下變動）。
+let scoreSince = {};
 let threshold = Number(process.env.LIGHT_THRESHOLD) || 120; // 希望之燈點燈門檻（總分達標方可點燈）
 let lit = false;            // 希望之燈是否已點亮
 // 答錯鎖定模式：true=答錯出局不可再搶（現狀預設）；false=答錯不鎖、該組可再搶
@@ -128,6 +131,7 @@ function stateMsg() {
       : ((state.phase === 'open' && state.deadline) ? Math.max(0, state.deadline - Date.now()) : null),
     countFrom: COUNT_FROM,
     scores: scores,                       // 各組累計分數 {組名: 分數}
+    scoreSince: scoreSince,               // 各組達到當前分數的時間戳 {組名: epoch ms}，投影端平手排序用
     eliminated: state.eliminated,         // 本回合出局組別
     threshold: threshold,                 // 點燈門檻
     totalScore: totalScore,               // 全場總分
@@ -167,6 +171,14 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
 
+      // 主持/投影端進場握手：console 輸入 PIN 後先驗一次，驗過才放行進介面。
+      // 此為第一道防線；後續所有 host_* 操作仍各自 checkPin 作第二道防線。
+      case 'host_auth': {
+        if (msg.pin !== HOST_PIN) { ws.send(JSON.stringify({ type: 'auth_error' })); return; }
+        ws.send(JSON.stringify({ type: 'auth_ok' }));
+        break;
+      }
+
       case 'join': {
         const name = cleanTeam(msg.team);
         if (!name) { ws.send(JSON.stringify({ type: 'join_error', reason: 'invalid' })); return; }
@@ -194,6 +206,8 @@ wss.on('connection', (ws) => {
         const outToken = sameOwner ? token : makeToken();
         sockets.set(ws, name);
         teamTokens.set(name, outToken);
+        // 全新加入才記加入時間（0 分組以此作平手排序基準）；重連接管沿用舊值不重設
+        if (scoreSince[name] === undefined) scoreSince[name] = Date.now();
         ws.send(JSON.stringify({ type: 'join_ok', team: name, token: outToken }));
         broadcastState();
         break;
@@ -222,6 +236,7 @@ wss.on('connection', (ws) => {
         state.closed = false;
         // 整場重來：分數歸零、熄燈、清出局與定格倒數
         scores = {};
+        scoreSince = {}; // 整場重來：清掉所有達分時間戳
         lit = false;
         state.eliminated = [];
         state.remainingMs = null;
@@ -338,6 +353,7 @@ wss.on('connection', (ws) => {
           entry.verified = true;
           entry.result = result;
           scores[team] = (scores[team] || 0) + pts;
+          scoreSince[team] = Date.now(); // 達到新分數的時間戳，供平手排序
           entry.points = pts; // 記錄本題分值，供撤銷與顯示用
           state.phase = 'locked';
           state.eliminated = [];
@@ -385,8 +401,10 @@ wss.on('connection', (ws) => {
         // 還原分數：correct 才扣回本題分值；扣到 0 以下移除鬼項
         if (lv.result === 'correct') {
           scores[lv.team] = (scores[lv.team] || 0) - lv.points;
-          if (scores[lv.team] <= 0) delete scores[lv.team];
+          if (scores[lv.team] <= 0) { delete scores[lv.team]; delete scoreSince[lv.team]; }
         }
+        // 撤銷視為當下一次分數變動（近似，不存歷史）：仍在 scores 內才更新時間戳
+        if (scores[lv.team] !== undefined) scoreSince[lv.team] = Date.now();
 
         // 用判定前完整順位深拷貝統一還原 buzzOrder，一次涵蓋三情況：
         // correct / 鎖模式 wrong 的 entry.verified 復原為 false、
@@ -411,6 +429,7 @@ wss.on('connection', (ws) => {
       case 'host_score_reset': {
         if (!checkPin()) return;
         scores = {};
+        scoreSince = {}; // 分數全清 → 達分時間戳一併清
         broadcastState();
         break;
       }
@@ -424,7 +443,8 @@ wss.on('connection', (ws) => {
         scores[team] = (scores[team] || 0) + delta;
         if (scores[team] < 0) scores[team] = 0;
         // 0 分不保留在 scores 物件，避免對從未得分的隊扣分後留下 0 分鬼項污染計分板/榜單
-        if (scores[team] === 0) delete scores[team];
+        if (scores[team] === 0) { delete scores[team]; delete scoreSince[team]; }
+        else scoreSince[team] = Date.now(); // 調分視為一次分數變動，更新達分時間戳
         broadcastState();
         break;
       }

@@ -1321,3 +1321,155 @@ test('D7 非鎖模式同組連搶錯：連錯後倒數歸零 closed=true 不卡�
   await new Promise(r => setTimeout(r, 200));
   cleanup.sock.close();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 本輪新協定測試：host_auth PIN 驗證（Bug1）、scoreSince 下發（Feature5）
+// PORT=3200, PIN=SCORE1234
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── E1 host_auth 正確 PIN → 收 auth_ok ──────────────────────────────────────
+test('E1 host_auth 正確 PIN → 收 auth_ok', async () => {
+  const ws = rawConn(); await ws.ready;
+  ws.sock.send(JSON.stringify({ type: 'host_auth', pin: PIN }));
+  const msg = await waitMsg(ws.inbox, 'auth_ok', 3000);
+  expect(msg.type).toBe('auth_ok');
+  ws.sock.close();
+});
+
+// ── E2 host_auth 錯誤 PIN → 收 auth_error ───────────────────────────────────
+test('E2 host_auth 錯誤 PIN → 收 auth_error', async () => {
+  const ws = rawConn(); await ws.ready;
+  ws.sock.send(JSON.stringify({ type: 'host_auth', pin: 'WRONGPIN' }));
+  const msg = await waitMsg(ws.inbox, 'auth_error', 3000);
+  expect(msg.type).toBe('auth_error');
+  ws.sock.close();
+});
+
+// ── E3 scoreSince 下發：join 後 stateMsg 含 scoreSince[team]（加入時間）；
+//        答對後 scoreSince[team] 更新（>= 加入時間）──────────────────────────
+test('E3 scoreSince 下發：join 後有加入時間；答對後 since 更新', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  // 清分確保乾淨
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+
+  const t0 = Date.now();
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'Since甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 取 join 後最新 state，確認 scoreSince[team] 存在且 >= t0
+  const afterJoin = rawConn(); await afterJoin.ready;
+  const joinState = await waitMsg(afterJoin.inbox, 'state', 3000);
+  afterJoin.sock.close();
+
+  expect(typeof joinState.scoreSince).toBe('object');
+  expect(joinState.scoreSince['Since甲']).toBeGreaterThanOrEqual(t0);
+  const joinSince = joinState.scoreSince['Since甲'];
+
+  // 開搶 → c1 拍燈 → 判 correct → scoreSince[team] 應更新（>=joinSince）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'Since甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'Since甲', result: 'correct' }));
+  const afterCorrect = await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 答對後 scoreSince 應存在，且時間戳 >= 加入時間（因為 Date.now() 只增不減）
+  expect(afterCorrect.scoreSince['Since甲']).toBeDefined();
+  expect(afterCorrect.scoreSince['Since甲']).toBeGreaterThanOrEqual(joinSince);
+
+  host.sock.close(); c1.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── E4 scoreSince 排序基準 ─────────────────────────────────────────────────
+// 情境一：兩組都 0 分時，先 join 的 since 較小（時間先）
+// 情境二：A 先得分、B 後得同分（+10），A 的 since < B 的 since（有分時先達分者排前）
+test('E4 scoreSince 排序基準：0分組先後join反映先後；有分組先達分的since較小', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+
+  // 情境一：A 先 join，B 後 join，兩組 0 分
+  const cA = rawConn(); await cA.ready;
+  cA.sock.send(JSON.stringify({ type: 'join', team: 'SortA' }));
+  await waitMsg(cA.inbox, 'join_ok');
+
+  // 小延遲確保時間戳可區分
+  await new Promise(r => setTimeout(r, 30));
+
+  const cB = rawConn(); await cB.ready;
+  cB.sock.send(JSON.stringify({ type: 'join', team: 'SortB' }));
+  await waitMsg(cB.inbox, 'join_ok');
+
+  // 取最新 state 確認 0 分時 scoreSince 反映加入先後
+  const stateAfterJoin = rawConn(); await stateAfterJoin.ready;
+  const s0 = await waitMsg(stateAfterJoin.inbox, 'state', 3000);
+  stateAfterJoin.sock.close();
+
+  expect(s0.scoreSince['SortA']).toBeDefined();
+  expect(s0.scoreSince['SortB']).toBeDefined();
+  // SortA 先 join，since 應較小（時間較早）
+  expect(s0.scoreSince['SortA']).toBeLessThan(s0.scoreSince['SortB']);
+
+  // 情境二：A 先得分（答對 +10），B 後得同分（+10），A.since < B.since
+  // 回合一：A 搶到 → 判對
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  cA.sock.send(JSON.stringify({ type: 'buzz', team: 'SortA' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'SortA', result: 'correct' }));
+  const afterA = await waitState(host.inbox, s => s.phase === 'locked');
+  expect(afterA.scores['SortA']).toBe(10);
+  const sinceA = afterA.scoreSince['SortA'];
+
+  // 小延遲確保 B 達分時間戳可區分
+  await new Promise(r => setTimeout(r, 30));
+
+  // 回合二：reset → B 搶到 → 判對（同分 10）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  cB.sock.send(JSON.stringify({ type: 'buzz', team: 'SortB' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'SortB', result: 'correct' }));
+  const afterB = await waitState(host.inbox, s => s.phase === 'locked');
+  expect(afterB.scores['SortB']).toBe(10);
+  const sinceB = afterB.scoreSince['SortB'];
+
+  // A 先達分 → A 的 since < B 的 since
+  expect(sinceA).toBeLessThan(sinceB);
+
+  host.sock.close(); cA.sock.close(); cB.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});

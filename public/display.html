@@ -24,7 +24,7 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  height: 100%; overflow: hidden;
+  height: 100%; overflow: hidden; overflow-x: hidden; max-width: 100vw;
   font-family: var(--font-body);
   color: var(--ink);
   background:
@@ -108,7 +108,7 @@ body::before{
 .meander-band { height: 16px; background-image: var(--meander); background-repeat: repeat-x; background-position: center; opacity: .65; }
 
 /* ── Screens ── */
-.screen { display: none; flex-direction: column; height: 100%; width: 100%; }
+.screen { display: none; flex-direction: column; height: 100%; width: 100%; overflow-x: hidden; max-width: 100vw; }
 .screen.active { display: flex; }
 
 /* ── 聖杯火焰標記 ── */
@@ -162,7 +162,7 @@ body::before{
 .open-waiting .chips { justify-content: center; max-width: 80vw; }
 
 /* ── 順位列表（open 即時 / rank 回顧 共用）── */
-.order-list { list-style: none; width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(8px,1.2vw,14px); overflow-y: auto; padding: 6px 0; }
+.order-list { list-style: none; width: 100%; max-width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(8px,1.2vw,14px); overflow-y: auto; overflow-x: hidden; padding: 6px 0; }
 .order-list.few { justify-content: center; }  /* 隊伍少時垂直置中，多時回頂端可捲動 */
 /* 隊伍多時（>6）壓縮密度：縮 row 間距、padding 與字級下限，盡量讓 8-10 隊不捲動全上屏 */
 .order-list.dense { gap: clamp(5px,.7vw,9px); }
@@ -174,7 +174,7 @@ body::before{
 .order-list > li:nth-child(2).rank-row { border-color: rgba(212,175,55,.4); border-left-color: rgba(212,175,55,.55); background: rgba(212,175,55,.05); }
 .order-list > li:nth-child(3).rank-row { border-left-color: var(--gold-deep); background: rgba(212,175,55,.03); }
 .rank-row.focus { border-color: var(--gold-bright) !important; border-left-color: var(--gold-bright) !important; background: rgba(245,166,35,.12) !important; box-shadow: 0 0 30px rgba(245,166,35,.15); }
-.rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: linear-gradient(180deg, rgba(63,174,107,.22), rgba(63,174,107,.06)) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 30px rgba(63,174,107,.3) !important; transform: scale(1.015); }
+.rank-row.correct { border-color: var(--up) !important; border-left-color: var(--up) !important; background: linear-gradient(180deg, rgba(63,174,107,.26), rgba(63,174,107,.08)) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 38px rgba(63,174,107,.42) !important; }
 .rank-row.wrong { border-color: var(--wrong) !important; border-left-color: var(--wrong) !important; background: rgba(192,57,43,.08) !important; opacity: .5; }
 .rank-row.just-buzzed { animation: just-buzzed .5s ease-out; }
 @keyframes slide-up { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;} }
@@ -201,7 +201,7 @@ body::before{
 .result-tag .pts { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-weight: 900; margin-left: 4px; }
 
 /* ── Rank 回顧 ── */
-#rank-screen { padding: clamp(28px,3.4vw,44px) clamp(32px,4vw,64px); }
+#rank-screen { padding: clamp(28px,3.4vw,44px) clamp(32px,4vw,64px); overflow-x: hidden; max-width: 100vw; }
 .rank-head { display:flex; flex-direction:column; align-items:flex-start; gap:10px; margin-bottom: clamp(16px,2.4vw,28px); flex-shrink:0; }
 .rank-title { font-family:var(--font-title); font-size: clamp(24px,3vw,44px); font-weight: 700; letter-spacing: 8px; color: var(--gold-bright); text-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 22px rgba(245,166,35,.32); }
 .rank-head .meander-band { width: clamp(160px,24vw,300px); }
@@ -269,7 +269,15 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 #open-flame-bar { flex-shrink: 0; margin-bottom: clamp(10px,1.4vw,18px); }
 
 /* ── idle 大型排行榜 ── */
-#idle-leaderboard { width: min(86vw, 1080px); display: flex; flex-direction: column; gap: clamp(8px,1.1vw,14px); padding: clamp(18px,2.4vw,28px) clamp(22px,3vw,36px); }
+#idle-leaderboard { width: min(86vw, 1080px); max-height: 64vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: clamp(8px,1.1vw,14px); padding: clamp(18px,2.4vw,28px) clamp(22px,3vw,36px); }
+/* 隊伍多時（>6）壓密度，讓 8-10 隊全 0 分也能完整列出不溢出 */
+#idle-leaderboard.dense { gap: clamp(5px,.7vw,9px); }
+#idle-leaderboard.dense .lb-row { padding: clamp(6px,.9vw,12px) clamp(14px,2vw,24px); }
+#idle-leaderboard.dense .lb-badge { width: clamp(34px,4vw,50px); height: clamp(34px,4vw,50px); font-size: clamp(14px,1.7vw,22px); }
+#idle-leaderboard.dense .lb-team { font-size: clamp(18px,2.7vw,36px); }
+#idle-leaderboard.dense .lb-score { font-size: clamp(18px,2.6vw,34px); }
+#idle-leaderboard.dense .lb-row.r1 .lb-team { font-size: clamp(20px,3vw,40px); }
+#idle-leaderboard.dense .lb-row.r1 .lb-score { font-size: clamp(20px,2.9vw,38px); }
 .lb-title { font-size: clamp(13px,1.6vw,18px); font-weight: 700; letter-spacing: 6px; color: var(--muted); margin-bottom: 4px; }
 .lb-row { display: flex; align-items: center; gap: clamp(14px,2vw,26px); border-radius: 14px; padding: clamp(10px,1.4vw,18px) clamp(16px,2.2vw,28px); background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); animation: slide-up .45s cubic-bezier(.16,1,.3,1) both; }
 .lb-row.r1 { border-color: var(--gold); border-left-color: var(--gold); background: linear-gradient(180deg, rgba(212,175,55,.22), rgba(212,175,55,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 30px rgba(245,166,35,.18); }
@@ -629,6 +637,12 @@ let stateInited = false;  // 第一次 applyState 僅同步基準值（prevCanIg
 // 倒數秒數 fallback：以伺服器下發的 state.countFrom 為權威來源，僅在尚未收到 state 時用此預設。
 // 同步成 server 預設 60，避免 remainingMs==null fallback 路徑顯示與伺服器不一致的秒數。
 let COUNT_FROM = 60;
+// rank 回顧畫面自動切回計時：判定後 locked 且 buzzOrder 有值會停在 rank 回顧，
+// RANK_REVIEW_MS 後若仍 locked 就自動切回 idle 城鎮看板，避免卡在過渡畫面。
+let rankAutoTimer = null;
+const RANK_REVIEW_MS = 7000;
+// 模組層快取：給 rankAutoTimer 切回 idle 用，避免閉包抓到 applyState 當下的舊值
+let lastJoined = [], lastScores = {}, lastScoreSince = {};
 
 // ── 音效引擎（參考遊戲節目原型：明亮鐘聲、經典蜂鳴器；加殘響與壓縮使其專業不刺耳）──
 let masterGain, reverbSend;
@@ -826,32 +840,36 @@ function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
   });
 }
 
-// 穩定排序：分數降序，同分時以「首見順序」(固定 idx) tiebreak，避免每次 render 跳動。
-function sortedScores(scores, teams){
-  (teams || []).forEach(t=>{ if(!lastTeamOrder.includes(t)) lastTeamOrder.push(t); });
-  const entries = Object.keys(scores||{}).map(team=>{
+// 穩定排序：以 joinedTeams 為全集（含 0 分）。分數降序，同分時依 server 的 scoreSince
+// （達到當前分數的時間戳，0 分組=加入時間）由小到大（先到在上），最終以首見順序 idx tiebreak。
+function sortedScores(scores, teams, scoreSince){
+  const all = new Set([...(teams||[]), ...Object.keys(scores||{})]);
+  (teams||[]).forEach(t=>{ if(!lastTeamOrder.includes(t)) lastTeamOrder.push(t); });
+  const entries = [...all].map(team=>{
     if(!lastTeamOrder.includes(team)) lastTeamOrder.push(team);
-    return { team, score: scores[team]||0, idx: lastTeamOrder.indexOf(team) };
+    return { team, score: scores[team]||0, since: (scoreSince&&scoreSince[team])||Infinity, idx: lastTeamOrder.indexOf(team) };
   });
-  entries.sort((a,b)=> (b.score-a.score) || (a.idx-b.idx));
+  entries.sort((a,b)=> (b.score-a.score) || (a.since-b.since) || (a.idx-b.idx));
   return entries;
 }
 
 // 是否有任何非零分數（沒有就維持城鎮 chips / 隱藏計分板）
 function hasAnyScore(scores){ return Object.values(scores||{}).some(v=>v>0); }
 
-// idle 大型排行榜：名次徽章 + 組名 + 分數，冠軍列最大最亮可帶聖杯火焰
-function renderLeaderboard(scores, teams){
+// idle 大型排行榜：名次徽章 + 組名 + 分數，冠軍列最大最亮可帶聖杯火焰。
+// idle 一律完整列出所有參賽城鎮（含 0 分），取代原本城鎮 chips 面板。
+function renderLeaderboard(scores, teams, scoreSince){
   const wrap=$('idle-leaderboard');
   const joinedPanel=document.querySelector('.joined-panel');
-  if(!hasAnyScore(scores)){
+  const entries = sortedScores(scores, teams, scoreSince);
+  if(entries.length===0){
     wrap.style.display='none';
     if(joinedPanel) joinedPanel.style.display='';
     return;
   }
   wrap.style.display='';
   if(joinedPanel) joinedPanel.style.display='none';
-  const entries = sortedScores(scores, teams).filter(e=>e.score>0);
+  wrap.classList.toggle('dense', entries.length>6);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
   entries.forEach((e,i)=>{
     const rank=i+1;
@@ -870,10 +888,10 @@ function renderLeaderboard(scores, teams){
 }
 
 // open 角落常駐小計分板：top 5 緊湊列，不可遮擋中央順位
-function renderMiniScores(scores, teams){
+function renderMiniScores(scores, teams, scoreSince){
   const wrap=$('mini-scoreboard');
   if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
-  const entries = sortedScores(scores, teams).filter(e=>e.score>0).slice(0,5);
+  const entries = sortedScores(scores, teams, scoreSince).filter(e=>e.score>0).slice(0,5);
   wrap.querySelectorAll('.mini-row').forEach(r=>r.remove());
   entries.forEach((e,i)=>{
     const rank=i+1;
@@ -891,10 +909,10 @@ function renderMiniScores(scores, teams){
 
 // open 右側常駐完整榜：顯示所有有分數的組（降序，不切片），>8 隊壓密度。
 // row 帶 data-lb-team，與 idle 大榜共用 scoreFlash 的 [data-lb-team] 選擇器。
-function renderOpenLeaderboard(scores, teams){
+function renderOpenLeaderboard(scores, teams, scoreSince){
   const wrap=$('open-leaderboard');
   if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
-  const entries = sortedScores(scores, teams).filter(e=>e.score>0);
+  const entries = sortedScores(scores, teams, scoreSince).filter(e=>e.score>0);
   wrap.classList.toggle('dense', entries.length>8);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
   entries.forEach((e,i)=>{
@@ -991,9 +1009,12 @@ function playIgnite(){
 function showLitBadge(){ const b=$('lit-badge'); if(b) b.classList.add('show'); }
 
 function applyState(state){
+  // 統一清掉 rank 回顧自動切回計時，只有 rank 分支會重設，避免殘留 timer 把 open 畫面切走
+  clearTimeout(rankAutoTimer); rankAutoTimer = null;
   // 以伺服器下發的 countFrom 為倒數權威值（同步後 remainingMs==null 的 fallback 路徑才不會與 server 不一致）
   if(typeof state.countFrom === 'number' && state.countFrom > 0) COUNT_FROM = state.countFrom;
   const teams = state.joinedTeams || [];
+  const scoreSince = state.scoreSince || {};
   renderAllFlameBars(state);
   // F5/重連後若已點燈，直接顯示最終態徽記、不重播長動畫
   if(state.lit){ ignitePlayed = true; showLitBadge(); }
@@ -1028,7 +1049,7 @@ function applyState(state){
     } else {
       renderChips($('open-waiting-chips'), teams);
     }
-    renderOpenLeaderboard(state.scores, teams);
+    renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else if(state.phase==='reviewing'){
     // 拍燈定格：留在 open 畫面顯示定格倒數與順位（不切回顧），停表但不歸零
     showScreen('open');
@@ -1036,7 +1057,7 @@ function applyState(state){
     $('open-waiting').style.display = 'none';
     $('open-rank-list').style.display = 'flex';
     renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
-    renderOpenLeaderboard(state.scores, teams);
+    renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
     $('open-leaderboard').classList.remove('show');
@@ -1044,11 +1065,19 @@ function applyState(state){
     if(state.buzzOrder.length){
       showScreen('rank');
       renderOrderList($('rank-list'), state.buzzOrder, state.currentFocus, false);
+      // 回顧 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
+      rankAutoTimer = setTimeout(()=>{
+        rankAutoTimer = null;
+        showScreen('idle');
+        $('idle-count').textContent = lastJoined.length;
+        renderChips($('idle-chips'), lastJoined);
+        renderLeaderboard(lastScores, lastJoined, lastScoreSince);
+      }, RANK_REVIEW_MS);
     } else {
       showScreen('idle');
       $('idle-count').textContent = teams.length;
       renderChips($('idle-chips'), teams);
-      renderLeaderboard(state.scores, teams);
+      renderLeaderboard(state.scores, teams, scoreSince);
     }
   }
   prevBuzzCount = state.buzzOrder.length;
@@ -1064,6 +1093,10 @@ function applyState(state){
   }
   justVerified = null;
   prevScores = Object.assign({}, state.scores);
+  // 快取最新 teams/scores/scoreSince 供 rankAutoTimer 切回 idle 使用（避免閉包抓舊值）
+  lastJoined = teams;
+  lastScores = state.scores || {};
+  lastScoreSince = scoreSince;
   stateInited = true;
 }
 
@@ -1095,8 +1128,8 @@ function handleMessage(msg){
         justVerified = msg.team;
         // 用本次廣播的最新分數先即時重排榜單，再對該組播 +10 跳動與上飄金字
         const delta = (msg.scores?.[msg.team]||0) - (prevScores[msg.team]||0);
-        renderLeaderboard(msg.scores, lastTeamOrder);
-        renderOpenLeaderboard(msg.scores, lastTeamOrder);
+        renderLeaderboard(msg.scores, lastJoined, lastScoreSince);
+        renderOpenLeaderboard(msg.scores, lastJoined, lastScoreSince);
         scoreFlash(msg.team, delta>0 ? delta : 0);
       } else {
         playSfx('wrong');
@@ -1112,8 +1145,8 @@ function handleMessage(msg){
     case 'verify_undone':
       // 撤銷判定：用最新分數重排榜單，並清掉剛剛的答對/答錯慶祝殘留
       if(msg.scores){
-        renderLeaderboard(msg.scores, lastTeamOrder);
-        renderOpenLeaderboard(msg.scores, lastTeamOrder);
+        renderLeaderboard(msg.scores, lastJoined, lastScoreSince);
+        renderOpenLeaderboard(msg.scores, lastJoined, lastScoreSince);
         prevScores = Object.assign({}, msg.scores); // 同步基準，避免下個 state 把撤銷誤判成扣分動畫
       }
       $('x-overlay').classList.remove('show');
