@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>聖火之夜 — 主持端</title>
 <link rel="manifest" href="/manifest.json">
@@ -123,6 +123,12 @@ body { background: transparent; }
 
 /* ── 搶答列表 ── */
 #main { overflow-y: auto; padding: 14px 16px; height: calc(100% - 170px); }
+/* 判定中（reviewing）：收起點燈/門檻/計分板等次要面板，讓分值器與 O/X 判定列上移到拇指可及的首屏 */
+body.reviewing .hope-panel,
+body.reviewing #score-board { display: none; }
+/* 判定中：分值列與搶答列加強區隔，O/X 列更顯眼 */
+body.reviewing #points-bar { background: rgba(245,166,35,.08); }
+body.reviewing .buzz-row.focus { box-shadow: 0 0 0 2px rgba(245,166,35,.35), 0 4px 14px rgba(0,0,0,.3); }
 #empty-msg { margin-top: 60px; text-align: center; font-size: 15px; font-weight: 600; color: var(--muted); letter-spacing: 2px; }
 #buzz-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .buzz-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 10px; padding: 14px 18px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 12px rgba(0,0,0,.22); animation: row-in .4s cubic-bezier(.16,1,.3,1) both; transition: border-color .2s, background .2s; }
@@ -145,8 +151,8 @@ body { background: transparent; }
 .result-badge .ic { width: 1.1em; height: 1.1em; flex-shrink: 0; }
 .badge-correct { background: rgba(63,174,107,.18); color: #7fe0a4; }
 .badge-wrong { background: rgba(192,57,43,.18); color: #e3897f; }
-.verify-btns { display: flex; gap: 6px; flex-shrink: 0; }
-.v-btn { border: none; border-radius: 8px; width: 46px; height: 46px; min-width: 46px; font-size: 19px; font-weight: 900; line-height: 1; flex-shrink: 0; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
+.verify-btns { display: flex; gap: 12px; flex-shrink: 0; }
+.v-btn { border: none; border-radius: 10px; width: 54px; height: 54px; min-width: 54px; font-size: 22px; font-weight: 900; line-height: 1; flex-shrink: 0; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; touch-action: manipulation; }
 .v-btn:active { transform: scale(.88); filter: brightness(1.18); box-shadow: 0 0 0 4px rgba(255,255,255,.18), 0 0 16px rgba(255,255,255,.25); }
 .v-correct { background: var(--up); }
 .v-wrong { background: var(--wrong); }
@@ -172,7 +178,7 @@ body { background: transparent; }
 .points-bar:empty { display: none; }
 .points-bar .pb-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
 .points-bar .pb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.points-chip { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-latin); font-size: 14px; font-weight: 800; letter-spacing: .5px; padding: 8px 12px; min-width: 44px; cursor: pointer; transition: background .15s, transform .1s, border-color .15s; font-variant-numeric: tabular-nums; }
+.points-chip { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-latin); font-size: 15px; font-weight: 800; letter-spacing: .5px; padding: 11px 14px; min-width: 48px; min-height: 44px; cursor: pointer; transition: background .15s, transform .1s, border-color .15s; font-variant-numeric: tabular-nums; touch-action: manipulation; }
 .points-chip:active { transform: scale(.95); }
 .points-chip.active { background: linear-gradient(160deg,#fff3c0,#f5d77a 40%,#d4af37 90%); color: #2a1c00; border-color: var(--gold-bright); box-shadow: 0 0 10px rgba(245,166,35,.3); }
 #points-custom { width: 72px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 8px; padding: 8px 10px; font-family: var(--font-latin); font-size: 14px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; font-variant-numeric: tabular-nums; transition: border-color .15s, box-shadow .15s; }
@@ -183,7 +189,7 @@ body { background: transparent; }
 /* 判定 badge 得分 */
 .result-badge .pts { font-family: var(--font-latin); font-variant-numeric: tabular-nums; opacity: .9; }
 /* 撤銷鈕 */
-.btn-unverify { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-title); font-size: 12px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; padding: 7px 10px; flex-shrink: 0; cursor: pointer; transition: background .15s, transform .1s; }
+.btn-unverify { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-title); font-size: 13px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; padding: 12px 14px; min-height: 44px; flex-shrink: 0; cursor: pointer; transition: background .15s, transform .1s; touch-action: manipulation; }
 .btn-unverify:active { transform: scale(.95); background: rgba(212,175,55,.16); }
 
 /* ── 金箔風確認對話框 ── */
@@ -193,8 +199,8 @@ body { background: transparent; }
 .cd-card { width: 100%; max-width: 380px; padding: 26px 24px 20px; animation: rise .4s cubic-bezier(.16,1,.3,1) both; }
 .cd-msg { font-family: var(--font-title); font-size: 16px; font-weight: 700; line-height: 1.7; letter-spacing: .5px; color: var(--ink); text-align: center; }
 .cd-msg b { color: var(--gold-bright); }
-.cd-actions { display: flex; gap: 10px; margin-top: 22px; }
-.cd-btn { flex: 1; border-radius: 10px; padding: 13px 10px; font-family: var(--font-title); font-size: 15px; font-weight: 800; letter-spacing: 1.5px; cursor: pointer; transition: transform .1s, filter .15s, background .15s; }
+.cd-actions { display: flex; gap: 16px; margin-top: 22px; }
+.cd-btn { flex: 1; border-radius: 10px; padding: 16px 10px; min-height: 52px; font-family: var(--font-title); font-size: 16px; font-weight: 800; letter-spacing: 1.5px; cursor: pointer; transition: transform .1s, filter .15s, background .15s; touch-action: manipulation; }
 .cd-btn:active { transform: scale(.97); }
 .cd-cancel { border: 1px solid var(--gold-dim); background: rgba(212,175,55,.08); color: var(--gold-bright); }
 .cd-cancel:active { background: rgba(212,175,55,.16); }
@@ -214,7 +220,7 @@ body { background: transparent; }
 .threshold-set label { font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
 #threshold-input { width: 92px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 8px; padding: 9px 12px; font-family: var(--font-latin); font-size: 16px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; font-variant-numeric: tabular-nums; transition: border-color .15s, box-shadow .15s; }
 #threshold-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
-#btn-threshold { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.08); color: var(--gold-bright); font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 1px; padding: 9px 14px; cursor: pointer; transition: background .15s, transform .1s; }
+#btn-threshold { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.08); color: var(--gold-bright); font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 1px; padding: 12px 16px; min-height: 44px; cursor: pointer; transition: background .15s, transform .1s; touch-action: manipulation; }
 #btn-threshold:active { transform: scale(.97); background: rgba(212,175,55,.16); }
 #btn-ignite { border: none; border-radius: 12px; padding: 16px 8px; font-family: var(--font-title); font-size: clamp(16px,4.4vw,19px); font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: transform .1s, filter .15s, opacity .25s; }
 #btn-ignite:not(:disabled) { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: inset 0 1px 0 rgba(255,240,200,.55), inset 0 -3px 7px rgba(120,40,0,.45), 0 8px 26px rgba(232,67,31,.5); text-shadow: 0 1px 0 rgba(255,225,160,.4); animation: badge-glow 1.4s ease-in-out infinite; }
@@ -228,7 +234,7 @@ body { background: transparent; }
 #score-board:empty { display: none; }
 .score-head { display: flex; align-items: center; gap: 10px; padding: 4px 2px; }
 .score-head .score-title { flex: 1; font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); }
-.btn-score-reset { border: 1px solid rgba(192,57,43,.6); border-radius: 8px; padding: 7px 12px; font-family: var(--font-title); font-size: 13px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s; }
+.btn-score-reset { border: 1px solid rgba(192,57,43,.6); border-radius: 8px; padding: 11px 14px; min-height: 44px; font-family: var(--font-title); font-size: 13px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s; touch-action: manipulation; }
 .btn-score-reset:hover { filter: brightness(1.1); color: #f3b8ae; }
 .btn-score-reset:active { transform: scale(.97); background: linear-gradient(160deg, rgba(192,57,43,.34), rgba(192,57,43,.16)); }
 .score-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
@@ -237,8 +243,8 @@ body { background: transparent; }
 .score-row.eliminated .s-name { text-decoration: line-through; color: var(--muted); }
 .score-row .s-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #e3897f; border: 1px solid rgba(192,57,43,.5); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
 .score-row .s-val { font-family: var(--font-latin); font-size: 19px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
-.score-adj { display: flex; gap: 6px; flex-shrink: 0; }
-.score-adj button { border: none; border-radius: 8px; width: 40px; height: 40px; min-width: 40px; font-size: 22px; font-weight: 900; line-height: 1; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
+.score-adj { display: flex; gap: 10px; flex-shrink: 0; }
+.score-adj button { border: none; border-radius: 9px; width: 46px; height: 46px; min-width: 46px; font-size: 24px; font-weight: 900; line-height: 1; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; touch-action: manipulation; }
 .score-adj button:active { transform: scale(.88); filter: brightness(1.18); }
 .s-plus { background: var(--up); }
 .s-minus { background: var(--wrong); }
@@ -574,6 +580,9 @@ function renderState(state){
   const [label,bg,color,border] = phases[state.phase] ?? phases.locked;
   badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
   badge.classList.toggle('open-live', state.phase==='open');
+
+  // 判定中收起次要面板，讓 O/X 判定列上移到首屏（手機拇指可及）
+  document.body.classList.toggle('reviewing', state.phase==='reviewing' && !state.lit);
 
   // 定格等判定：清楚提示主持人剩餘秒數 + 久候催促
   const pauseNote = $('pause-note');
