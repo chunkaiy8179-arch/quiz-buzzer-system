@@ -935,3 +935,389 @@ test('C12 H-1 回歸：判錯續跑後別組拍燈，host_unverify 失效（環�
   await new Promise(r => setTimeout(r, 200));
   cl.sock.close();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 本輪新協定測試：lockOnWrong 可變、host_set_lock_mode、非鎖模式撤銷
+// PORT=3200, PIN=SCORE1234, COUNT_FROM=5
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── D1 預設鎖模式答錯（迴歸）：c1 拍→判 wrong→進 eliminated、再 buzz 被拒 ──
+test('D1 預設鎖模式答錯：c1 進 eliminated、再 buzz 被拒、其他組可搶', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 確保鎖定模式 = true（預設）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  await waitState(host.inbox, s => s.lockOnWrong === true);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D1甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  const c2 = rawConn(); await c2.ready;
+  c2.sock.send(JSON.stringify({ type: 'join', team: 'D1乙' }));
+  await waitMsg(c2.inbox, 'join_ok');
+
+  // 開搶
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // c1 拍燈 → reviewing
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D1甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 判 c1 wrong → 鎖模式 → c1 進 eliminated、phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D1甲', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong.eliminated).toContain('D1甲');
+  expect(afterWrong.lockOnWrong).toBe(true);
+
+  // c1 再送 buzz → 應收到 buzz_rejected（出局不可再搶）
+  c1.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D1甲' }));
+  const rej = await waitMsg(c1.inbox, 'buzz_rejected', 3000);
+  expect(rej.team).toBe('D1甲');
+
+  // 等 300ms 確認 buzzOrder 中 D1甲 未再增加
+  await new Promise(r => setTimeout(r, 300));
+  const peek = rawConn(); await peek.ready;
+  const latest = await waitMsg(peek.inbox, 'state', 3000);
+  peek.sock.close();
+  const d1Entries = latest.buzzOrder.filter(x => x.team === 'D1甲');
+  expect(d1Entries.length).toBe(1); // 只有第一筆（verified=true）
+
+  // c2 此時應可搶（未出局）
+  host.inbox.length = 0;
+  c2.sock.send(JSON.stringify({ type: 'buzz', team: 'D1乙' }));
+  const r2 = await waitState(host.inbox, s => s.phase === 'reviewing' && s.buzzOrder.some(x => x.team === 'D1乙'));
+  expect(r2.buzzOrder.find(x => x.team === 'D1乙')).toBeTruthy();
+
+  host.sock.close(); c1.sock.close(); c2.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D2 非鎖模式答錯可再搶：lock:false→c1 拍→判 wrong→不在 eliminated、可再 buzz ──
+test('D2 非鎖模式答錯可再搶：lock:false→c1拍→判wrong→不在eliminated、c1再buzz成功', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 切到非鎖模式
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: false }));
+  await waitState(host.inbox, s => s.lockOnWrong === false);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D2甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 開搶
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // c1 第一次拍燈 → reviewing
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D2甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 判 c1 wrong → 非鎖模式：entry 被移除，不進 eliminated，phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D2甲', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  // 非鎖模式：不在 eliminated
+  expect(afterWrong.eliminated).not.toContain('D2甲');
+  // entry 被移除（buzzOrder 不含 D2甲）
+  expect(afterWrong.buzzOrder.find(x => x.team === 'D2甲')).toBeUndefined();
+
+  // c1 再次 buzz → 應成功進 buzzOrder（非鎖、未在 eliminated）
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D2甲' }));
+  const r2 = await waitState(host.inbox, s => s.phase === 'reviewing' && s.buzzOrder.some(x => x.team === 'D2甲'));
+  const entry = r2.buzzOrder.find(x => x.team === 'D2甲');
+  expect(entry).toBeTruthy();
+  expect(entry.verified).toBe(false);
+
+  host.sock.close(); c1.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  // 恢復預設鎖模式
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D3 切非鎖全部解放：先鎖模式讓 c1 出局→切 lock:false→eliminated 清空、c1 可再搶 ──
+test('D3 切非鎖全部解放：c1出局後切lock:false→eliminated清空、c1可再搶', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 確保鎖定模式 = true
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  await waitState(host.inbox, s => s.lockOnWrong === true);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D3甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  const c2 = rawConn(); await c2.ready;
+  c2.sock.send(JSON.stringify({ type: 'join', team: 'D3乙' }));
+  await waitMsg(c2.inbox, 'join_ok');
+
+  // 開搶，c1 拍→判 wrong（鎖模式）→ c1 進 eliminated
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D3甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D3甲', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong.eliminated).toContain('D3甲'); // c1 在 eliminated
+
+  // 切 lock:false → 應清空 eliminated
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: false }));
+  const afterUnlock = await waitState(host.inbox, s => s.lockOnWrong === false);
+  expect(afterUnlock.eliminated).toHaveLength(0); // eliminated 已清空
+  expect(afterUnlock.lockOnWrong).toBe(false);
+
+  // c1 應可再搶（不再被 eliminated 擋）
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D3甲' }));
+  const r2 = await waitState(host.inbox, s => s.phase === 'reviewing' && s.buzzOrder.some(x => x.team === 'D3甲'));
+  expect(r2.buzzOrder.find(x => x.team === 'D3甲')).toBeTruthy();
+
+  host.sock.close(); c1.sock.close(); c2.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D4 非鎖模式判錯後撤銷：lock:false→c1拍→判wrong(entry移除)→host_unverify→c1回 buzzOrder ──
+test('D4 非鎖模式判錯後撤銷：lock:false→拍→判wrong→host_unverify→c1回buzzOrder可重判', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+
+  // 切非鎖模式
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: false }));
+  await waitState(host.inbox, s => s.lockOnWrong === false);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D4甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 開搶，c1 拍
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D4甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 判 wrong（非鎖）：entry 被移除，不進 eliminated，phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D4甲', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong.eliminated).not.toContain('D4甲');
+  expect(afterWrong.buzzOrder.find(x => x.team === 'D4甲')).toBeUndefined();
+
+  // host_unverify → 應還原 c1 回 buzzOrder（prevBuzzOrder 快照）、phase=reviewing
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  const afterUndo = await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // c1 應回到 buzzOrder，verified=false，可重判
+  const entry = afterUndo.buzzOrder.find(b => b.team === 'D4甲');
+  expect(entry).toBeTruthy();
+  expect(entry.verified).toBe(false);
+  expect(entry.result).toBeNull();
+  // eliminated 仍為空（非鎖模式）
+  expect(afterUndo.eliminated).not.toContain('D4甲');
+  // currentFocus 指向 D4甲
+  expect(afterUndo.currentFocus).toBe('D4甲');
+  // phase = reviewing
+  expect(afterUndo.phase).toBe('reviewing');
+
+  host.sock.close(); c1.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D5 鎖模式判錯後撤銷（迴歸）：lock:true→c1拍→判wrong→host_unverify→c1移出eliminated ──
+test('D5 鎖模式判錯後撤銷：lock:true→c1拍→判wrong→host_unverify→c1移出eliminated回reviewing', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 確保鎖定模式 = true
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  await waitState(host.inbox, s => s.lockOnWrong === true);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D5甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 開搶，c1 拍
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D5甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 判 wrong（鎖模式）→ c1 進 eliminated，phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D5甲', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong.eliminated).toContain('D5甲');
+  // entry 仍在 buzzOrder，verified=true，result=wrong
+  const wrongEntry = afterWrong.buzzOrder.find(x => x.team === 'D5甲');
+  expect(wrongEntry).toBeTruthy();
+  expect(wrongEntry.verified).toBe(true);
+  expect(wrongEntry.result).toBe('wrong');
+
+  // host_unverify → c1 移出 eliminated，回 reviewing，entry 重置
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  const afterUndo = await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // c1 移出 eliminated
+  expect(afterUndo.eliminated).not.toContain('D5甲');
+  // phase 回 reviewing
+  expect(afterUndo.phase).toBe('reviewing');
+  // entry 重置：verified=false、result=null
+  const restoredEntry = afterUndo.buzzOrder.find(b => b.team === 'D5甲');
+  expect(restoredEntry).toBeTruthy();
+  expect(restoredEntry.verified).toBe(false);
+  expect(restoredEntry.result).toBeNull();
+  // currentFocus 指向 D5甲
+  expect(afterUndo.currentFocus).toBe('D5甲');
+
+  host.sock.close(); c1.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D6 host_set_lock_mode 下發：切換後 observer 收到 state.lockOnWrong 對應值 ──
+test('D6 host_set_lock_mode 下發：切換後 observer 收到 state.lockOnWrong 正確值', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  const observer = rawConn(); await observer.ready;
+  await waitMsg(observer.inbox, 'state', 3000); // 接收初始 state
+
+  // 先確認初始值（預設 true）
+  observer.inbox.length = 0;
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  const s1 = await waitState(observer.inbox, s => true);
+  expect(s1.lockOnWrong).toBe(true);
+
+  // 切到 false，observer 應收到 lockOnWrong=false
+  observer.inbox.length = 0;
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: false }));
+  const s2 = await waitState(observer.inbox, s => s.lockOnWrong === false);
+  expect(s2.lockOnWrong).toBe(false);
+
+  // 切回 true，observer 再收到 lockOnWrong=true
+  observer.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  const s3 = await waitState(observer.inbox, s => s.lockOnWrong === true);
+  expect(s3.lockOnWrong).toBe(true);
+
+  host.sock.close(); observer.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── D7 非鎖模式同組連搶錯：c1拍→判wrong→c1再拍→判wrong→倒數歸零closed=true不卡死 ──
+// COUNT_FROM=5（短倒數），讓時間到時歸零 closed=true，驗不卡死（phase 最終 closed 或 locked）。
+test('D7 非鎖模式同組連搶錯：連錯後倒數歸零 closed=true 不卡死', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 切非鎖模式
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: false }));
+  await waitState(host.inbox, s => s.lockOnWrong === false);
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: 'D7甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 開搶（COUNT_FROM=5）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  const openState = await waitState(host.inbox, s => s.phase === 'open');
+  expect(openState.remainingMs).toBeGreaterThan(0);
+
+  // c1 第一次拍→判 wrong（非鎖：entry 移除、可再搶）
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D7甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D7甲', result: 'wrong' }));
+  const afterWrong1 = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong1.eliminated).not.toContain('D7甲'); // 非鎖，不出局
+
+  // c1 第二次拍→判 wrong
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: 'D7甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'D7甲', result: 'wrong' }));
+  const afterWrong2 = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong2.eliminated).not.toContain('D7甲'); // 仍不出局
+
+  // 等待倒數歸零（COUNT_FROM=5，最多等 8 秒）
+  // 每次判 wrong 後從 remainingMs 續跑，兩次判 wrong 後 remainingMs 應所剩無幾
+  // 等待 closed=true 或 time_up
+  const peek = rawConn(); await peek.ready;
+  const closedState = await waitState(peek.inbox, s => s.closed === true || s.phase === 'locked', 9000);
+  peek.sock.close();
+  // 確認不卡死：closed=true（open 已歸零）或 locked（已結束）
+  expect(closedState.closed === true || closedState.phase === 'locked').toBe(true);
+  // c1 不在 eliminated（非鎖模式始終如此）
+  expect(closedState.eliminated).not.toContain('D7甲');
+
+  host.sock.close(); c1.sock.close();
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_lock_mode', pin: PIN, lock: true }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});

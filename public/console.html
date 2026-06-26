@@ -229,6 +229,20 @@ body.reviewing .buzz-row.focus { box-shadow: 0 0 0 2px rgba(245,166,35,.35), 0 4
 #btn-ignite.lit { background: linear-gradient(160deg,#fff4c6,#f5d77a 40%,#d4af37 80%); color: #2a1c00; animation: none; cursor: default; }
 @media (prefers-reduced-motion: reduce) { #btn-ignite:not(:disabled) { animation: none; } }
 
+/* ── 答錯處置開關（金箔風 toggle）── */
+.lock-set { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.lock-set .ls-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
+.lock-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; min-height: 44px; gap: 12px; flex: 1; }
+.lock-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.lock-track { position: relative; flex-shrink: 0; width: 60px; height: 32px; border-radius: 16px; border: 1.5px solid var(--gold-dim); background: rgba(212,175,55,.06); transition: background .2s, border-color .2s, box-shadow .2s; }
+.lock-track::before { content:''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(160deg,#e8e2cf,#b7a978); box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: transform .2s, background .2s; }
+.lock-switch input:checked + .lock-track { background: linear-gradient(160deg, rgba(192,57,43,.28), rgba(192,57,43,.12)); border-color: rgba(192,57,43,.6); box-shadow: 0 0 8px rgba(192,57,43,.25); }
+.lock-switch input:checked + .lock-track::before { transform: translateX(28px); background: linear-gradient(160deg,#fff3c0,#f5d77a 40%,#d4af37 90%); }
+.lock-switch input:focus-visible + .lock-track { box-shadow: 0 0 0 3px rgba(245,166,35,.25); }
+.lock-mode-text { font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 1px; white-space: nowrap; }
+.lock-mode-text.locked { color: #e3897f; }
+.lock-mode-text.open { color: var(--gold-bright); }
+
 /* ── 計分板 ── */
 #score-board { padding: 4px 16px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
 #score-board:empty { display: none; }
@@ -342,6 +356,14 @@ button, .town-btn { position: relative; overflow: hidden; }
     <label for="threshold-input">點燈門檻</label>
     <input id="threshold-input" type="number" min="0" step="10" inputmode="numeric">
     <button id="btn-threshold">設定門檻</button>
+  </div>
+  <div class="lock-set">
+    <span class="ls-label">答錯處置</span>
+    <label class="lock-switch">
+      <input id="lock-toggle" type="checkbox" checked>
+      <span class="lock-track"></span>
+      <span class="lock-mode-text locked" id="lock-mode-text">出局鎖定</span>
+    </label>
   </div>
   <button id="btn-ignite" disabled>點燃希望之燈</button>
 </div>
@@ -470,6 +492,18 @@ $('btn-threshold').addEventListener('click', ()=>{
   sendHost({ type:'host_set_threshold', threshold:v });
 });
 $('threshold-input').addEventListener('keydown', e => { if(e.key==='Enter') $('btn-threshold').click(); });
+
+// 答錯處置：勾選=出局鎖定（現狀），取消=可再搶（server 切到 false 時會解放 eliminated）
+$('lock-toggle').addEventListener('change', e=>{
+  setLockModeText(e.target.checked);
+  sendHost({ type:'host_set_lock_mode', lock: e.target.checked });
+});
+function setLockModeText(locked){
+  const el = $('lock-mode-text');
+  el.textContent = locked ? '出局鎖定' : '可再搶';
+  el.classList.toggle('locked', locked);
+  el.classList.toggle('open', !locked);
+}
 
 $('btn-ignite').addEventListener('click', async ()=>{
   if($('btn-ignite').disabled) return;
@@ -675,6 +709,14 @@ function renderState(state){
   $('threshold-show').textContent = threshold;
   const thInput = $('threshold-input');
   if(document.activeElement !== thInput) thInput.value = threshold;
+
+  // 答錯處置回填（focus 守衛：主持人正操作時不被 state 覆寫）
+  const lt = $('lock-toggle');
+  if(lt && document.activeElement !== lt){
+    const locked = (state.lockOnWrong !== false);
+    lt.checked = locked;
+    setLockModeText(locked);
+  }
 
   // 點燈鈕：僅 canIgnite 才 enable 並發亮；已點燈顯示狀態
   const ignite = $('btn-ignite');

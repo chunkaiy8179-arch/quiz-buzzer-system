@@ -39,6 +39,8 @@ let state = {
 let scores = {};
 let threshold = Number(process.env.LIGHT_THRESHOLD) || 120; // 希望之燈點燈門檻（總分達標方可點燈）
 let lit = false;            // 希望之燈是否已點亮
+// 答錯鎖定模式：true=答錯出局不可再搶（現狀預設）；false=答錯不鎖、該組可再搶
+let lockOnWrong = (process.env.LOCK_ON_WRONG ?? 'true') !== 'false';
 const SCORE_DELTA = 10;     // 每次答對加分
 
 let countdownTimer = null;
@@ -132,6 +134,7 @@ function stateMsg() {
     canIgnite: totalScore >= threshold,   // 總分是否達標、可點燈
     lit: lit,                             // 希望之燈是否已亮
     canUndo: !!state.lastVerify,          // 是否有可撤銷的最後一筆判定（無則主持端不顯示撤銷鈕）
+    lockOnWrong: lockOnWrong,             // 答錯鎖定模式：true=出局不可再搶；false=不鎖可再搶
   };
 }
 
@@ -270,8 +273,10 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'buzz_rejected', team }));
           return;
         }
-        // 自己已在 buzzOrder（已搶到）：正常情況，不回 reject（reject 會誤解鎖樂觀鎖）
-        if (state.buzzOrder.find(b => b.team === team)) return;
+        // 自己已在 buzzOrder 且「尚未判定」（已搶到、待判）：正常情況，不回 reject（reject 會誤解鎖樂觀鎖）。
+        // 已判定（鎖模式答錯留下 verified=true 的 wrong entry）不在此擋下，
+        // 讓流程往下走到 eliminated 檢查（回 buzz_rejected）或（解放後）重新搶答。
+        if (state.buzzOrder.find(b => b.team === team && !b.verified)) return;
         // 本回合已答錯出局者不可再搶：回 reject 讓 client 解鎖，後續靠 state.eliminated 正確顯示出局
         if (state.eliminated.includes(team)) {
           ws.send(JSON.stringify({ type: 'buzz_rejected', team }));
@@ -316,19 +321,22 @@ wss.on('connection', (ws) => {
 
         // 撤銷快照：在改 state 之前存「判定前」的定格狀態，供 host_unverify 一鍵還原。
         // prevRemainingMs = 拍燈當下定格的剩餘毫秒；prevEliminated = 判定前出局名單快照。
+        // prevBuzzOrder = 判定前完整順位深拷貝，供撤銷時統一還原（涵蓋非鎖模式被移除的 entry）。
+        // lockOnWrong = 記錄此筆判定當下的模式，撤銷時據此正確還原。
         state.lastVerify = {
           team,
           result,
           points: result === 'correct' ? pts : 0,
           prevRemainingMs: state.remainingMs,
           prevEliminated: [...state.eliminated],
+          prevBuzzOrder: state.buzzOrder.map(b => ({ ...b })),
+          lockOnWrong,
         };
-
-        entry.verified = true;
-        entry.result = result;
 
         if (result === 'correct') {
           // 答對：加分（用本題分值）、回合結束鎖定，清出局與定格倒數
+          entry.verified = true;
+          entry.result = result;
           scores[team] = (scores[team] || 0) + pts;
           entry.points = pts; // 記錄本題分值，供撤銷與顯示用
           state.phase = 'locked';
@@ -337,8 +345,17 @@ wss.on('connection', (ws) => {
           clearCountdown();
           state.closed = false;
         } else {
-          // 答錯：該組本回合出局，從拍燈定格的剩餘倒數續跑，讓其他組搶答
-          state.eliminated.push(team);
+          // 答錯：依模式分流
+          if (lockOnWrong) {
+            // 鎖定模式（現狀）：該組本回合出局、不可再搶
+            entry.verified = true;
+            entry.result = result;
+            state.eliminated.push(team);
+          } else {
+            // 不鎖模式：移除該組 entry 讓它回乾淨可搶狀態（不設 verified、不進 eliminated）
+            state.buzzOrder = state.buzzOrder.filter(b => b.team !== team);
+          }
+          // 兩模式共同：從拍燈定格的剩餘倒數續跑，讓其他組（不鎖時含本組）搶答
           const ms = state.remainingMs ?? 0;
           state.remainingMs = null;
           state.phase = 'open';
@@ -364,8 +381,6 @@ wss.on('connection', (ws) => {
         if (!checkPin()) return;
         const lv = state.lastVerify;
         if (!lv) return;
-        const entry = state.buzzOrder.find(b => b.team === lv.team);
-        if (!entry || !entry.verified) return;
 
         // 還原分數：correct 才扣回本題分值；扣到 0 以下移除鬼項
         if (lv.result === 'correct') {
@@ -373,13 +388,12 @@ wss.on('connection', (ws) => {
           if (scores[lv.team] <= 0) delete scores[lv.team];
         }
 
-        // 還原 entry 回未判定
-        entry.verified = false;
-        entry.result = null;
-        delete entry.points;
+        // 用判定前完整順位深拷貝統一還原 buzzOrder，一次涵蓋三情況：
+        // correct / 鎖模式 wrong 的 entry.verified 復原為 false、
+        // 非鎖模式 wrong 被移除的 entry 也一併回來。
+        state.buzzOrder = lv.prevBuzzOrder.map(b => ({ ...b }));
 
-        // 還原狀態回 reviewing 定格：用快照覆蓋出局名單
-        // （correct 撤銷復原被清空的名單、wrong 撤銷移除剛加入的該組），
+        // 還原狀態回 reviewing 定格：用快照覆蓋出局名單，
         // 回填拍燈當下的剩餘毫秒，reviewing 不跑倒數＝定格。
         state.eliminated = lv.prevEliminated;
         state.phase = 'reviewing';
@@ -421,6 +435,23 @@ wss.on('connection', (ws) => {
         const t = Number(msg.threshold);
         if (!Number.isFinite(t) || t < 0) return;
         threshold = Math.round(t);
+        broadcastState();
+        break;
+      }
+
+      // 切換答錯鎖定模式：true=出局不可再搶；false=不鎖可再搶
+      case 'host_set_lock_mode': {
+        if (!checkPin()) return;
+        if (typeof msg.lock !== 'boolean') return;
+        lockOnWrong = msg.lock;
+        if (!lockOnWrong) {
+          state.eliminated = []; // 切到可再搶 → 全部解放（使用者指定）
+          // 清掉鎖模式期間留下的已判錯 entry，讓被解放的組回到乾淨可搶狀態。
+          // 否則修法1放行後再拍燈，buzzOrder 會多 push 一筆，出現同隊重複 entry。
+          state.buzzOrder = state.buzzOrder.filter(b => b.result !== 'wrong');
+          // 跨模式切換視為新決策點，舊判定快照已失真，禁止用它撤銷（避免還原出非法中間態）。
+          state.lastVerify = null;
+        }
         broadcastState();
         break;
       }

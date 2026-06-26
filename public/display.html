@@ -283,7 +283,36 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 .lb-row.r1 .lb-crown { width: 1em; height: 1em; flex-shrink: 0; }
 .lb-row.r1 .lb-crown .flame { transform-origin: 50% 82%; }
 
-/* ── open 角落常駐小計分板 ── */
+/* ── open 雙欄：中央順位 + 右側常駐完整分數榜 ── */
+.open-main { flex: 1; display: flex; gap: clamp(16px,2vw,28px); min-height: 0; }
+#open-leaderboard { width: clamp(240px,22vw,340px); flex-shrink: 0; display: none; flex-direction: column; gap: clamp(6px,.9vw,11px); padding: clamp(14px,1.8vw,22px) clamp(16px,2vw,26px); overflow-y: auto; }
+#open-leaderboard.show { display: flex; }
+#open-leaderboard .lb-title { margin-bottom: clamp(2px,.6vw,6px); }
+/* 完整榜：壓密 lb 樣式，讓全部組別塞得下右側欄 */
+#open-leaderboard .lb-row { gap: clamp(10px,1.2vw,16px); padding: clamp(7px,.9vw,12px) clamp(12px,1.4vw,18px); }
+#open-leaderboard .lb-badge { width: clamp(30px,2.6vw,40px); height: clamp(30px,2.6vw,40px); font-size: clamp(13px,1.2vw,18px); }
+#open-leaderboard .lb-team { font-size: clamp(17px,1.7vw,26px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#open-leaderboard .lb-score { font-size: clamp(17px,1.6vw,26px); }
+#open-leaderboard .lb-row.r1 .lb-team { font-size: clamp(19px,1.9vw,30px); }
+#open-leaderboard .lb-row.r1 .lb-score { font-size: clamp(20px,1.9vw,30px); }
+/* 隊伍多時（>8）再壓一級密度，避免捲動 */
+#open-leaderboard.dense { gap: clamp(4px,.6vw,8px); }
+#open-leaderboard.dense .lb-row { padding: clamp(5px,.7vw,9px) clamp(10px,1.2vw,15px); }
+#open-leaderboard.dense .lb-badge { width: clamp(26px,2.2vw,34px); height: clamp(26px,2.2vw,34px); font-size: clamp(12px,1.1vw,16px); }
+#open-leaderboard.dense .lb-team { font-size: clamp(15px,1.5vw,22px); }
+#open-leaderboard.dense .lb-score { font-size: clamp(15px,1.4vw,22px); }
+#open-leaderboard.dense .lb-row.r1 .lb-team { font-size: clamp(16px,1.6vw,24px); }
+#open-leaderboard.dense .lb-row.r1 .lb-score { font-size: clamp(17px,1.6vw,24px); }
+/* 窄屏 / 直式投影：側欄改回橫向置底，中央順位不被擠壓 */
+@media (max-aspect-ratio: 5/4) {
+  .open-main { flex-direction: column; }
+  #open-leaderboard { width: 100%; flex-shrink: 1; max-height: 30vh; }
+  #open-leaderboard.show { flex-flow: row wrap; align-content: flex-start; gap: clamp(6px,1vw,12px); }
+  #open-leaderboard .lb-title { width: 100%; }
+  #open-leaderboard .lb-row { flex: 1 1 clamp(160px,28%,240px); }
+}
+
+/* ── open 角落常駐小計分板（保留 DOM，open 已改用右側完整榜）── */
 #mini-scoreboard { position: absolute; right: clamp(20px,2.6vw,40px); bottom: clamp(20px,2.6vw,40px); z-index: 6; width: clamp(180px,18vw,260px); padding: clamp(10px,1.2vw,16px) clamp(12px,1.4vw,18px); display: none; flex-direction: column; gap: 6px; background: rgba(8,10,26,.62); opacity: .94; }
 #mini-scoreboard.show { display: flex; }
 .mini-head { font-size: clamp(9px,1vw,12px); font-weight: 700; letter-spacing: 4px; color: var(--muted); margin-bottom: 2px; }
@@ -501,13 +530,18 @@ button, .town-btn { position: relative; overflow: hidden; }
   <div id="mini-scoreboard" class="gold-frame">
     <div class="mini-head">英雄榜</div>
   </div>
-  <div class="open-body">
-    <div id="open-waiting" class="open-waiting">
-      <div class="open-waiting-title serif gold-foil">聖火開放！</div>
-      <div class="open-waiting-sub">衝五步 · 拍燈搶答</div>
-      <div id="open-waiting-chips" class="chips"></div>
+  <div class="open-main">
+    <div class="open-body">
+      <div id="open-waiting" class="open-waiting">
+        <div class="open-waiting-title serif gold-foil">聖火開放！</div>
+        <div class="open-waiting-sub">衝五步 · 拍燈搶答</div>
+        <div id="open-waiting-chips" class="chips"></div>
+      </div>
+      <ol id="open-rank-list" class="order-list" style="display:none"></ol>
     </div>
-    <ol id="open-rank-list" class="order-list" style="display:none"></ol>
+    <aside id="open-leaderboard" class="gold-frame">
+      <div class="lb-title">英雄榜</div>
+    </aside>
   </div>
 </div>
 
@@ -855,6 +889,31 @@ function renderMiniScores(scores, teams){
   wrap.classList.add('show');
 }
 
+// open 右側常駐完整榜：顯示所有有分數的組（降序，不切片），>8 隊壓密度。
+// row 帶 data-lb-team，與 idle 大榜共用 scoreFlash 的 [data-lb-team] 選擇器。
+function renderOpenLeaderboard(scores, teams){
+  const wrap=$('open-leaderboard');
+  if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
+  const entries = sortedScores(scores, teams).filter(e=>e.score>0);
+  wrap.classList.toggle('dense', entries.length>8);
+  wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
+  entries.forEach((e,i)=>{
+    const rank=i+1;
+    const row=document.createElement('div');
+    row.className = `lb-row${rank<=3?` r${rank}`:''}`;
+    row.dataset.lbTeam = e.team;
+    row.style.animationDelay=`${Math.min(i,8)*0.05}s`;
+    const badgeCls = rank<=3 ? `r${rank}` : '';
+    const crown = rank===1 ? `<svg class="lb-crown" viewBox="0 0 120 150"><path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_d)"/><path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/></svg>` : '';
+    row.innerHTML=`
+      <div class="lb-badge ${badgeCls} num">${rank}</div>
+      <div class="lb-team">${crown}${escHtml(e.team)}</div>
+      <div class="lb-score num">${e.score}</div>`;
+    wrap.appendChild(row);
+  });
+  wrap.classList.add('show');
+}
+
 // 聖火進度條：填充寬度 = min(100%, total/threshold)，逼近門檻火苗加劇，達標滿格金光。
 function renderFlameBar(barEl, totalScore, threshold, canIgnite){
   if(!barEl) return;
@@ -899,9 +958,13 @@ function scoreFlash(team, delta){
   document.querySelectorAll(sel).forEach(el=>{
     el.classList.remove('score-pop'); void el.offsetWidth; el.classList.add('score-pop');
   });
-  // 上飄金字：錨在 idle 排行榜該組分數上方（找不到就略過，不影響流程）
-  const anchor = document.querySelector(`#idle-leaderboard [data-lb-team="${CSS.escape(team)}"]`)
-              || document.querySelector(`#mini-scoreboard [data-mini-team="${CSS.escape(team)}"]`);
+  // 上飄金字：錨在「當前可見」榜單該組分數上方（idle 大榜 / open 完整榜，取 offsetParent 非 null 者；找不到就略過）
+  const cand = [
+    document.querySelector(`#idle-leaderboard [data-lb-team="${CSS.escape(team)}"]`),
+    document.querySelector(`#open-leaderboard [data-lb-team="${CSS.escape(team)}"]`),
+    document.querySelector(`#mini-scoreboard [data-mini-team="${CSS.escape(team)}"]`),
+  ];
+  const anchor = cand.find(el => el && el.offsetParent !== null) || null;
   if(anchor){
     const r = anchor.getBoundingClientRect();
     const f = document.createElement('div');
@@ -965,7 +1028,7 @@ function applyState(state){
     } else {
       renderChips($('open-waiting-chips'), teams);
     }
-    renderMiniScores(state.scores, teams);
+    renderOpenLeaderboard(state.scores, teams);
   } else if(state.phase==='reviewing'){
     // 拍燈定格：留在 open 畫面顯示定格倒數與順位（不切回顧），停表但不歸零
     showScreen('open');
@@ -973,10 +1036,10 @@ function applyState(state){
     $('open-waiting').style.display = 'none';
     $('open-rank-list').style.display = 'flex';
     renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
-    renderMiniScores(state.scores, teams);
+    renderOpenLeaderboard(state.scores, teams);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
-    $('mini-scoreboard').classList.remove('show');
+    $('open-leaderboard').classList.remove('show');
     $('x-overlay').classList.remove('show');
     if(state.buzzOrder.length){
       showScreen('rank');
@@ -1033,7 +1096,7 @@ function handleMessage(msg){
         // 用本次廣播的最新分數先即時重排榜單，再對該組播 +10 跳動與上飄金字
         const delta = (msg.scores?.[msg.team]||0) - (prevScores[msg.team]||0);
         renderLeaderboard(msg.scores, lastTeamOrder);
-        renderMiniScores(msg.scores, lastTeamOrder);
+        renderOpenLeaderboard(msg.scores, lastTeamOrder);
         scoreFlash(msg.team, delta>0 ? delta : 0);
       } else {
         playSfx('wrong');
@@ -1050,7 +1113,7 @@ function handleMessage(msg){
       // 撤銷判定：用最新分數重排榜單，並清掉剛剛的答對/答錯慶祝殘留
       if(msg.scores){
         renderLeaderboard(msg.scores, lastTeamOrder);
-        renderMiniScores(msg.scores, lastTeamOrder);
+        renderOpenLeaderboard(msg.scores, lastTeamOrder);
         prevScores = Object.assign({}, msg.scores); // 同步基準，避免下個 state 把撤銷誤判成扣分動畫
       }
       $('x-overlay').classList.remove('show');

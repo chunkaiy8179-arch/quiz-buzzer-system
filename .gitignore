@@ -8,3 +8,4 @@ playwright-report/
 
 # Claude Code 本地設定（agent / 指令等，不進 repo）
 .claude/
+tests/_*.js
