@@ -31,13 +31,27 @@ test.beforeAll(async () => {
 test.afterAll(() => { if (serverProc) serverProc.kill(); });
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+// 回合進行中重設會彈自製 confirmDialog（#confirm-overlay），需點「確定」(#cd-ok)；locked 不彈框。
+async function clickReset(page) {
+  await page.click('#btn-reset');
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  if (await ok.count()) await ok.click();
+}
+// 判「正確」也會彈 confirmDialog（+N 分結束回合需確認），點確定後才送出 host_verify correct。
+async function verifyCorrect(page) {
+  await page.locator('.v-btn[data-result="correct"]').first().click();
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  await expect(ok).toBeVisible({ timeout: WS_TIMEOUT });
+  await ok.click();
+}
+
 async function freshHost(ctx) {
   const p = await ctx.newPage();
   await p.goto(`${BASE}/console.html`);
   await p.fill('#pin-input', PIN);
   await p.click('#pin-btn');
   await expect(p.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS_TIMEOUT });
-  await p.click('#btn-reset');
+  await clickReset(p);
   await expect(p.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   return p;
 }
@@ -111,12 +125,10 @@ test('B1 搶錯出局+續跑：c1 拍→判錯→c1 不可再搶、c2 可搶→�
   // c2 搶→判對→locked
   await c2.click('#buzz-btn');
   await expect(host.locator('#buzz-list li')).toHaveCount(2, { timeout: WS_TIMEOUT });
-  const correctBtn = host.locator('.v-btn[data-result="correct"]').first();
-  await expect(correctBtn).toBeVisible({ timeout: WS_TIMEOUT });
-  await correctBtn.click();
+  await verifyCorrect(host);
   await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
 
-  await host.click('#btn-reset');
+  await clickReset(host);
   await ctx.close();
 });
 
@@ -214,11 +226,11 @@ test('B3 計分累計：兩回合各判對一次 → 該組 20；host_reset 後�
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
   await c1.click('#buzz-btn');
   await expect(host.locator('.v-btn[data-result="correct"]')).toBeVisible({ timeout: WS_TIMEOUT });
-  await host.locator('.v-btn[data-result="correct"]').first().click();
+  await verifyCorrect(host);
   await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
 
   // host_reset → 回到 locked，但分數應保留
-  await host.click('#btn-reset');
+  await clickReset(host);
   await expect(host.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
 
   // 回合二：c1 拍→判對 → 城鎮一累計 +10 = 20
@@ -226,7 +238,7 @@ test('B3 計分累計：兩回合各判對一次 → 該組 20；host_reset 後�
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
   await c1.click('#buzz-btn');
   await expect(host.locator('.v-btn[data-result="correct"]')).toBeVisible({ timeout: WS_TIMEOUT });
-  await host.locator('.v-btn[data-result="correct"]').first().click();
+  await verifyCorrect(host);
   await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
 
   // 驗 state scores 城鎮一 = 20（用 raw ws 取最新 state）
@@ -235,7 +247,7 @@ test('B3 計分累計：兩回合各判對一次 → 該組 20；host_reset 後�
   peek.sock.close();
   expect(stateMsg.scores['城鎮一']).toBe(20);
 
-  await host.click('#btn-reset');
+  await clickReset(host);
   // host_reset 後分數仍在（不歸零）
   const peek2 = rawConn(); await peek2.ready;
   const stateMsg2 = await waitMsg(peek2.inbox, 'state', 3000);
@@ -532,4 +544,394 @@ test('B10 同時拍燈競態：B 被拒收到 buzz_rejected；判 A 錯續跑後
   cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
   await new Promise(r => setTimeout(r, 200));
   cleanup.sock.close();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 本輪新協定測試：可變加分(points)、撤銷判定(host_unverify)、verify_undone 廣播
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── helper：開場並加入一組，直到 c1 拍燈 phase=reviewing ───────────────────────
+async function openRoundWith(hostSock, hostInbox, teamName) {
+  hostSock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(hostInbox, s => s.phase === 'locked');
+  hostInbox.length = 0;
+  // 清分確保測試起始乾淨
+  hostSock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  await waitState(hostInbox, () => true);
+
+  const c = rawConn(); await c.ready;
+  c.sock.send(JSON.stringify({ type: 'join', team: teamName }));
+  await waitMsg(c.inbox, 'join_ok');
+
+  hostInbox.length = 0;
+  hostSock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(hostInbox, s => s.phase === 'open');
+
+  hostInbox.length = 0;
+  c.sock.send(JSON.stringify({ type: 'buzz', team: teamName }));
+  await waitState(hostInbox, s => s.phase === 'reviewing');
+
+  return c;
+}
+
+// ── C1 可變加分：帶 points:20 → +20 ─────────────────────────────────────────
+test('C1 可變加分：host_verify 帶 points:20 → 該組 +20', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分甲');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分甲', result: 'correct', points: 20 }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  expect(s.scores['加分甲']).toBe(20);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C2 可變加分：帶 points:5 → +5 ───────────────────────────────────────────
+test('C2 可變加分：host_verify 帶 points:5 → 該組 +5', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分乙');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分乙', result: 'correct', points: 5 }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  expect(s.scores['加分乙']).toBe(5);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C3 可變加分：不帶 points → 預設 +10 ────────────────────────────────────
+test('C3 可變加分：不帶 points → 預設 +10（向後相容）', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分丙');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分丙', result: 'correct' }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  expect(s.scores['加分丙']).toBe(10);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C4 可變加分：points 超界(999) → clamp 到 200 ────────────────────────────
+test('C4 可變加分：points:999 超界 → clamp 到 200', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分丁');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分丁', result: 'correct', points: 999 }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  expect(s.scores['加分丁']).toBe(200);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C5 可變加分：points:0 → clamp 到下限 1（最小 1 分） ─────────────────────
+test('C5 可變加分：points:0 → clamp 下限，至少 +1', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分戊');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分戊', result: 'correct', points: 0 }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  // points:0 應被 clamp 到 1（Math.max(1, ...)），不應為 0 或預設 10
+  expect(s.scores['加分戊']).toBe(1);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C6 可變加分：points:-5（負數）→ clamp 下限 1 ────────────────────────────
+test('C6 可變加分：points:-5 負數 → clamp 下限，至少 +1', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '加分己');
+
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '加分己', result: 'correct', points: -5 }));
+  const s = await waitState(host.inbox, st => st.phase === 'locked');
+  expect(s.scores['加分己']).toBe(1);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C7 撤銷 correct：判對後 host_unverify → 分扣回、phase=reviewing、entry 重置 ─
+test('C7 撤銷 correct：判對(+10) → host_unverify → 分扣回、phase=reviewing、entry 可再判', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '撤銷正');
+
+  // 判 correct
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '撤銷正', result: 'correct' }));
+  const afterCorrect = await waitState(host.inbox, s => s.phase === 'locked');
+  expect(afterCorrect.scores['撤銷正']).toBe(10);
+
+  // host_unverify
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  const afterUndo = await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 驗分數扣回（0 分被刪除鬼項）
+  expect(afterUndo.scores['撤銷正'] ?? 0).toBe(0);
+  // phase 回 reviewing
+  expect(afterUndo.phase).toBe('reviewing');
+  // entry.verified 應回 false（currentFocus 應是該組）
+  const entry = afterUndo.buzzOrder.find(b => b.team === '撤銷正');
+  expect(entry).toBeTruthy();
+  expect(entry.verified).toBe(false);
+  // currentFocus 應重新指向該組
+  expect(afterUndo.currentFocus).toBe('撤銷正');
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C8 撤銷 wrong：判錯 → host_unverify → 移出 eliminated、phase=reviewing ────
+test('C8 撤銷 wrong：判錯(出局) → host_unverify → 移出 eliminated、phase=reviewing', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '撤銷錯');
+
+  // 判 wrong → 出局，phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '撤銷錯', result: 'wrong' }));
+  const afterWrong = await waitState(host.inbox, s => s.phase === 'open');
+  expect(afterWrong.eliminated).toContain('撤銷錯');
+
+  // host_unverify
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  const afterUndo = await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 移出 eliminated
+  expect(afterUndo.eliminated).not.toContain('撤銷錯');
+  // phase 回 reviewing
+  expect(afterUndo.phase).toBe('reviewing');
+  // entry 重置為 unverified
+  const entry = afterUndo.buzzOrder.find(b => b.team === '撤銷錯');
+  expect(entry).toBeTruthy();
+  expect(entry.verified).toBe(false);
+  expect(entry.result).toBeNull();
+  // 分數不受影響（wrong 不加分）
+  expect(afterUndo.scores['撤銷錯'] ?? 0).toBe(0);
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C9 撤銷限制：連續兩次 host_unverify → 第二次應無效 ───────────────────────
+test('C9 撤銷限制：連續兩次 host_unverify → 第二次無效（lastVerify 已清）', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '連撤隊');
+
+  // 判 correct
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '連撤隊', result: 'correct' }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 第一次撤銷 → 成功，phase 回 reviewing
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  const undone1 = await waitMsg(host.inbox, 'verify_undone', 4000);
+  expect(undone1.team).toBe('連撤隊');
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 第二次撤銷 → 無效（lastVerify 已清，server 靜默忽略）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  await new Promise(r => setTimeout(r, 400));
+  // 不應再有新的 verify_undone
+  const undone2 = host.inbox.find(x => x.type === 'verify_undone');
+  expect(undone2).toBeUndefined();
+  // phase 仍應維持 reviewing
+  const latestState = [...host.inbox].reverse().find(x => x.type === 'state');
+  if (latestState) {
+    expect(latestState.phase).toBe('reviewing');
+  }
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C10 撤銷限制：host_reset 後 host_unverify 無效 ───────────────────────────
+test('C10 撤銷限制：host_reset 後 host_unverify 無效（lastVerify 已清）', async () => {
+  const host = rawConn(); await host.ready;
+  const c = await openRoundWith(host.sock, host.inbox, '重設後撤');
+
+  // 判 correct
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '重設後撤', result: 'correct' }));
+  const afterCorrect = await waitState(host.inbox, s => s.phase === 'locked');
+  expect(afterCorrect.scores['重設後撤']).toBe(10);
+
+  // host_reset → lastVerify 清除
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // host_unverify → 應無效（靜默忽略，分數維持不變）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  await new Promise(r => setTimeout(r, 400));
+
+  // 取最新 state，分數應維持（reset 後 lastVerify 已清，無法撤銷）
+  const peek = rawConn(); await peek.ready;
+  const latestState = await waitMsg(peek.inbox, 'state', 3000);
+  peek.sock.close();
+  // 分數應仍為 10（host_unverify 無效）
+  expect(latestState.scores['重設後撤']).toBe(10);
+  expect(latestState.phase).toBe('locked');
+  // 不應收到 verify_undone
+  const undone = host.inbox.find(x => x.type === 'verify_undone');
+  expect(undone).toBeUndefined();
+
+  host.sock.close(); c.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C11 verify_undone 廣播：host_unverify 後 observer 收到帶最新 scores ───────
+test('C11 verify_undone 廣播：host_unverify 後 observer 收到 verify_undone 帶最新 scores', async () => {
+  const host = rawConn(); await host.ready;
+  const observer = rawConn(); await observer.ready;
+  await waitMsg(observer.inbox, 'state', 3000); // 接收初始 state
+
+  const c = await openRoundWith(host.sock, host.inbox, '廣播隊');
+
+  // 判 correct(+10)
+  host.inbox.length = 0;
+  observer.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '廣播隊', result: 'correct', points: 10 }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // host_unverify → 應廣播 verify_undone
+  observer.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+
+  // observer 應收到 verify_undone
+  const undoneMsg = await waitMsg(observer.inbox, 'verify_undone', 4000);
+  expect(undoneMsg.type).toBe('verify_undone');
+  expect(undoneMsg.team).toBe('廣播隊');
+  // scores 應反映扣回後狀態（0 分不留鬼項）
+  expect(undoneMsg.scores['廣播隊'] ?? 0).toBe(0);
+
+  host.sock.close(); c.sock.close(); observer.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
+});
+
+// ── C12（H-1 回歸）：判錯續跑期間別組拍燈後，撤銷必須失效，不得還原出非法中間態 ──
+// 重現 reviewer 阻斷 H-1：A 拍→判 A 錯(eliminated=[A]、續跑、lastVerify 指 A)→ 續跑期間 B 拍燈
+// (phase=reviewing)。此時若仍能 host_unverify，會用 A 的舊快照還原：buzzOrder 出現兩個未判定組、
+// currentFocus 跳回 A、remainingMs 被 A 舊定格值覆蓋。修法是在 buzz 進 reviewing 時清 lastVerify，
+// 使撤銷只在「判錯後、還沒有人接著拍燈」的窗口內有效。
+test('C12 H-1 回歸：判錯續跑後別組拍燈，host_unverify 失效（環境已變不可還原）', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+
+  const a = rawConn(); await a.ready;
+  a.sock.send(JSON.stringify({ type: 'join', team: 'H1甲' }));
+  await waitMsg(a.inbox, 'join_ok');
+  const b = rawConn(); await b.ready;
+  b.sock.send(JSON.stringify({ type: 'join', team: 'H1乙' }));
+  await waitMsg(b.inbox, 'join_ok');
+
+  // 開搶 → A 拍 → reviewing
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+  host.inbox.length = 0;
+  a.sock.send(JSON.stringify({ type: 'buzz', team: 'H1甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+
+  // 判 A 錯 → A 出局、phase=open 續跑（此刻 lastVerify 指向 A，撤銷尚有效）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: 'H1甲', result: 'wrong' }));
+  await waitState(host.inbox, s => s.phase === 'open' && s.eliminated.includes('H1甲'));
+
+  // 續跑期間 B 拍燈 → phase=reviewing（環境已變，server 應在此清掉 lastVerify）
+  host.inbox.length = 0;
+  b.sock.send(JSON.stringify({ type: 'buzz', team: 'H1乙' }));
+  const afterBBuzz = await waitState(host.inbox, s => s.phase === 'reviewing' && s.buzzOrder.some(x => x.team === 'H1乙'));
+  // 健全性：此刻只有 B 一個未判定組，currentFocus 指 B
+  expect(afterBBuzz.currentFocus).toBe('H1乙');
+  const frozenForB = afterBBuzz.remainingMs;
+
+  // 嘗試 host_unverify → 必須無效（lastVerify 已被 B 的 buzz 清空），不得還原出非法中間態
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_unverify', pin: PIN }));
+  await new Promise(r => setTimeout(r, 400));
+  // 不應收到 verify_undone
+  const undone = host.inbox.find(x => x.type === 'verify_undone');
+  expect(undone).toBeUndefined();
+
+  // 取最新 state 驗證狀態未被破壞
+  const peek = rawConn(); await peek.ready;
+  const latest = await waitMsg(peek.inbox, 'state', 3000);
+  peek.sock.close();
+  expect(latest.phase).toBe('reviewing');
+  // A 仍出局、未被舊快照復活
+  expect(latest.eliminated).toContain('H1甲');
+  // buzzOrder 不應出現兩個未判定組（A 已 verified=wrong、B 未判定）
+  const unverified = latest.buzzOrder.filter(x => !x.verified);
+  expect(unverified.length).toBe(1);
+  expect(unverified[0].team).toBe('H1乙');
+  // currentFocus 仍指 B，未被還原跳回 A
+  expect(latest.currentFocus).toBe('H1乙');
+  // remainingMs 未被 A 的舊定格值覆蓋（仍是 B 拍燈的定格值）
+  expect(latest.remainingMs).toBe(frozenForB);
+
+  host.sock.close(); a.sock.close(); b.sock.close();
+  const cl = rawConn(); await cl.ready;
+  cl.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cl.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cl.sock.close();
 });

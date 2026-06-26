@@ -36,6 +36,23 @@ async function joinHost(page) {
   await expect(page.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS_TIMEOUT });
 }
 
+// 重設：回合進行中（非 locked 或已有搶答順位）時主持端會彈自製 confirmDialog（#confirm-overlay）
+// 而非原生 window.confirm，需點對話框「確定」(#cd-ok) 才真的送出 host_reset。
+// locked 純回顧時不彈框，直接送出。helper 統一處理兩種情況。
+async function clickReset(page) {
+  await page.click('#btn-reset');
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  if (await ok.count()) await ok.click();
+}
+
+// 判「正確」也會彈 confirmDialog（+N 分並結束回合需確認），點確定後才送出 host_verify correct。
+async function verifyCorrect(page) {
+  await page.locator('.v-btn[data-result="correct"]').first().click();
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  await expect(ok).toBeVisible({ timeout: WS_TIMEOUT });
+  await ok.click();
+}
+
 // 加入流程：城鎮按鈕會填入名稱輸入框，再按「加入」。
 // teamName 為預設城鎮（如 城鎮一）時點按鈕；否則視為自訂名稱直接輸入。
 async function joinClient(page, teamName) {
@@ -97,9 +114,7 @@ test('完整搶答流程：開搶→搶答→判錯出局→遞補驗證', async
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
 
   // 判城鎮二正確 → 回到 locked
-  const correctBtn = hostPage.locator('.v-btn[data-result="correct"]').first();
-  await expect(correctBtn).toBeVisible({ timeout: WS_TIMEOUT });
-  await correctBtn.click();
+  await verifyCorrect(hostPage);
 
   await expect(hostPage.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
@@ -133,7 +148,7 @@ test('答對使回合結束後，剩餘未搶組不應有判定鈕（bug 修正�
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
 
   // 城鎮二對 → 回合結束（城鎮三從未搶過）
-  await hostPage.locator('.v-btn[data-result="correct"]').first().click();
+  await verifyCorrect(hostPage);
 
   // 回合結束（LOCKED）：不應再有任何判定鈕，不應有「待驗證」
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
@@ -156,7 +171,7 @@ test('重設後回到 locked 狀態，學員按鈕文字清除', async ({ browse
   await client.click('#buzz-btn');
   await expect(client.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
 
   await expect(client.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
   await expect(client.locator('#buzz-btn')).toHaveText('BUZZ', { timeout: WS_TIMEOUT });
@@ -184,7 +199,7 @@ test('投影端在各 phase 顯示正確畫面', async ({ browser }) => {
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
   await expect(displayPage.locator('#open-rank-list li').first()).toContainText('城鎮四');
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await expect(displayPage.locator('#idle-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
   await ctx.close();
@@ -194,7 +209,7 @@ test('投影端在各 phase 顯示正確畫面', async ({ browser }) => {
 async function freshHost(ctx) {
   const hostPage = await ctx.newPage();
   await joinHost(hostPage);
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await expect(hostPage.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   return hostPage;
 }
@@ -215,7 +230,7 @@ test('開搶後 0 城搶答：投影維持開放等待、主持端列表空', as
   await expect(hostPage.locator('#empty-msg')).toBeVisible();
   await expect(hostPage.locator('#buzz-list li')).toHaveCount(0);
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -250,7 +265,7 @@ test('部分城鎮搶答：未搶且未出局城鎮按鈕，判錯後仍可搶',
   await expect(c3.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
   await expect(c3.locator('#buzz-btn')).toHaveClass(/state-open/, { timeout: WS_TIMEOUT });
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -291,11 +306,11 @@ test('連續答錯遞補：錯→錯→對，focus 依序遞補（新行為：�
   await expect(hostPage.locator('#buzz-list li').nth(2)).toContainText('待驗證', { timeout: WS_TIMEOUT });
 
   // 判 c3 對 → 回合結束 LOCKED
-  await hostPage.locator('.v-btn[data-result="correct"]').first().click();
+  await verifyCorrect(hostPage);
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('.v-btn')).toHaveCount(0);
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -332,7 +347,7 @@ test('全部答錯：無 focus、無判定鈕，可重設續行（新行為：�
   await expect(hostPage.locator('.v-btn')).toHaveCount(0);
 
   // 重設可續行 → 回到可開搶
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await expect(hostPage.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   await ctx.close();
 });
@@ -350,7 +365,7 @@ test('開搶中不可再開搶（btn-open 鎖定）', async ({ browser }) => {
   await client.click('#buzz-btn');
   await expect(hostPage.locator('#btn-open')).toBeDisabled();
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await expect(hostPage.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
   await ctx.close();
 });
@@ -370,7 +385,7 @@ test('學員拍燈後鎖定，再點無效', async ({ browser }) => {
   await client.click('#buzz-btn', { force: true }).catch(() => {});
   await expect(hostPage.locator('#buzz-list li')).toHaveCount(1);
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -388,7 +403,7 @@ test('城鎮選擇衝突：已被選的城鎮在其他人端顯示「已加入�
   // 其他城鎮不受影響
   await expect(b.locator('.town-btn[data-town="城鎮二"]')).not.toHaveClass(/taken/);
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -405,7 +420,7 @@ test('重設：投影回 idle、主持端清空、學員按鈕復位', async ({ 
   await client.click('#buzz-btn');
   await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await expect(displayPage.locator('#idle-screen')).toBeVisible({ timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#empty-msg')).toBeVisible();
   await expect(client.locator('#buzz-btn')).toHaveClass(/state-locked/);
@@ -429,7 +444,7 @@ test('自訂隊名：可輸入名稱，三端顯示自訂名', async ({ browser 
   await expect(displayPage.locator('#idle-chips')).toContainText('烈焰隊', { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#joined-names')).toContainText('烈焰隊', { timeout: WS_TIMEOUT });
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -448,7 +463,7 @@ test('重複名稱：第二個同名加入被拒絕', async ({ browser }) => {
   await expect(b.locator('#game-screen')).toBeHidden();
   await expect(hostPage.locator('#joined-count')).toHaveText('1');
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });
 
@@ -469,13 +484,16 @@ test('換城鎮：學員可自行回到選擇畫面，名單即時更新', async
 test('主持端「清空連線」：全部學員退回選擇畫面', async ({ browser }) => {
   const ctx = await browser.newContext();
   const hostPage = await freshHost(ctx);
-  hostPage.on('dialog', d => d.accept()); // 接受確認對話框
   const [c1, c2] = await Promise.all([ctx.newPage(), ctx.newPage()]);
   await joinClient(c1, '城鎮一');
   await joinClient(c2, '城鎮二');
   await expect(hostPage.locator('#joined-count')).toHaveText('2', { timeout: WS_TIMEOUT });
 
+  // 清空連線改用自製 confirmDialog（非原生 window.confirm），需點對話框「確定」(#cd-ok)
   await hostPage.click('#btn-clear');
+  const clearOk = hostPage.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  await expect(clearOk).toBeVisible({ timeout: WS_TIMEOUT });
+  await clearOk.click();
   // 兩個學員都被退回選擇畫面、名單歸零
   await expect(c1.locator('#login-screen')).toBeVisible({ timeout: WS_TIMEOUT });
   await expect(c2.locator('#login-screen')).toBeVisible({ timeout: WS_TIMEOUT });
@@ -500,6 +518,6 @@ test('injection 安全：名稱中的角括號被移除、不會注入元素', a
   await expect(displayPage.locator('#idle-chips')).toContainText('bx', { timeout: WS_TIMEOUT });
   await expect(displayPage.locator('#idle-chips b')).toHaveCount(0);
 
-  await hostPage.click('#btn-reset');
+  await clickReset(hostPage);
   await ctx.close();
 });

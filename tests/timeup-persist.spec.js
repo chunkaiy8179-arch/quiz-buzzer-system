@@ -28,13 +28,27 @@ test.beforeAll(async () => {
 
 test.afterAll(() => { if (serverProc) serverProc.kill(); });
 
+// 回合進行中重設會彈自製 confirmDialog（#confirm-overlay），需點「確定」(#cd-ok)；locked 不彈框。
+async function clickReset(page) {
+  await page.click('#btn-reset');
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  if (await ok.count()) await ok.click();
+}
+// 判「正確」也會彈 confirmDialog（+N 分結束回合需確認），點確定後才送出。
+async function verifyCorrect(page) {
+  await page.locator('.v-btn[data-result="correct"]').first().click();
+  const ok = page.locator('#confirm-overlay:not(.hidden) #cd-ok');
+  await expect(ok).toBeVisible({ timeout: WS });
+  await ok.click();
+}
+
 async function freshHost(ctx) {
   const p = await ctx.newPage();
   await p.goto(`${BASE}/console.html`);
   await p.fill('#pin-input', PIN);
   await p.click('#pin-btn');
   await expect(p.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS });
-  await p.click('#btn-reset');
+  await clickReset(p);
   await expect(p.locator('#btn-open')).toBeEnabled({ timeout: WS });
   return p;
 }
@@ -82,7 +96,7 @@ test('倒數歸零後關閉搶答：學員顯示「時間到」、再拍燈不�
   await client.click('#buzz-btn', { force: true }).catch(() => {});
   await expect(host.locator('#buzz-list li')).toHaveCount(0);
 
-  await host.click('#btn-reset');
+  await clickReset(host);
   await ctx.close();
 });
 
@@ -111,12 +125,10 @@ test('第一個拍燈後定格：c2 立即被鎖；判 c1 錯後 c2 才可搶、
   await expect(host.locator('#buzz-list li')).toHaveCount(2, { timeout: WS });
 
   // 判 c2 對 → 回合結束 LOCKED
-  const correctBtn = host.locator('.v-btn[data-result="correct"]').first();
-  await expect(correctBtn).toBeVisible({ timeout: WS });
-  await correctBtn.click();
+  await verifyCorrect(host);
   await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS });
 
-  await host.click('#btn-reset');
+  await clickReset(host);
   await ctx.close();
 });
 
@@ -128,7 +140,7 @@ test('換城鎮按鈕：開賽後隱藏、回 locked 後再現', async ({ browse
   await expect(client.locator('#change-town')).toBeVisible();
   await host.click('#btn-open');
   await expect(client.locator('#change-town')).toBeHidden({ timeout: WS });
-  await host.click('#btn-reset');
+  await clickReset(host);
   await expect(client.locator('#change-town')).toBeVisible({ timeout: WS });
 
   await ctx.close();
@@ -146,7 +158,7 @@ test('F5 記憶：重整後自動回到原本城鎮，不需重選', async ({ br
   await expect(client.locator('#team-badge')).toHaveText('城鎮三');
   await expect(host.locator('#joined-count')).toHaveText('1', { timeout: WS });
 
-  await host.click('#btn-reset');
+  await clickReset(host);
   await ctx.close();
 });
 

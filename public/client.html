@@ -111,7 +111,7 @@ body { background: transparent; }
 @keyframes dot-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
 
 .btn-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 24px; }
-#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .08s, background .2s, color .2s, box-shadow .2s; outline: none; }
+#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .08s, background .2s, color .2s, box-shadow .2s; outline: none; touch-action: manipulation; }
 #buzz-btn.state-locked { background: radial-gradient(circle at 40% 35%, #2a2740, #15131f 65%); color: var(--muted); box-shadow: inset 0 0 0 2px rgba(212,175,55,.18), inset 0 -6px 18px rgba(0,0,0,.5); animation: locked-breath 3.6s ease-in-out infinite; }
 @keyframes locked-breath {
   0%,100% { box-shadow: inset 0 0 0 2px rgba(212,175,55,.18), inset 0 -6px 18px rgba(0,0,0,.5); }
@@ -122,18 +122,39 @@ body { background: transparent; }
   animation: fire-pulse 1.3s ease-in-out infinite; }
 #buzz-btn.state-open:active { transform: scale(.9); }
 #buzz-btn.state-buzzed { background: radial-gradient(circle at 50% 42%, rgba(245,166,35,.22), transparent 58%), radial-gradient(circle at 42% 35%, #2a2740, #15131f 65%); color: var(--gold-bright); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 44px rgba(245,166,35,.16), 0 0 36px rgba(245,166,35,.35); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; }
-#buzz-btn.state-out { background: radial-gradient(circle at 42% 35%, #2a1a1d, #140d0f 65%); color: var(--wrong); box-shadow: inset 0 0 0 2px rgba(192,57,43,.3), inset 0 -6px 18px rgba(0,0,0,.55); opacity: .55; font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed; }
+/* 搶到瞬間：周圍金光爆裂（一次性，由 JS 加 .buzz-burst 觸發後移除）*/
+#buzz-btn { position: relative; }
+#buzz-btn.buzz-burst::before { content:''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; z-index: 2;
+  background: radial-gradient(circle, rgba(255,243,200,.85) 0%, rgba(245,166,35,.5) 35%, rgba(245,166,35,0) 68%);
+  animation: buzz-burst .55s cubic-bezier(.18,.9,.32,1) forwards; }
+@keyframes buzz-burst { 0% { opacity: .95; transform: scale(.55); } 100% { opacity: 0; transform: scale(1.7); } }
+#buzz-btn.state-out { background: radial-gradient(circle at 42% 35%, #2a1a1d, #140d0f 65%); color: var(--wrong); box-shadow: inset 0 0 0 2px rgba(192,57,43,.45), inset 0 -6px 18px rgba(0,0,0,.55); opacity: .62; font-size: clamp(20px,5.4vw,30px); letter-spacing: 1px; cursor: not-allowed; }
+/* 出局：對角封鎖斜槓 + ✕ 破裂語義，整題不可玩 */
+#buzz-btn.state-out::after { content:''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 1;
+  background: linear-gradient(135deg, transparent calc(50% - 3px), rgba(192,57,43,.65) calc(50% - 3px), rgba(232,67,31,.8) 50%, rgba(192,57,43,.65) calc(50% + 3px), transparent calc(50% + 3px)); }
+#buzz-btn.state-out .out-mark { display: block; font-family: var(--font-title); }
+#buzz-btn.state-out .out-x { display: block; font-size: 1.7em; line-height: 1; color: var(--wrong); }
+#buzz-btn.state-out .out-text { display: block; font-size: .5em; letter-spacing: 3px; margin-top: 4px; color: #e3897f; }
+/* 驗證中：琥珀微光 + 緩慢脈動，和 state-locked（灰待命）區分——正在判定、可能放我再搶 */
+#buzz-btn.state-review { background: radial-gradient(circle at 42% 35%, #3a2f1a, #1d1710 65%); color: var(--flame-amber); box-shadow: inset 0 0 0 2px rgba(245,166,35,.32), inset 0 -6px 18px rgba(0,0,0,.5); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed; animation: review-pulse 1.8s ease-in-out infinite; }
+@keyframes review-pulse {
+  0%,100% { box-shadow: inset 0 0 0 2px rgba(245,166,35,.30), inset 0 -6px 18px rgba(0,0,0,.5), 0 0 18px rgba(245,166,35,.10); }
+  50% { box-shadow: inset 0 0 0 2px rgba(245,166,35,.52), inset 0 -6px 18px rgba(0,0,0,.5), 0 0 34px rgba(245,166,35,.28); }
+}
+#buzz-btn.state-review .review-dots::after { content:'…'; display: inline-block; font-size: .7em; letter-spacing: 2px; animation: review-dots 1.4s steps(4,end) infinite; width: 1.4em; text-align: left; overflow: hidden; vertical-align: bottom; }
+@keyframes review-dots { 0%{ clip-path: inset(0 100% 0 0); } 100%{ clip-path: inset(0 0 0 0); } }
 @keyframes fire-pulse {
   0%,100% { box-shadow: inset 0 12px 28px rgba(255,243,200,.5), inset 0 -18px 34px rgba(120,18,0,.55), 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5); }
   50% { box-shadow: inset 0 12px 28px rgba(255,243,200,.6), inset 0 -18px 34px rgba(120,18,0,.6), 0 0 0 14px rgba(245,166,35,.22), 0 0 0 36px rgba(245,166,35,.08), 0 22px 80px rgba(232,67,31,.65); }
 }
 @keyframes body-flash { 0%{background:#f5a623;} 18%{background:#e8431f;} 100%{background:#0a1430;} }
 body.buzz-flash { animation: body-flash .5s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, #buzz-btn.state-review, #buzz-btn.state-review .review-dots::after, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash, #buzz-btn.buzz-burst::before { animation: none; } #buzz-btn.buzz-burst::before { display: none; } }
 
 .status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
 #status-msg.active { color: var(--gold-bright); background: rgba(245,166,35,.1); }
+#status-msg.out { color: #f0a99f; background: rgba(192,57,43,.18); }
 #phase-label { font-family: var(--font-latin); font-size: 10px; letter-spacing: 3px; font-weight: 700; color: var(--muted); }
 .wake-note { font-size: 11px; letter-spacing: .5px; font-weight: 600; min-height: 14px; line-height: 1.3; text-align: center; padding: 0 12px; transition: color .3s; }
 .wake-note.ok { color: var(--up); }
@@ -222,7 +243,14 @@ const MAX_NAME = 10;
 
 const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
 let ws, myTeam = null, buzzed = false, myEliminated = false, joinedTeams = [];
+// M-1：一次性搶答回饋（震動/閃光）是否已對「目前這次搶到」播過。
+// 隨 buzzed 一起在每個解鎖點重設，確保下一回合搶到能再播一次，但同一次定格內不重播。
+let buzzFeedbackDone = false;
 let lastState = null; // 最近一次 state 廣播快取：收到 buzz_rejected 解鎖後立即用它重繪
+
+// 出局／驗證中鈕面文案（含圖示），集中定義避免兩處出局分支重複
+const OUT_HTML = '<span class="out-mark"><span class="out-x">✕</span><span class="out-text">本題出局</span></span>';
+const REVIEW_HTML = '驗證中<span class="review-dots"></span>';
 
 // 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
 // 另存重連權杖 token：F5 後帶回給伺服器，讓伺服器認得同一人、直接接管原城鎮
@@ -295,7 +323,7 @@ function doJoin(){
 }
 
 function showSelection(){
-  myTeam = null; buzzed = false; autoName = null; autoTries = 0;
+  myTeam = null; buzzed = false; buzzFeedbackDone = false; autoName = null; autoTries = 0;
   $('game-screen').style.display = 'none';
   $('login-screen').style.display = 'flex';
   document.querySelectorAll('.town-btn').forEach(x=>x.classList.remove('selected'));
@@ -337,7 +365,7 @@ function handleMessage(msg){
     // 解除樂觀鎖 buzzed，並用最近一次 state 立即重繪，避免續跑後孤兒卡死整回合。
     case 'buzz_rejected':
       if(msg.team===myTeam){
-        buzzed=false;
+        buzzed=false; buzzFeedbackDone=false;
         if(lastState) applyState(lastState); // 無快取時靠下一次 state 廣播自然修正，但至少已解鎖
       }
       break;
@@ -388,9 +416,9 @@ function applyState(msg){
     // 出局守衛須在 buzzed/myEntry 之前：判錯出局者拍燈時 buzzed=true 且 buzzOrder 仍有其 entry，
     // 若先走 if(buzzed) return 或 myEntry 會卡在「第N名」畫面，故先解鎖並顯示「已出局」。
     if(myEliminated){
-      buzzed=false;
-      btn.disabled=true; btn.className='state-out'; btn.textContent='已出局';
-      setStatus('已出局，等待下一題', ''); $('phase-label').textContent='OUT';
+      buzzed=false; buzzFeedbackDone=false;
+      btn.disabled=true; btn.className='state-out'; btn.innerHTML=OUT_HTML;
+      setStatus('已出局，等待下一題', 'out'); $('phase-label').textContent='OUT';
       return;
     }
     if(buzzed) return;
@@ -400,21 +428,21 @@ function applyState(msg){
   } else if(msg.phase==='open' && msg.closed){
     // 倒數歸零：搶答視窗關閉
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
-    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
+    buzzed=false; buzzFeedbackDone=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
     setStatus('搶答時間結束', ''); $('phase-label').textContent='TIME UP';
   } else if(msg.phase==='reviewing'){
     // 出局守衛同樣須在 myEntry 之前，避免出局組停在「第N名」
     if(myEliminated){
-      buzzed=false;
-      btn.disabled=true; btn.className='state-out'; btn.textContent='已出局';
-      setStatus('已出局，等待下一題', ''); $('phase-label').textContent='OUT';
+      buzzed=false; buzzFeedbackDone=false;
+      btn.disabled=true; btn.className='state-out'; btn.innerHTML=OUT_HTML;
+      setStatus('已出局，等待下一題', 'out'); $('phase-label').textContent='OUT';
       return;
     }
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
-    btn.disabled=true; btn.className='state-locked'; btn.textContent='驗證中';
+    btn.disabled=true; btn.className='state-review'; btn.innerHTML=REVIEW_HTML;
     setStatus('主持人驗證中', ''); $('phase-label').textContent='REVIEW';
   } else { // locked
-    buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
+    buzzed=false; buzzFeedbackDone=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
     setStatus('等待主持人點燃聖火', ''); $('phase-label').textContent='LOCKED';
   }
 }
@@ -424,26 +452,40 @@ function setBuzzLocked(rank){
   const btn=$('buzz-btn');
   btn.disabled=true; btn.className='state-buzzed'; btn.textContent=`第 ${rank} 名`;
   setStatus('已點燃聖火，等待驗證', 'active'); $('phase-label').textContent=`RANK ${rank}`;
-  document.body.classList.add('buzz-flash');
-  setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
+  // M-1：一次性回饋（震動/金光爆裂/閃屏）只在「搶到順位」的邊沿播一次。
+  // applyState 對已在 buzzOrder 的自己每收一次 state 都會呼叫本函式（reviewing 定格期間任何
+  // broadcastState — 別人 join/撤銷/調分 — 都會進來），用 buzzFeedbackDone 旗標擋掉重播，
+  // 避免反覆重震重閃。pointerdown 已先設 buzzed=true（樂觀鎖），故不能用 buzzed 當邊沿，需獨立旗標。
+  if(!buzzFeedbackDone){
+    buzzFeedbackDone = true;
+    // 依名次差異化震動：搶到第一強震，其餘短震（統一在此給，避免 buzz 當下尚不知名次）
+    if(navigator.vibrate) navigator.vibrate(rank===1 ? [180] : [90]);
+    // 搶到瞬間金光爆裂（一次性，播完移除以便下回合可再觸發）
+    btn.classList.remove('buzz-burst'); void btn.offsetWidth; btn.classList.add('buzz-burst');
+    setTimeout(()=>btn.classList.remove('buzz-burst'),600);
+    document.body.classList.add('buzz-flash');
+    setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
+  }
 }
 
 // 他人搶到第一：立即鎖住自己的鈕等主持人判定（不設 buzzed，判錯續跑後要能再搶）
 function lockForReview(){
   if(buzzed || myEliminated) return;
   const btn=$('buzz-btn');
-  btn.disabled=true; btn.className='state-locked'; btn.textContent='驗證中';
+  btn.disabled=true; btn.className='state-review'; btn.innerHTML=REVIEW_HTML;
   setStatus('主持人驗證中…', ''); $('phase-label').textContent='REVIEW';
 }
 
 function setStatus(text, cls){ const el=$('status-msg'); el.textContent=text; el.className=cls; }
 
-$('buzz-btn').addEventListener('click', ()=>{
+// 用 pointerdown 取代 click：手指一觸即送，省去 click 等待點擊判定的延遲（搶答公平性）。
+// preventDefault 阻止後續合成的 click，避免同一手勢重送；buzzed/disabled 防重送邏輯不變。
+$('buzz-btn').addEventListener('pointerdown', e=>{
   if(myEliminated) return;
   if(buzzed || !ws || ws.readyState!==1 || !myTeam) return;
+  e.preventDefault();
   buzzed=true;
   ws.send(JSON.stringify({ type:'buzz', team:myTeam, ts:Date.now() }));
-  if(navigator.vibrate) navigator.vibrate([100,50,100]);
   requestScreenWake();   // 搶答手勢順便補強螢幕恆亮
 });
 

@@ -155,6 +155,54 @@ body { background: transparent; }
 .pause-note { font-family: var(--font-latin); font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-align: center; padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--flame-amber); background: rgba(245,166,35,.06); }
 .pause-note:empty { display: none; }
 .pause-note b { font-variant-numeric: tabular-nums; color: var(--gold-bright); }
+/* 定格催促：呼吸 → 久候轉紅加強閃 */
+.pause-note.breathing { animation: pause-breathe 1.8s ease-in-out infinite; }
+.pause-note.urging { color: #ffb3a6; background: rgba(192,57,43,.12); animation: pause-urge .9s ease-in-out infinite; }
+@keyframes pause-breathe { 0%,100%{ opacity: 1; } 50%{ opacity: .55; } }
+@keyframes pause-urge { 0%,100%{ opacity: 1; box-shadow: inset 0 0 0 0 rgba(192,57,43,0); } 50%{ opacity: .65; box-shadow: inset 0 0 22px 0 rgba(192,57,43,.45); } }
+@media (prefers-reduced-motion: reduce){ .pause-note.breathing, .pause-note.urging { animation: none; } }
+
+/* ── 下一步流程引導 ── */
+.hint-note { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-align: center; padding: 8px 14px; border-bottom: 1px solid var(--line); color: var(--gold-bright); background: rgba(212,175,55,.05); }
+.hint-note:empty { display: none; }
+.hint-note b { color: var(--gold-bright); font-weight: 800; }
+
+/* ── 分值選擇器 ── */
+.points-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--line); background: rgba(212,175,55,.03); }
+.points-bar:empty { display: none; }
+.points-bar .pb-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
+.points-bar .pb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.points-chip { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-latin); font-size: 14px; font-weight: 800; letter-spacing: .5px; padding: 8px 12px; min-width: 44px; cursor: pointer; transition: background .15s, transform .1s, border-color .15s; font-variant-numeric: tabular-nums; }
+.points-chip:active { transform: scale(.95); }
+.points-chip.active { background: linear-gradient(160deg,#fff3c0,#f5d77a 40%,#d4af37 90%); color: #2a1c00; border-color: var(--gold-bright); box-shadow: 0 0 10px rgba(245,166,35,.3); }
+#points-custom { width: 72px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 8px; padding: 8px 10px; font-family: var(--font-latin); font-size: 14px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; font-variant-numeric: tabular-nums; transition: border-color .15s, box-shadow .15s; }
+#points-custom:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+.points-bar .pb-current { margin-left: auto; font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
+.points-bar .pb-current b { font-family: var(--font-latin); font-size: 16px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+
+/* 判定 badge 得分 */
+.result-badge .pts { font-family: var(--font-latin); font-variant-numeric: tabular-nums; opacity: .9; }
+/* 撤銷鈕 */
+.btn-unverify { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.06); color: var(--gold-bright); font-family: var(--font-title); font-size: 12px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; padding: 7px 10px; flex-shrink: 0; cursor: pointer; transition: background .15s, transform .1s; }
+.btn-unverify:active { transform: scale(.95); background: rgba(212,175,55,.16); }
+
+/* ── 金箔風確認對話框 ── */
+#confirm-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 28px; background: rgba(6,8,20,.72); backdrop-filter: blur(4px); animation: cd-fade .2s ease both; }
+#confirm-overlay.hidden { display: none; }
+@keyframes cd-fade { from { opacity: 0; } to { opacity: 1; } }
+.cd-card { width: 100%; max-width: 380px; padding: 26px 24px 20px; animation: rise .4s cubic-bezier(.16,1,.3,1) both; }
+.cd-msg { font-family: var(--font-title); font-size: 16px; font-weight: 700; line-height: 1.7; letter-spacing: .5px; color: var(--ink); text-align: center; }
+.cd-msg b { color: var(--gold-bright); }
+.cd-actions { display: flex; gap: 10px; margin-top: 22px; }
+.cd-btn { flex: 1; border-radius: 10px; padding: 13px 10px; font-family: var(--font-title); font-size: 15px; font-weight: 800; letter-spacing: 1.5px; cursor: pointer; transition: transform .1s, filter .15s, background .15s; }
+.cd-btn:active { transform: scale(.97); }
+.cd-cancel { border: 1px solid var(--gold-dim); background: rgba(212,175,55,.08); color: var(--gold-bright); }
+.cd-cancel:active { background: rgba(212,175,55,.16); }
+.cd-ok { border: none; background: linear-gradient(160deg,#fff3c0,#f5d77a 30%,#d4af37 60%,#a67c2e 100%); color: #2a1c00; box-shadow: inset 0 1px 0 rgba(255,250,225,.7), inset 0 -3px 6px rgba(120,80,10,.5), 0 7px 18px rgba(0,0,0,.35); text-shadow: 0 1px 0 rgba(255,245,210,.5); }
+.cd-ok:active { filter: brightness(1.08); }
+.cd-card.danger .cd-ok { background: linear-gradient(160deg, #e57a6c, #c0392b 60%, #7c2018); color: #fff2ee; text-shadow: 0 1px 0 rgba(0,0,0,.3); box-shadow: inset 0 1px 0 rgba(255,200,190,.4), 0 7px 18px rgba(192,57,43,.4); }
+.cd-card.danger { border-color: var(--wrong); }
+.cd-card.danger::before { border-color: rgba(192,57,43,.4); }
 
 /* ── 希望之燈 / 門檻 ── */
 .hope-panel { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
@@ -237,6 +285,16 @@ button, .town-btn { position: relative; overflow: hidden; }
   <div id="pin-error"></div>
 </div>
 
+<div id="confirm-overlay" class="hidden">
+  <div class="cd-card gold-frame">
+    <div class="cd-msg" id="cd-msg"></div>
+    <div class="cd-actions">
+      <button class="cd-btn cd-cancel" id="cd-cancel">取消</button>
+      <button class="cd-btn cd-ok" id="cd-ok">確定</button>
+    </div>
+  </div>
+</div>
+
 <div class="top-bar">
   <span class="top-title serif gold-foil">聖火之夜 · 主持端</span>
   <span id="phase-badge">LOCKED</span>
@@ -255,6 +313,18 @@ button, .town-btn { position: relative; overflow: hidden; }
 </div>
 
 <div id="pause-note" class="pause-note"></div>
+<div id="hint-note" class="hint-note"></div>
+
+<div id="points-bar" class="points-bar">
+  <span class="pb-label">本回合分值</span>
+  <div class="pb-chips">
+    <button class="points-chip" data-points="10">10</button>
+    <button class="points-chip" data-points="20">20</button>
+    <button class="points-chip" data-points="30">30</button>
+  </div>
+  <input id="points-custom" type="number" min="1" step="5" inputmode="numeric" placeholder="自訂">
+  <span class="pb-current">判對 +<b id="points-show">10</b></span>
+</div>
 
 <div class="hope-panel">
   <div class="hope-meter">
@@ -285,6 +355,45 @@ let ws, hostPin = '';
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $ = id => document.getElementById(id);
+
+// 最近一次 state，供快捷鍵 / 重設判斷使用
+let lastState = null;
+// 判對加分值（分值選擇器，預設 10）
+let selectedPoints = 10;
+
+// ── 金箔風確認對話框：取代原生 confirm()，回傳 Promise<boolean> ──
+function confirmDialog(message, opts={}){
+  const overlay = $('confirm-overlay');
+  const card = overlay.querySelector('.cd-card');
+  const msgEl = $('cd-msg'); const okBtn = $('cd-ok'); const cancelBtn = $('cd-cancel');
+  msgEl.innerHTML = message;
+  okBtn.textContent = opts.okText || '確定';
+  card.classList.toggle('danger', !!opts.danger);
+  overlay.classList.remove('hidden');
+  okBtn.focus();
+  return new Promise(resolve=>{
+    function cleanup(result){
+      overlay.classList.add('hidden');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey, true);
+      resolve(result);
+    }
+    function onOk(){ cleanup(true); }
+    function onCancel(){ cleanup(false); }
+    function onBackdrop(e){ if(e.target===overlay) cleanup(false); }
+    function onKey(e){
+      if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); cleanup(false); }
+      else if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); cleanup(true); }
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey, true);
+  });
+}
+function confirmOpen(){ return !$('confirm-overlay').classList.contains('hidden'); }
 
 // ── 螢幕恆亮（Screen Wake Lock）：主持手機長時間控場不鎖屏變暗 ──
 let wakeLock = null, wakeWanted = false;
@@ -335,10 +444,19 @@ function send(obj){ if(ws && ws.readyState===1) ws.send(JSON.stringify(obj)); }
 function sendHost(obj){ send({ ...obj, pin:hostPin }); }
 
 $('btn-open').addEventListener('click', ()=>sendHost({ type:'host_open' }));
-$('btn-reset').addEventListener('click', ()=>sendHost({ type:'host_reset' }));
-$('btn-clear').addEventListener('click', ()=>{
-  if(confirm('確定清空所有連線？所有學員將被退回選城鎮畫面，需重新加入。')) sendHost({ type:'host_clear' });
+$('btn-reset').addEventListener('click', doReset);
+$('btn-clear').addEventListener('click', async ()=>{
+  if(await confirmDialog('確定清空所有連線？所有學員將被退回選城鎮畫面，需重新加入。', { danger:true, okText:'清空連線' })) sendHost({ type:'host_clear' });
 });
+
+// 重設：回合進行中（非 locked 或已有搶答順位）才需確認，避免誤清；locked 純回顧直接送
+async function doReset(){
+  const inRound = lastState && (lastState.phase !== 'locked' || (lastState.buzzOrder && lastState.buzzOrder.length));
+  if(inRound){
+    if(!await confirmDialog('回合進行中，確定重設？本回合搶答順位與判定將清除（分數保留）。', { danger:true, okText:'重設回合' })) return;
+  }
+  sendHost({ type:'host_reset' });
+}
 
 $('btn-threshold').addEventListener('click', ()=>{
   const v = parseInt($('threshold-input').value, 10);
@@ -347,20 +465,106 @@ $('btn-threshold').addEventListener('click', ()=>{
 });
 $('threshold-input').addEventListener('keydown', e => { if(e.key==='Enter') $('btn-threshold').click(); });
 
-$('btn-ignite').addEventListener('click', ()=>{
+$('btn-ignite').addEventListener('click', async ()=>{
   if($('btn-ignite').disabled) return;
+  if(!await confirmDialog('確定點燃希望之燈？此動作會觸發全場點燈動畫，且無法復原。', { danger:true, okText:'點燃' })) return;
   sendHost({ type:'host_ignite' });
 });
 
 // 計分板按鈕：事件委派，避免每次 render 重複綁定
-$('score-board').addEventListener('click', e=>{
+$('score-board').addEventListener('click', async e=>{
   const adj = e.target.closest('.score-adj button');
   if(adj){ sendHost({ type:'host_score_adjust', team:adj.dataset.team, delta:parseInt(adj.dataset.delta,10) }); return; }
   const rst = e.target.closest('.btn-score-reset');
-  if(rst && confirm('確定清空所有分數？')) sendHost({ type:'host_score_reset' });
+  if(rst && await confirmDialog('確定清空所有分數？', { danger:true, okText:'分數歸零' })) sendHost({ type:'host_score_reset' });
 });
 
+// ── 分值選擇器：chip / 自訂輸入共用 selectedPoints ──
+function setPoints(p, fromCustom){
+  const v = parseInt(p, 10);
+  if(Number.isNaN(v) || v < 1) return;
+  selectedPoints = v;
+  $('points-show').textContent = v;
+  $('points-bar').querySelectorAll('.points-chip').forEach(c=>{
+    c.classList.toggle('active', parseInt(c.dataset.points,10)===v);
+  });
+  if(!fromCustom){ const ci=$('points-custom'); if(document.activeElement!==ci) ci.value=''; }
+  // 計分板 ± 步進與分值連動：分值改了就重繪一次
+  if(lastState) renderScores(lastState);
+}
+$('points-bar').addEventListener('click', e=>{
+  const chip = e.target.closest('.points-chip');
+  if(chip){ setPoints(chip.dataset.points); $('points-custom').value=''; }
+});
+$('points-custom').addEventListener('input', e=>{
+  const v = parseInt(e.target.value, 10);
+  if(!Number.isNaN(v) && v >= 1) setPoints(v, true);
+});
+setPoints(10);
+
+// ── 判定（O/X）：按鈕與快捷鍵共用；correct 帶 selectedPoints 並先確認 ──
+let verifyBusy = false;
+async function verifyTeam(team, result){
+  if(verifyBusy) return;
+  if(result==='correct'){
+    verifyBusy = true;
+    const ok = await confirmDialog(`判定「<b>${escHtml(team)}</b>」答對？將 +${selectedPoints} 分並結束本回合。`, { okText:`+${selectedPoints} 分` });
+    verifyBusy = false;
+    if(!ok) return;
+    sendHost({ type:'host_verify', team, result:'correct', points:selectedPoints });
+  } else {
+    sendHost({ type:'host_verify', team, result:'wrong' });
+  }
+}
+
+// ── 快捷鍵：Space 開搶 / O 對 / X 錯 / R 重設；輸入框焦點與對話框開啟時不攔截 ──
+document.addEventListener('keydown', e=>{
+  if(confirmOpen()) return;
+  if($('pin-screen') && !$('pin-screen').classList.contains('hidden')) return;
+  const t = e.target;
+  if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable)) return;
+  if(e.metaKey || e.ctrlKey || e.altKey) return;
+  const st = lastState; if(!st) return;
+
+  if(e.code==='Space'){
+    if(!$('btn-open').disabled){ e.preventDefault(); $('btn-open').click(); }
+    return;
+  }
+  const k = e.key.toLowerCase();
+  if(k==='r'){ e.preventDefault(); doReset(); return; }
+  if(k==='o' || k==='x'){
+    const canVerify = st.phase==='open' || st.phase==='reviewing';
+    if(!canVerify) return;
+    const focus = (st.buzzOrder||[]).find(en=>en.team===st.currentFocus && !en.verified);
+    if(!focus) return;
+    e.preventDefault();
+    verifyTeam(focus.team, k==='o' ? 'correct' : 'wrong');
+  }
+});
+
+// ── 定格催促：reviewing 先呼吸，停留超過 6s 轉紅加強閃 ──
+let reviewUrgeStart = 0, reviewUrgeTimer = null;
+const REVIEW_URGE_MS = 6000;
+function startReviewUrge(){
+  const note = $('pause-note');
+  note.classList.add('breathing');
+  if(reviewUrgeTimer) return;
+  reviewUrgeStart = Date.now();
+  reviewUrgeTimer = setInterval(()=>{
+    if(Date.now() - reviewUrgeStart >= REVIEW_URGE_MS){
+      note.classList.add('urging'); note.classList.remove('breathing');
+    }
+  }, 500);
+}
+function stopReviewUrge(){
+  const note = $('pause-note');
+  note.classList.remove('breathing','urging');
+  if(reviewUrgeTimer){ clearInterval(reviewUrgeTimer); reviewUrgeTimer = null; }
+  reviewUrgeStart = 0;
+}
+
 function renderState(state){
+  lastState = state;
   const badge = $('phase-badge');
   const phases = {
     locked:    ['LOCKED',        'rgba(212,175,55,.08)', 'var(--muted)',      'var(--gold-deep)'],
@@ -371,13 +575,29 @@ function renderState(state){
   badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
   badge.classList.toggle('open-live', state.phase==='open');
 
-  // 定格等判定：清楚提示主持人剩餘秒數
+  // 定格等判定：清楚提示主持人剩餘秒數 + 久候催促
   const pauseNote = $('pause-note');
   if(state.phase==='reviewing'){
     const secs = Math.ceil((state.remainingMs||0)/1000);
-    pauseNote.innerHTML = `PAUSED · 剩餘 <b>${secs}</b>s 定格中 — 請判定`;
+    pauseNote.innerHTML = `PAUSED · 剩餘 <b>${secs}</b>s 定格中 — 請判定 O對 / X錯`;
+    startReviewUrge();
   } else {
     pauseNote.textContent='';
+    stopReviewUrge();
+  }
+
+  // 下一步流程引導
+  const hint = $('hint-note');
+  if(state.lit){
+    hint.textContent = '';
+  } else if(state.phase==='locked'){
+    hint.innerHTML = '可開下一題：按「<b>點燃聖火</b>」開放搶答';
+  } else if(state.phase==='open'){
+    hint.textContent = '搶答開放中 · 等待學員拍燈';
+  } else if(state.phase==='reviewing'){
+    hint.innerHTML = '已有人搶答 · 請判定 <b>O對</b> / <b>X錯</b>';
+  } else {
+    hint.textContent = '';
   }
 
   const teams = state.joinedTeams || [];
@@ -388,10 +608,15 @@ function renderState(state){
 
   // 回合進行中（open/reviewing）才顯示判定鈕；locked 為純回顧，避免誤判重開回合
   const canVerify = state.phase === 'open' || state.phase === 'reviewing';
+  $('points-bar').style.display = canVerify ? '' : 'none';
 
   const list = $('buzz-list');
   list.innerHTML='';
   $('empty-msg').style.display = state.buzzOrder.length ? 'none' : '';
+
+  // 最後一筆已判定列：掛「撤銷」鈕
+  let lastVerifiedIdx = -1;
+  state.buzzOrder.forEach((entry,i)=>{ if(entry.verified) lastVerifiedIdx = i; });
 
   state.buzzOrder.forEach((entry,i)=>{
     const isFocus = canVerify && state.currentFocus===entry.team && !entry.verified;
@@ -406,7 +631,9 @@ function renderState(state){
       const ic = entry.result==='correct'
         ? '<svg class="ic" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
         : '<svg class="ic" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
-      rightContent = `<span class="result-badge ${cls}">${ic}${lbl}</span>`;
+      const pts = (entry.result==='correct' && entry.points!=null) ? ` <span class="pts">+${entry.points}</span>` : '';
+      const undo = (i===lastVerifiedIdx && state.canUndo) ? '<button class="btn-unverify" aria-label="撤銷判定">↩ 撤銷</button>' : '';
+      rightContent = `<span class="result-badge ${cls}">${ic}${lbl}${pts}</span>${undo}`;
     } else if(canVerify){
       const tag = isFocus ? '<span class="focus-tag">待驗證</span>' : '';
       rightContent = `
@@ -425,8 +652,11 @@ function renderState(state){
 
   list.querySelectorAll('.v-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      sendHost({ type:'host_verify', team:btn.dataset.team, result:btn.dataset.result });
+      verifyTeam(btn.dataset.team, btn.dataset.result);
     });
+  });
+  list.querySelectorAll('.btn-unverify').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ sendHost({ type:'host_unverify' }); });
   });
 
   // 總分 / 門檻
@@ -462,6 +692,8 @@ function renderScores(state){
 
   if(!teams.length){ board.innerHTML=''; return; }
 
+  // ± 步進與分值選擇器共用 selectedPoints，主持判分與微調一致
+  const step = selectedPoints;
   let rows='';
   teams.forEach(team=>{
     const val = scores[team] ?? 0;
@@ -473,8 +705,8 @@ function renderScores(state){
         ${out?'<span class="s-tag">出局</span>':''}
         <span class="s-val">${val}</span>
         <div class="score-adj">
-          <button class="s-minus" data-team="${a}" data-delta="-10" aria-label="減 10">−</button>
-          <button class="s-plus" data-team="${a}" data-delta="10" aria-label="加 10">+</button>
+          <button class="s-minus" data-team="${a}" data-delta="${-step}" aria-label="減 ${step}">−</button>
+          <button class="s-plus" data-team="${a}" data-delta="${step}" aria-label="加 ${step}">+</button>
         </div>
       </div>`;
   });

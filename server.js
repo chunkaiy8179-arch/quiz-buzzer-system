@@ -32,6 +32,7 @@ let state = {
   closed: false,  // 倒數歸零 → 搶答視窗關閉（仍可顯示順位與判定）
   remainingMs: null, // 判錯續跑用：拍燈定格時保存的剩餘毫秒（reviewing 階段下發此定格值）
   eliminated: [],    // 本回合已答錯出局、不可再搶的組別名稱
+  lastVerify: null,  // 最後一筆判定的快照，供 host_unverify 撤銷（開新回合即清）
 };
 
 // 分數獨立於 state：整場累計，host_reset 不歸零（僅 host_clear / host_score_reset 清）
@@ -130,6 +131,7 @@ function stateMsg() {
     totalScore: totalScore,               // 全場總分
     canIgnite: totalScore >= threshold,   // 總分是否達標、可點燈
     lit: lit,                             // 希望之燈是否已亮
+    canUndo: !!state.lastVerify,          // 是否有可撤銷的最後一筆判定（無則主持端不顯示撤銷鈕）
   };
 }
 
@@ -220,6 +222,7 @@ wss.on('connection', (ws) => {
         lit = false;
         state.eliminated = [];
         state.remainingMs = null;
+        state.lastVerify = null; // 開新局：上一回合的判定不可再撤
         broadcast({ type: 'force_reselect' });
         broadcastState();
         break;
@@ -235,6 +238,7 @@ wss.on('connection', (ws) => {
         // 新回合：清出局與定格倒數（分數與燈狀態跨回合保留，不動）
         state.eliminated = [];
         state.remainingMs = null;
+        state.lastVerify = null; // 開新回合：上一回合的判定不可再撤
         // 伺服器權威倒數：到時即關閉搶答視窗（buzzOrder/順位仍保留供判定）
         startCountdownFrom(COUNT_FROM * 1000);
         broadcastState();
@@ -251,6 +255,7 @@ wss.on('connection', (ws) => {
         // 結束回合：清出局與定格倒數（分數與燈狀態保留）
         state.eliminated = [];
         state.remainingMs = null;
+        state.lastVerify = null; // 結束回合：判定不可再撤
         broadcastState();
         break;
       }
@@ -283,6 +288,10 @@ wss.on('connection', (ws) => {
         state.remainingMs = state.deadline ? Math.max(0, state.deadline - Date.now()) : 0;
         clearCountdown();
         state.phase = 'reviewing';
+        // 阻斷 H-1：判錯續跑期間有新搶答者拍燈，環境已變，前一筆判定不可再撤——
+        // 否則 host_unverify 會用過時的 lastVerify 快照還原，造成 buzzOrder 出現兩個未判定組、
+        // currentFocus 跳回舊組、remainingMs 被舊定格值覆蓋等非法中間態。
+        state.lastVerify = null;
 
         if (isFirst) {
           broadcast({ type: 'first_buzz', team, rank: 1 });
@@ -300,12 +309,28 @@ wss.on('connection', (ws) => {
         const entry = state.buzzOrder.find(b => b.team === team);
         if (!entry || entry.verified) return; // 防重複判定（達標廣播只計一次）
 
+        // 每題可設加分值：correct 用傳入 points（clamp 1~200），預設 SCORE_DELTA；wrong 不加分
+        const pts = Number.isFinite(Number(msg.points))
+          ? Math.min(200, Math.max(1, Math.round(Number(msg.points))))
+          : SCORE_DELTA;
+
+        // 撤銷快照：在改 state 之前存「判定前」的定格狀態，供 host_unverify 一鍵還原。
+        // prevRemainingMs = 拍燈當下定格的剩餘毫秒；prevEliminated = 判定前出局名單快照。
+        state.lastVerify = {
+          team,
+          result,
+          points: result === 'correct' ? pts : 0,
+          prevRemainingMs: state.remainingMs,
+          prevEliminated: [...state.eliminated],
+        };
+
         entry.verified = true;
         entry.result = result;
 
         if (result === 'correct') {
-          // 答對：加分、回合結束鎖定，清出局與定格倒數
-          scores[team] = (scores[team] || 0) + SCORE_DELTA;
+          // 答對：加分（用本題分值）、回合結束鎖定，清出局與定格倒數
+          scores[team] = (scores[team] || 0) + pts;
+          entry.points = pts; // 記錄本題分值，供撤銷與顯示用
           state.phase = 'locked';
           state.eliminated = [];
           state.remainingMs = null;
@@ -329,6 +354,41 @@ wss.on('connection', (ws) => {
           nextFocus: next ? next.team : null,
           scores: scores,
         });
+        broadcastState();
+        break;
+      }
+
+      // 撤銷最後一筆判定：主持人判錯/判對後反悔，一鍵還原回「該組剛拍燈、定格待判」狀態。
+      // 僅允許撤銷最後一筆（lastVerify），撤完即清快照，不可連撤。
+      case 'host_unverify': {
+        if (!checkPin()) return;
+        const lv = state.lastVerify;
+        if (!lv) return;
+        const entry = state.buzzOrder.find(b => b.team === lv.team);
+        if (!entry || !entry.verified) return;
+
+        // 還原分數：correct 才扣回本題分值；扣到 0 以下移除鬼項
+        if (lv.result === 'correct') {
+          scores[lv.team] = (scores[lv.team] || 0) - lv.points;
+          if (scores[lv.team] <= 0) delete scores[lv.team];
+        }
+
+        // 還原 entry 回未判定
+        entry.verified = false;
+        entry.result = null;
+        delete entry.points;
+
+        // 還原狀態回 reviewing 定格：用快照覆蓋出局名單
+        // （correct 撤銷復原被清空的名單、wrong 撤銷移除剛加入的該組），
+        // 回填拍燈當下的剩餘毫秒，reviewing 不跑倒數＝定格。
+        state.eliminated = lv.prevEliminated;
+        state.phase = 'reviewing';
+        state.remainingMs = lv.prevRemainingMs;
+        state.closed = false;
+        clearCountdown();
+
+        state.lastVerify = null; // 撤完清掉，不可連撤
+        broadcast({ type: 'verify_undone', team: lv.team, scores });
         broadcastState();
         break;
       }
