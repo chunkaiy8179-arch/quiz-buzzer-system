@@ -86,7 +86,7 @@ test('倒數歸零後關閉搶答：學員顯示「時間到」、再拍燈不�
   await ctx.close();
 });
 
-test('第一個拍燈後倒數續跑：視窗仍開放，後續城鎮可繼續拍燈', async ({ browser }) => {
+test('第一個拍燈後定格：c2 立即被鎖；判 c1 錯後 c2 才可搶、倒數續跑', async ({ browser }) => {
   const ctx = await browser.newContext();
   const host = await freshHost(ctx);
   const c1 = await joinClient(ctx, '城鎮一');
@@ -95,12 +95,26 @@ test('第一個拍燈後倒數續跑：視窗仍開放，後續城鎮可繼續�
   await host.click('#btn-open');
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS });
 
+  // c1 拍燈 → phase=reviewing、c2 應立即被鎖（定格期間不可搶）
   await c1.click('#buzz-btn');
   await expect(host.locator('#buzz-list li')).toHaveCount(1, { timeout: WS });
-  // 第一搶後視窗未關（倒數續跑）→ 城鎮二仍可拍燈
-  await expect(c2.locator('#buzz-btn')).toBeEnabled();
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS });
+
+  // 判 c1 錯 → phase=open（從剩餘秒續跑）、c1 出局、c2 解鎖可搶
+  const wrongBtn = host.locator('.v-btn[data-result="wrong"]').first();
+  await expect(wrongBtn).toBeVisible({ timeout: WS });
+  await wrongBtn.click();
+
+  // c2 解鎖並可搶答
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS });
   await c2.click('#buzz-btn');
   await expect(host.locator('#buzz-list li')).toHaveCount(2, { timeout: WS });
+
+  // 判 c2 對 → 回合結束 LOCKED
+  const correctBtn = host.locator('.v-btn[data-result="correct"]').first();
+  await expect(correctBtn).toBeVisible({ timeout: WS });
+  await correctBtn.click();
+  await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS });
 
   await host.click('#btn-reset');
   await ctx.close();

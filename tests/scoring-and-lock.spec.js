@@ -1,0 +1,535 @@
+// @ts-check
+// 新行為測試：搶答定格、計分、出局、希望之燈（scoring-and-hope-lamp 分支）
+// 使用 PORT=3200、HOST_PIN=SCORE1234、短倒數 COUNT_FROM=5（時序案例）
+// 與 buzzer.spec.js(3000)、load/timeup(3100) 互不干擾
+const { test, expect } = require('@playwright/test');
+const { spawn } = require('child_process');
+const path = require('path');
+const WebSocket = require('ws');
+
+let serverProc;
+const PORT = 3200;
+const BASE = `http://localhost:${PORT}`;
+const PIN = 'SCORE1234';
+const COUNT_FROM = 5; // 倒數秒數：夠短讓定格/續跑測試不用等太久
+const WS_TIMEOUT = 5000;
+
+test.beforeAll(async () => {
+  serverProc = spawn('node', [path.join(__dirname, '..', 'server.js')], {
+    stdio: 'pipe',
+    env: { ...process.env, PORT: String(PORT), HOST_PIN: PIN, COUNT_FROM: String(COUNT_FROM) },
+  });
+  await new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('Server start timeout')), 10000);
+    serverProc.stdout.on('data', d => {
+      if (d.toString().includes('running at')) { clearTimeout(t); resolve(); }
+    });
+    serverProc.on('error', reject);
+  });
+});
+
+test.afterAll(() => { if (serverProc) serverProc.kill(); });
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+async function freshHost(ctx) {
+  const p = await ctx.newPage();
+  await p.goto(`${BASE}/console.html`);
+  await p.fill('#pin-input', PIN);
+  await p.click('#pin-btn');
+  await expect(p.locator('#pin-screen')).toHaveClass(/hidden/, { timeout: WS_TIMEOUT });
+  await p.click('#btn-reset');
+  await expect(p.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
+  return p;
+}
+
+async function joinClient(ctx, town) {
+  const p = await ctx.newPage();
+  await p.goto(`${BASE}/client.html`);
+  await p.click(`.town-btn[data-town="${town}"]`);
+  await p.click('#join-btn');
+  await expect(p.locator('#game-screen')).toBeVisible({ timeout: WS_TIMEOUT });
+  return p;
+}
+
+// 原生 WebSocket 直連（不經瀏覽器）
+function rawConn() {
+  const sock = new WebSocket(`ws://localhost:${PORT}`);
+  const inbox = [];
+  sock.on('message', d => { try { inbox.push(JSON.parse(d)); } catch (e) {} });
+  const ready = new Promise((res, rej) => { sock.on('open', res); sock.on('error', rej); });
+  return { sock, inbox, ready };
+}
+
+function waitMsg(inbox, type, timeout = 4000) {
+  return new Promise((res, rej) => {
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      const m = inbox.find(x => x.type === type);
+      if (m) { clearInterval(iv); res(m); }
+      else if (Date.now() - t0 > timeout) { clearInterval(iv); rej(new Error(`timeout waiting ${type}`)); }
+    }, 25);
+  });
+}
+
+// 等待包含特定條件的 state 訊息
+function waitState(inbox, predicate, timeout = 4000) {
+  return new Promise((res, rej) => {
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      const m = inbox.filter(x => x.type === 'state').find(predicate);
+      if (m) { clearInterval(iv); res(m); }
+      else if (Date.now() - t0 > timeout) { clearInterval(iv); rej(new Error('timeout waiting state condition')); }
+    }, 25);
+  });
+}
+
+// ── 測試案例 B1：搶錯出局+續跑 ────────────────────────────────────────────
+test('B1 搶錯出局+續跑：c1 拍→判錯→c1 不可再搶、c2 可搶→判對→locked', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const host = await freshHost(ctx);
+  const c1 = await joinClient(ctx, '城鎮一');
+  const c2 = await joinClient(ctx, '城鎮二');
+
+  await host.click('#btn-open');
+  await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c1 拍燈 → phase=reviewing
+  await c1.click('#buzz-btn');
+  await expect(host.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+
+  // 判 c1 錯 → c1 出局（eliminated），phase=open，c2 解鎖
+  const wrongBtn = host.locator('.v-btn[data-result="wrong"]').first();
+  await expect(wrongBtn).toBeVisible({ timeout: WS_TIMEOUT });
+  await wrongBtn.click();
+
+  // c1 應無法再搶（出局後按鈕應是 disabled）
+  await expect(c1.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+  // c2 解鎖可搶
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c2 搶→判對→locked
+  await c2.click('#buzz-btn');
+  await expect(host.locator('#buzz-list li')).toHaveCount(2, { timeout: WS_TIMEOUT });
+  const correctBtn = host.locator('.v-btn[data-result="correct"]').first();
+  await expect(correctBtn).toBeVisible({ timeout: WS_TIMEOUT });
+  await correctBtn.click();
+  await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
+
+  await host.click('#btn-reset');
+  await ctx.close();
+});
+
+// ── 測試案例 B2：定格倒數 ──────────────────────────────────────────────────
+test('B2 定格倒數：拍燈後剩餘秒定格；判錯後繼續下降', async () => {
+  // 用 rawConn 取 state.remainingMs，避免 UI 渲染延遲
+  const host = rawConn(); await host.ready;
+  // 先 reset
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 加入兩組
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: '定格A' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  const c2 = rawConn(); await c2.ready;
+  c2.sock.send(JSON.stringify({ type: 'join', team: '定格B' }));
+  await waitMsg(c2.inbox, 'join_ok');
+
+  // 清掉舊 state 訊息，重新開搶
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  const openState = await waitState(host.inbox, s => s.phase === 'open');
+  expect(openState.remainingMs).toBeGreaterThan(0);
+
+  // 等 1.5 秒再讓 c1 拍，確保倒數有在跑
+  await new Promise(r => setTimeout(r, 1500));
+
+  // c1 拍燈
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: '定格A' }));
+  const afterBuzzState = await waitState(host.inbox, s => s.phase === 'reviewing');
+  const frozenMs = afterBuzzState.remainingMs;
+  expect(frozenMs).toBeGreaterThan(0);
+  expect(frozenMs).toBeLessThan(COUNT_FROM * 1000); // 應比初始少（已跑過時間）
+
+  // 等再過 1.5 秒，remainingMs 應不變（定格）
+  await new Promise(r => setTimeout(r, 1500));
+  host.inbox.length = 0;
+  // 送 ping 觸發 server 下發新 state（等待任意 state 訊息）
+  // 直接讀 remainingMs —— reviewing 時 server 每次都回相同 remainingMs
+  const stateAfterWait = await new Promise((res, rej) => {
+    const t = setTimeout(() => rej(new Error('no state after wait')), 3000);
+    const iv = setInterval(() => {
+      // 重連一個新 ws 取最新 state（on connection server 立刻 push stateMsg）
+    }, 9999);
+    clearInterval(iv);
+    clearTimeout(t);
+    // 改用新連線取即時 state
+    const peek = rawConn();
+    peek.ready.then(() => {
+      return waitMsg(peek.inbox, 'state', 3000);
+    }).then(s => {
+      peek.sock.close();
+      clearTimeout(t);
+      res(s);
+    }).catch(e => { clearTimeout(t); rej(e); });
+  });
+
+  // reviewing 下 remainingMs 應等於定格值（不隨時間減少）
+  expect(stateAfterWait.phase).toBe('reviewing');
+  expect(stateAfterWait.remainingMs).toBe(frozenMs);
+
+  // 判 c1 錯 → 續跑，remainingMs 應在一段時間後減少
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '定格A', result: 'wrong' }));
+  const afterWrongState = await waitState(host.inbox, s => s.phase === 'open');
+  const runningMs = afterWrongState.remainingMs;
+  // 等 500ms 再取一次 state，應比 runningMs 小（倒數繼續跑）
+  await new Promise(r => setTimeout(r, 600));
+  const peekRunning = rawConn();
+  await peekRunning.ready;
+  const laterState = await waitMsg(peekRunning.inbox, 'state', 3000);
+  peekRunning.sock.close();
+  expect(laterState.phase).toBe('open');
+  expect(laterState.remainingMs).toBeLessThan(runningMs);
+
+  host.sock.close(); c1.sock.close(); c2.sock.close();
+  // reset 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B3：計分累計 ──────────────────────────────────────────────────
+test('B3 計分累計：兩回合各判對一次 → 該組 20；host_reset 後分數仍在', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const host = await freshHost(ctx);
+  const c1 = await joinClient(ctx, '城鎮一');
+
+  // 回合一：c1 拍→判對 → 城鎮一 +10
+  await host.click('#btn-open');
+  await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await c1.click('#buzz-btn');
+  await expect(host.locator('.v-btn[data-result="correct"]')).toBeVisible({ timeout: WS_TIMEOUT });
+  await host.locator('.v-btn[data-result="correct"]').first().click();
+  await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
+
+  // host_reset → 回到 locked，但分數應保留
+  await host.click('#btn-reset');
+  await expect(host.locator('#btn-open')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // 回合二：c1 拍→判對 → 城鎮一累計 +10 = 20
+  await host.click('#btn-open');
+  await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await c1.click('#buzz-btn');
+  await expect(host.locator('.v-btn[data-result="correct"]')).toBeVisible({ timeout: WS_TIMEOUT });
+  await host.locator('.v-btn[data-result="correct"]').first().click();
+  await expect(host.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
+
+  // 驗 state scores 城鎮一 = 20（用 raw ws 取最新 state）
+  const peek = rawConn(); await peek.ready;
+  const stateMsg = await waitMsg(peek.inbox, 'state', 3000);
+  peek.sock.close();
+  expect(stateMsg.scores['城鎮一']).toBe(20);
+
+  await host.click('#btn-reset');
+  // host_reset 後分數仍在（不歸零）
+  const peek2 = rawConn(); await peek2.ready;
+  const stateMsg2 = await waitMsg(peek2.inbox, 'state', 3000);
+  peek2.sock.close();
+  expect(stateMsg2.scores['城鎮一']).toBe(20);
+
+  await ctx.close();
+});
+
+// ── 測試案例 B4：分數歸零 ──────────────────────────────────────────────────
+test('B4 分數歸零：累積後 host_score_reset → 全部 0', async () => {
+  // 先用 raw ws 累積分數再清零
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  const c1 = rawConn(); await c1.ready;
+  c1.sock.send(JSON.stringify({ type: 'join', team: '歸零甲' }));
+  await waitMsg(c1.inbox, 'join_ok');
+
+  // 開搶 → 拍 → 判對（+10）
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+  host.inbox.length = 0;
+  c1.sock.send(JSON.stringify({ type: 'buzz', team: '歸零甲' }));
+  await waitState(host.inbox, s => s.phase === 'reviewing');
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '歸零甲', result: 'correct' }));
+  const afterCorrect = await waitState(host.inbox, s => s.phase === 'locked');
+  expect(afterCorrect.scores['歸零甲']).toBe(10);
+
+  // host_score_reset → 分數全清
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  const afterReset = await waitState(host.inbox, s => true); // 任一 state
+  expect(afterReset.scores['歸零甲'] ?? 0).toBe(0);
+  expect(afterReset.totalScore).toBe(0);
+
+  host.sock.close(); c1.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B5：手動±分 ───────────────────────────────────────────────────
+test('B5 手動±分：+10 兩次 -10 一次 → +10；連續負至 0 不變負（clamp）', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  // 先 score_reset 確保乾淨
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  await waitState(host.inbox, s => true);
+
+  // +10 兩次
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '手動隊', delta: 10 }));
+  await waitState(host.inbox, s => (s.scores['手動隊'] ?? 0) === 10);
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '手動隊', delta: 10 }));
+  await waitState(host.inbox, s => (s.scores['手動隊'] ?? 0) === 20);
+
+  // -10 一次 → 應剩 10
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '手動隊', delta: -10 }));
+  const s1 = await waitState(host.inbox, s => true);
+  expect(s1.scores['手動隊']).toBe(10);
+
+  // 連續 -20（超過現有 10）→ clamp 0，不應變負；clamp 到 0 後該 key 從 scores 移除（避免 0 分鬼項污染榜單），
+  // 故以 ?? 0 取值，有效分數仍為 0 且不為負。
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '手動隊', delta: -20 }));
+  const s2 = await waitState(host.inbox, s => true);
+  expect(s2.scores['手動隊'] ?? 0).toBe(0);
+  expect(s2.scores['手動隊'] ?? 0).not.toBeLessThan(0);
+  expect('手動隊' in s2.scores).toBe(false); // 0 分鬼項已被刪除，不留在計分板來源
+
+  host.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B6：first_buzz 立即鎖他人 ────────────────────────────────────
+test('B6 first_buzz 立即鎖他人：c1 拍後 c2 的 #buzz-btn 立即 disabled', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const host = await freshHost(ctx);
+  const c1 = await joinClient(ctx, '城鎮一');
+  const c2 = await joinClient(ctx, '城鎮二');
+
+  await host.click('#btn-open');
+  await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c1 拍燈 → c2 應立即被鎖（不等額外操作）
+  await c1.click('#buzz-btn');
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+  // c1 本身也轉為 state-buzzed + disabled
+  await expect(c1.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
+
+  await host.click('#btn-reset');
+  await ctx.close();
+});
+
+// ── 測試案例 B7：出局組不可再搶（raw ws 直連）────────────────────────────
+test('B7 出局組不可再搶：A 出局後再送 buzz → buzzOrder 不增第二筆 A', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  const a = rawConn(); await a.ready;
+  a.sock.send(JSON.stringify({ type: 'join', team: '出局甲' }));
+  await waitMsg(a.inbox, 'join_ok');
+
+  const b = rawConn(); await b.ready;
+  b.sock.send(JSON.stringify({ type: 'join', team: '出局乙' }));
+  await waitMsg(b.inbox, 'join_ok');
+
+  // 開搶
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // A 拍燈 → reviewing
+  host.inbox.length = 0;
+  a.sock.send(JSON.stringify({ type: 'buzz', team: '出局甲' }));
+  const r1 = await waitState(host.inbox, s => s.phase === 'reviewing');
+  expect(r1.buzzOrder.length).toBe(1);
+  expect(r1.buzzOrder[0].team).toBe('出局甲');
+
+  // 判 A 錯 → A 出局，phase=open
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '出局甲', result: 'wrong' }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // A 再送 buzz（被 eliminated 拒絕）
+  host.inbox.length = 0;
+  a.sock.send(JSON.stringify({ type: 'buzz', team: '出局甲' }));
+  // 等短暫後取最新 state，buzzOrder 不應再增加 A
+  await new Promise(r => setTimeout(r, 300));
+  const peek = rawConn(); await peek.ready;
+  const latestState = await waitMsg(peek.inbox, 'state', 3000);
+  peek.sock.close();
+  // buzzOrder 中 '出局甲' 只應有一筆
+  const aEntries = latestState.buzzOrder.filter(x => x.team === '出局甲');
+  expect(aEntries.length).toBe(1);
+
+  host.sock.close(); a.sock.close(); b.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B8：門檻達標解鎖 canIgnite ──────────────────────────────────
+test('B8 門檻達標解鎖：設低門檻、加分達標 → state.canIgnite=true', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  // 先清分
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+
+  // 設低門檻 = 10
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_threshold', pin: PIN, threshold: 10 }));
+  const afterThreshold = await waitState(host.inbox, s => s.threshold === 10);
+  expect(afterThreshold.canIgnite).toBe(false); // 分數尚未達標
+
+  // 手動加分 +10 → 達標
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '達標隊', delta: 10 }));
+  const afterScore = await waitState(host.inbox, s => (s.scores['達標隊'] ?? 0) >= 10);
+  expect(afterScore.canIgnite).toBe(true);
+  expect(afterScore.totalScore).toBeGreaterThanOrEqual(10);
+
+  host.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_threshold', pin: PIN, threshold: 120 }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B9：host_ignite ──────────────────────────────────────────────
+test('B9 host_ignite：未達標時送不 broadcast ignite；達標後送 → 收到 ignite 且 lit=true', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+  // 清分、設門檻 50
+  host.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_set_threshold', pin: PIN, threshold: 50 }));
+  await waitState(host.inbox, s => s.threshold === 50);
+
+  // 旁觀者監聽 ignite
+  const observer = rawConn(); await observer.ready;
+  await waitMsg(observer.inbox, 'state', 3000); // 接收初始 state
+
+  // 未達標（0分）→ 送 host_ignite 應無效（不 broadcast ignite）
+  host.inbox.length = 0;
+  observer.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_ignite', pin: PIN }));
+  await new Promise(r => setTimeout(r, 400));
+  const igniteBeforeScore = observer.inbox.find(x => x.type === 'ignite');
+  expect(igniteBeforeScore).toBeUndefined();
+
+  // 加分達標（+50）→ 再送 host_ignite → 應 broadcast ignite，lit=true
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_score_adjust', pin: PIN, team: '燈隊', delta: 50 }));
+  await waitState(host.inbox, s => s.canIgnite === true);
+
+  observer.inbox.length = 0;
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_ignite', pin: PIN }));
+  const igniteMsg = await waitMsg(observer.inbox, 'ignite', 3000);
+  expect(igniteMsg.type).toBe('ignite');
+
+  // 後續 state 應有 lit=true
+  const litState = await waitState(host.inbox, s => s.lit === true);
+  expect(litState.lit).toBe(true);
+
+  host.sock.close(); observer.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_score_reset', pin: PIN }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_set_threshold', pin: PIN, threshold: 120 }));
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});
+
+// ── 測試案例 B10：同時拍燈競態（raw ws 回歸）────────────────────────────────
+// 重現 reviewer 阻斷 #1：A、B 幾乎同時拍燈，B 命中 phase!=='open' 守衛。
+// 修法後 B 必須收到 buzz_rejected（解除 client 樂觀鎖）；判 A 錯續跑後 B 仍能成功進 buzzOrder（沒被卡死）。
+test('B10 同時拍燈競態：B 被拒收到 buzz_rejected；判 A 錯續跑後 B 可成功搶到', async () => {
+  const host = rawConn(); await host.ready;
+  host.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'locked');
+
+  const a = rawConn(); await a.ready;
+  a.sock.send(JSON.stringify({ type: 'join', team: '競態甲' }));
+  await waitMsg(a.inbox, 'join_ok');
+
+  const b = rawConn(); await b.ready;
+  b.sock.send(JSON.stringify({ type: 'join', team: '競態乙' }));
+  await waitMsg(b.inbox, 'join_ok');
+
+  // 開搶
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_open', pin: PIN }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // A 先送 buzz、B 緊接著送 buzz（同一 tick，B 會命中 phase 已 reviewing 守衛）
+  host.inbox.length = 0;
+  b.inbox.length = 0;
+  a.sock.send(JSON.stringify({ type: 'buzz', team: '競態甲' }));
+  b.sock.send(JSON.stringify({ type: 'buzz', team: '競態乙' }));
+
+  // A 進 buzzOrder、phase=reviewing
+  const r1 = await waitState(host.inbox, s => s.phase === 'reviewing');
+  expect(r1.buzzOrder.length).toBe(1);
+  expect(r1.buzzOrder[0].team).toBe('競態甲');
+
+  // B 必須收到 buzz_rejected（針對自己 team）→ 解除 client 樂觀鎖
+  const rej = await waitMsg(b.inbox, 'buzz_rejected', 3000);
+  expect(rej.team).toBe('競態乙');
+
+  // 判 A 錯 → A 出局、phase=open 續跑
+  host.inbox.length = 0;
+  host.sock.send(JSON.stringify({ type: 'host_verify', pin: PIN, team: '競態甲', result: 'wrong' }));
+  await waitState(host.inbox, s => s.phase === 'open');
+
+  // 續跑後 B 再送 buzz → 應成功進 buzzOrder（沒被卡死）
+  host.inbox.length = 0;
+  b.sock.send(JSON.stringify({ type: 'buzz', team: '競態乙' }));
+  const r2 = await waitState(host.inbox, s => s.phase === 'reviewing' && s.buzzOrder.some(x => x.team === '競態乙'));
+  const bEntry = r2.buzzOrder.find(x => x.team === '競態乙');
+  expect(bEntry).toBeTruthy();
+  expect(bEntry.verified).toBe(false);
+
+  host.sock.close(); a.sock.close(); b.sock.close();
+  // 清場
+  const cleanup = rawConn(); await cleanup.ready;
+  cleanup.sock.send(JSON.stringify({ type: 'host_reset', pin: PIN }));
+  await new Promise(r => setTimeout(r, 200));
+  cleanup.sock.close();
+});

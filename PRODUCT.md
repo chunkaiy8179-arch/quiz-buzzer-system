@@ -6,8 +6,8 @@ register: product
 
 Web-based quiz buzzer system for live quiz events. Three synchronized panels over WebSocket:
 - **Student client** (`/client.html`): mobile buzzer button, fullscreen, PWA
-- **Host console** (`/console.html`): control panel to open/reset rounds, verify answers
-- **Display screen** (`/display.html`): projection screen with countdown, rankings, sound effects
+- **Host console** (`/console.html`): control panel to open/reset rounds, verify answers, adjust scores, ignite the hope lamp
+- **Display screen** (`/display.html`): projection screen with countdown, rankings, sound effects, cooperative flame progress bar, hope-lamp animation
 
 ## Users
 
@@ -30,14 +30,29 @@ Type: Noto Serif TC (gold titles) + Noto Sans TC (body)
 
 1. Students pick a town (1 of 10) or type a custom team name, then join.
 2. Host enters PIN, taps "點燃聖火" → WebSocket broadcasts phase=open and the server starts an
-   authoritative countdown (`COUNT_FROM`, default 30s).
-3. Students tap BUZZ → ranked by **server** timestamp. 1st buzz plays the buzzer mp3 + flash on
-   display but **does NOT stop the countdown** (it keeps running). Later buzzers play a "ding".
-4. Countdown hits zero → server broadcasts `time_up`, marks the round `closed`, and **rejects all
+   authoritative countdown (`COUNT_FROM`, default 60s).
+3. Students tap BUZZ → ranked by **server** timestamp. The 1st buzz plays the buzzer mp3 + flash on
+   display, **locks out everyone else, and freezes the countdown** pending host verification. Later
+   buzzers (before lockout) play a "ding".
+4. Host taps O/X to verify the frozen buzzer → correct (mp3 + confetti) ends the round and awards
+   the team **+10**; wrong (mp3 + X) **eliminates** that team for the round and **resumes the
+   countdown from the remaining seconds** so other teams can still buzz (eliminated teams can't).
+5. Countdown hits zero → server broadcasts `time_up`, marks the round `closed`, and **rejects all
    further buzzes** (true lockout).
-5. Host taps O/X to verify → correct (mp3 + confetti) returns to locked; wrong (mp3 + X) moves focus
-   to the next buzzer.
-6. Host taps "重設" (reset) → clears the round; "清空連線" (clear) → forces everyone back to town select.
+6. Scores **accumulate across rounds**. Host can manually **adjust each team's score** (+/-) or
+   **reset all scores**; "清空連線" (clear) forces everyone back to town select and also zeroes scores.
+7. When the **combined total score** reaches the threshold (`LIGHT_THRESHOLD`, default 120; host can
+   adjust live), the "點燃希望之燈" button unlocks. The host **manually** ignites it → display plays a
+   fullscreen hope-lamp animation. Display also shows a cooperative flame progress bar and a per-team
+   leaderboard throughout.
+8. Host taps "重設" (reset) → clears the round (scores and lamp persist).
+
+## Scoring & Hope Lamp Messages
+
+Host → server: `host_score_adjust` (per-team +/-), `host_score_reset` (zero all scores),
+`host_set_threshold` (change unlock threshold live), `host_ignite` (light the lamp once unlocked).
+Server → clients: `ignite` (broadcast the lamp animation + state), `buzz_rejected` (sent to a buzzer
+that's locked out or eliminated). Score totals and progress ride along in the regular state broadcast.
 
 ## Reconnect & Identity
 

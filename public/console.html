@@ -151,6 +151,50 @@ body { background: transparent; }
 .v-correct { background: var(--up); }
 .v-wrong { background: var(--wrong); }
 
+/* ── 暫停（待判定）狀態 ── */
+.pause-note { font-family: var(--font-latin); font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-align: center; padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--flame-amber); background: rgba(245,166,35,.06); }
+.pause-note:empty { display: none; }
+.pause-note b { font-variant-numeric: tabular-nums; color: var(--gold-bright); }
+
+/* ── 希望之燈 / 門檻 ── */
+.hope-panel { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
+.hope-meter { display: flex; align-items: baseline; gap: 8px; font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+.hope-meter .total { font-family: var(--font-latin); font-size: 22px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; }
+.hope-meter .slash { opacity: .6; }
+.hope-meter .threshold { font-family: var(--font-latin); font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.threshold-set { display: flex; align-items: center; gap: 8px; }
+.threshold-set label { font-size: 12px; color: var(--muted); letter-spacing: 1px; white-space: nowrap; }
+#threshold-input { width: 92px; background: rgba(212,175,55,.06); border: 1.5px solid var(--gold-dim); border-radius: 8px; padding: 9px 12px; font-family: var(--font-latin); font-size: 16px; font-weight: 700; color: var(--gold-bright); text-align: center; outline: none; font-variant-numeric: tabular-nums; transition: border-color .15s, box-shadow .15s; }
+#threshold-input:focus { border-color: var(--gold-bright); box-shadow: 0 0 0 3px rgba(245,166,35,.18); }
+#btn-threshold { border: 1px solid var(--gold-dim); border-radius: 8px; background: rgba(212,175,55,.08); color: var(--gold-bright); font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 1px; padding: 9px 14px; cursor: pointer; transition: background .15s, transform .1s; }
+#btn-threshold:active { transform: scale(.97); background: rgba(212,175,55,.16); }
+#btn-ignite { border: none; border-radius: 12px; padding: 16px 8px; font-family: var(--font-title); font-size: clamp(16px,4.4vw,19px); font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: transform .1s, filter .15s, opacity .25s; }
+#btn-ignite:not(:disabled) { background: linear-gradient(160deg,#ffd96b,#f5a623 55%,#c0390f); color: #3a1900; box-shadow: inset 0 1px 0 rgba(255,240,200,.55), inset 0 -3px 7px rgba(120,40,0,.45), 0 8px 26px rgba(232,67,31,.5); text-shadow: 0 1px 0 rgba(255,225,160,.4); animation: badge-glow 1.4s ease-in-out infinite; }
+#btn-ignite:not(:disabled):active { transform: scale(.97); filter: brightness(1.08); }
+#btn-ignite:disabled { background: rgba(212,175,55,.06); color: var(--muted); cursor: not-allowed; box-shadow: none; border: 1px solid var(--gold-deep); }
+#btn-ignite.lit { background: linear-gradient(160deg,#fff4c6,#f5d77a 40%,#d4af37 80%); color: #2a1c00; animation: none; cursor: default; }
+@media (prefers-reduced-motion: reduce) { #btn-ignite:not(:disabled) { animation: none; } }
+
+/* ── 計分板 ── */
+#score-board { padding: 4px 16px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+#score-board:empty { display: none; }
+.score-head { display: flex; align-items: center; gap: 10px; padding: 4px 2px; }
+.score-head .score-title { flex: 1; font-family: var(--font-title); font-size: 14px; font-weight: 800; letter-spacing: 2px; color: var(--gold-bright); }
+.btn-score-reset { border: 1px solid rgba(192,57,43,.6); border-radius: 8px; padding: 7px 12px; font-family: var(--font-title); font-size: 13px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s; }
+.btn-score-reset:hover { filter: brightness(1.1); color: #f3b8ae; }
+.btn-score-reset:active { transform: scale(.97); background: linear-gradient(160deg, rgba(192,57,43,.34), rgba(192,57,43,.16)); }
+.score-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.score-row.eliminated { opacity: .45; }
+.score-row .s-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-title); font-size: clamp(15px,4vw,17px); font-weight: 700; color: var(--ink); letter-spacing: .5px; }
+.score-row.eliminated .s-name { text-decoration: line-through; color: var(--muted); }
+.score-row .s-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #e3897f; border: 1px solid rgba(192,57,43,.5); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+.score-row .s-val { font-family: var(--font-latin); font-size: 19px; font-weight: 900; color: var(--gold-bright); font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
+.score-adj { display: flex; gap: 6px; flex-shrink: 0; }
+.score-adj button { border: none; border-radius: 8px; width: 40px; height: 40px; min-width: 40px; font-size: 22px; font-weight: 900; line-height: 1; cursor: pointer; transition: transform .08s, filter .15s; color: #fff; }
+.score-adj button:active { transform: scale(.88); filter: brightness(1.18); }
+.s-plus { background: var(--up); }
+.s-minus { background: var(--wrong); }
+
 /* ── 點擊水波回饋（ripple）── */
 button, .town-btn { position: relative; overflow: hidden; }
 .ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.24) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,0) 70%); animation: ripple-anim .58s ease-out forwards; }
@@ -209,6 +253,24 @@ button, .town-btn { position: relative; overflow: hidden; }
   <button id="btn-reset" class="btn-reset">重設</button>
   <button id="btn-clear" class="btn-clear" title="清空所有連線，所有學員退回選城鎮">清空連線</button>
 </div>
+
+<div id="pause-note" class="pause-note"></div>
+
+<div class="hope-panel">
+  <div class="hope-meter">
+    總分 <span class="total" id="total-score">0</span>
+    <span class="slash">/</span>
+    門檻 <span class="threshold" id="threshold-show">0</span>
+  </div>
+  <div class="threshold-set">
+    <label for="threshold-input">點燈門檻</label>
+    <input id="threshold-input" type="number" min="0" step="10" inputmode="numeric">
+    <button id="btn-threshold">設定門檻</button>
+  </div>
+  <button id="btn-ignite" disabled>點燃希望之燈</button>
+</div>
+
+<div id="score-board"></div>
 
 <div id="wake-note" class="wake-note"></div>
 
@@ -278,16 +340,45 @@ $('btn-clear').addEventListener('click', ()=>{
   if(confirm('確定清空所有連線？所有學員將被退回選城鎮畫面，需重新加入。')) sendHost({ type:'host_clear' });
 });
 
+$('btn-threshold').addEventListener('click', ()=>{
+  const v = parseInt($('threshold-input').value, 10);
+  if(Number.isNaN(v) || v < 0){ $('threshold-input').focus(); return; }
+  sendHost({ type:'host_set_threshold', threshold:v });
+});
+$('threshold-input').addEventListener('keydown', e => { if(e.key==='Enter') $('btn-threshold').click(); });
+
+$('btn-ignite').addEventListener('click', ()=>{
+  if($('btn-ignite').disabled) return;
+  sendHost({ type:'host_ignite' });
+});
+
+// 計分板按鈕：事件委派，避免每次 render 重複綁定
+$('score-board').addEventListener('click', e=>{
+  const adj = e.target.closest('.score-adj button');
+  if(adj){ sendHost({ type:'host_score_adjust', team:adj.dataset.team, delta:parseInt(adj.dataset.delta,10) }); return; }
+  const rst = e.target.closest('.btn-score-reset');
+  if(rst && confirm('確定清空所有分數？')) sendHost({ type:'host_score_reset' });
+});
+
 function renderState(state){
   const badge = $('phase-badge');
   const phases = {
-    locked:    ['LOCKED', 'rgba(212,175,55,.08)', 'var(--muted)',      'var(--gold-deep)'],
-    open:      ['OPEN',   'rgba(245,166,35,.18)', 'var(--gold-bright)','var(--flame-amber)'],
-    reviewing: ['REVIEW', 'rgba(245,166,35,.12)', 'var(--gold-bright)','var(--gold)'],
+    locked:    ['LOCKED',        'rgba(212,175,55,.08)', 'var(--muted)',      'var(--gold-deep)'],
+    open:      ['OPEN',          'rgba(245,166,35,.18)', 'var(--gold-bright)','var(--flame-amber)'],
+    reviewing: ['PAUSED · 待判定', 'rgba(245,166,35,.12)', 'var(--gold-bright)','var(--gold)'],
   };
   const [label,bg,color,border] = phases[state.phase] ?? phases.locked;
   badge.textContent=label; badge.style.background=bg; badge.style.color=color; badge.style.borderColor=border;
   badge.classList.toggle('open-live', state.phase==='open');
+
+  // 定格等判定：清楚提示主持人剩餘秒數
+  const pauseNote = $('pause-note');
+  if(state.phase==='reviewing'){
+    const secs = Math.ceil((state.remainingMs||0)/1000);
+    pauseNote.innerHTML = `PAUSED · 剩餘 <b>${secs}</b>s 定格中 — 請判定`;
+  } else {
+    pauseNote.textContent='';
+  }
 
   const teams = state.joinedTeams || [];
   $('joined-count').textContent = teams.length;
@@ -337,10 +428,67 @@ function renderState(state){
       sendHost({ type:'host_verify', team:btn.dataset.team, result:btn.dataset.result });
     });
   });
+
+  // 總分 / 門檻
+  const total = state.totalScore ?? 0;
+  const threshold = state.threshold ?? 0;
+  $('total-score').textContent = total;
+  $('threshold-show').textContent = threshold;
+  const thInput = $('threshold-input');
+  if(document.activeElement !== thInput) thInput.value = threshold;
+
+  // 點燈鈕：僅 canIgnite 才 enable 並發亮；已點燈顯示狀態
+  const ignite = $('btn-ignite');
+  if(state.lit){
+    ignite.disabled = true;
+    ignite.classList.add('lit');
+    ignite.textContent = '✦ 希望之燈已點燃 ✦';
+  } else {
+    ignite.classList.remove('lit');
+    ignite.disabled = !state.canIgnite;
+    ignite.textContent = '點燃希望之燈';
+  }
+
+  renderScores(state);
+}
+
+function renderScores(state){
+  const board = $('score-board');
+  const scores = state.scores || {};
+  const eliminated = state.eliminated || [];
+  const joined = state.joinedTeams || [];
+  // 資料來源 = 有分數的組 ∪ 進場名單（含已離線但有分數者）
+  const teams = [...new Set([...Object.keys(scores), ...joined])];
+
+  if(!teams.length){ board.innerHTML=''; return; }
+
+  let rows='';
+  teams.forEach(team=>{
+    const val = scores[team] ?? 0;
+    const out = eliminated.includes(team);
+    const a = escAttr(team);
+    rows += `
+      <div class="score-row${out?' eliminated':''}">
+        <span class="s-name">${escHtml(team)}</span>
+        ${out?'<span class="s-tag">出局</span>':''}
+        <span class="s-val">${val}</span>
+        <div class="score-adj">
+          <button class="s-minus" data-team="${a}" data-delta="-10" aria-label="減 10">−</button>
+          <button class="s-plus" data-team="${a}" data-delta="10" aria-label="加 10">+</button>
+        </div>
+      </div>`;
+  });
+
+  board.innerHTML = `
+    <div class="score-head">
+      <span class="score-title">計分板</span>
+      <button class="btn-score-reset">分數歸零</button>
+    </div>
+    ${rows}`;
 }
 
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function escAttr(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function escAttr(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 </script>
 <script>
 (function(){

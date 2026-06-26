@@ -122,6 +122,7 @@ body { background: transparent; }
   animation: fire-pulse 1.3s ease-in-out infinite; }
 #buzz-btn.state-open:active { transform: scale(.9); }
 #buzz-btn.state-buzzed { background: radial-gradient(circle at 50% 42%, rgba(245,166,35,.22), transparent 58%), radial-gradient(circle at 42% 35%, #2a2740, #15131f 65%); color: var(--gold-bright); box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 44px rgba(245,166,35,.16), 0 0 36px rgba(245,166,35,.35); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; }
+#buzz-btn.state-out { background: radial-gradient(circle at 42% 35%, #2a1a1d, #140d0f 65%); color: var(--wrong); box-shadow: inset 0 0 0 2px rgba(192,57,43,.3), inset 0 -6px 18px rgba(0,0,0,.55); opacity: .55; font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed; }
 @keyframes fire-pulse {
   0%,100% { box-shadow: inset 0 12px 28px rgba(255,243,200,.5), inset 0 -18px 34px rgba(120,18,0,.55), 0 0 0 8px rgba(245,166,35,.16), 0 0 0 22px rgba(245,166,35,.06), 0 22px 60px rgba(232,67,31,.5); }
   50% { box-shadow: inset 0 12px 28px rgba(255,243,200,.6), inset 0 -18px 34px rgba(120,18,0,.6), 0 0 0 14px rgba(245,166,35,.22), 0 0 0 36px rgba(245,166,35,.08), 0 22px 80px rgba(232,67,31,.65); }
@@ -220,7 +221,8 @@ const TOWNS = ['城鎮一','城鎮二','城鎮三','城鎮四','城鎮五','城�
 const MAX_NAME = 10;
 
 const WS_URL = `${location.protocol==='https:'?'wss':'ws'}://${location.host}`;
-let ws, myTeam = null, buzzed = false, joinedTeams = [];
+let ws, myTeam = null, buzzed = false, myEliminated = false, joinedTeams = [];
+let lastState = null; // 最近一次 state 廣播快取：收到 buzz_rejected 解鎖後立即用它重繪
 
 // 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
 // 另存重連權杖 token：F5 後帶回給伺服器，讓伺服器認得同一人、直接接管原城鎮
@@ -326,9 +328,18 @@ function connectWS(){
 function handleMessage(msg){
   switch(msg.type){
     case 'state':
+      lastState = msg; // 快取最新 state，供 buzz_rejected 解鎖後重繪
       joinedTeams = msg.joinedTeams || [];
       if(!myTeam) refreshTownGrid();
       else applyState(msg);
+      break;
+    // 拍燈被伺服器拒絕（競態：他人幾乎同時搶到使 phase 已離開 open，或本回合已出局）：
+    // 解除樂觀鎖 buzzed，並用最近一次 state 立即重繪，避免續跑後孤兒卡死整回合。
+    case 'buzz_rejected':
+      if(msg.team===myTeam){
+        buzzed=false;
+        if(lastState) applyState(lastState); // 無快取時靠下一次 state 廣播自然修正，但至少已解鎖
+      }
       break;
     case 'join_ok':
       myTeam = msg.team; storedTeam = msg.team; rememberTeam(msg.team);
@@ -360,6 +371,7 @@ function handleMessage(msg){
     case 'first_buzz':
     case 'buzz_registered':
       if(msg.team===myTeam) setBuzzLocked(msg.rank);
+      else lockForReview();
       break;
   }
 }
@@ -370,8 +382,17 @@ function applyState(msg){
   $('change-town').style.display = (msg.phase==='locked') ? '' : 'none';
 
   const myEntry = msg.buzzOrder ? msg.buzzOrder.find(b=>b.team===myTeam) : null;
+  myEliminated = Array.isArray(msg.eliminated) && msg.eliminated.includes(myTeam);
 
   if(msg.phase==='open' && !msg.closed){
+    // 出局守衛須在 buzzed/myEntry 之前：判錯出局者拍燈時 buzzed=true 且 buzzOrder 仍有其 entry，
+    // 若先走 if(buzzed) return 或 myEntry 會卡在「第N名」畫面，故先解鎖並顯示「已出局」。
+    if(myEliminated){
+      buzzed=false;
+      btn.disabled=true; btn.className='state-out'; btn.textContent='已出局';
+      setStatus('已出局，等待下一題', ''); $('phase-label').textContent='OUT';
+      return;
+    }
     if(buzzed) return;
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
     btn.disabled=false; btn.className='state-open'; btn.textContent='搶答';
@@ -382,6 +403,13 @@ function applyState(msg){
     buzzed=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='時間到';
     setStatus('搶答時間結束', ''); $('phase-label').textContent='TIME UP';
   } else if(msg.phase==='reviewing'){
+    // 出局守衛同樣須在 myEntry 之前，避免出局組停在「第N名」
+    if(myEliminated){
+      buzzed=false;
+      btn.disabled=true; btn.className='state-out'; btn.textContent='已出局';
+      setStatus('已出局，等待下一題', ''); $('phase-label').textContent='OUT';
+      return;
+    }
     if(myEntry){ setBuzzLocked(msg.buzzOrder.indexOf(myEntry)+1); return; }
     btn.disabled=true; btn.className='state-locked'; btn.textContent='驗證中';
     setStatus('主持人驗證中', ''); $('phase-label').textContent='REVIEW';
@@ -400,9 +428,18 @@ function setBuzzLocked(rank){
   setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
 }
 
+// 他人搶到第一：立即鎖住自己的鈕等主持人判定（不設 buzzed，判錯續跑後要能再搶）
+function lockForReview(){
+  if(buzzed || myEliminated) return;
+  const btn=$('buzz-btn');
+  btn.disabled=true; btn.className='state-locked'; btn.textContent='驗證中';
+  setStatus('主持人驗證中…', ''); $('phase-label').textContent='REVIEW';
+}
+
 function setStatus(text, cls){ const el=$('status-msg'); el.textContent=text; el.className=cls; }
 
 $('buzz-btn').addEventListener('click', ()=>{
+  if(myEliminated) return;
   if(buzzed || !ws || ws.readyState!==1 || !myTeam) return;
   buzzed=true;
   ws.send(JSON.stringify({ type:'buzz', team:myTeam, ts:Date.now() }));

@@ -223,8 +223,96 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 #audio-unlock.hidden { display: none; }
 @keyframes au-pulse { 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.05);} }
 
+/* ── 定格倒數：拍燈後金色定格、不歸零不轉紅 ── */
+.count-badge.paused #count-badge-num { color: var(--gold-bright); text-shadow: 0 0 22px rgba(245,205,120,.55); }
+.count-badge.paused { animation: badge-paused-pulse 1.6s ease-in-out infinite; }
+@keyframes badge-paused-pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(245,205,120,0); } 50%{ box-shadow: 0 0 26px rgba(245,205,120,.32); } }
+
+/* ── 聖火進度條（合作核心視覺）── */
+.sacred-flame-bar { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.flame-bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.flame-bar-label { font-size: clamp(12px,1.4vw,17px); font-weight: 700; letter-spacing: 4px; color: var(--muted); }
+.flame-bar-figures { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-size: clamp(15px,2vw,26px); font-weight: 700; color: var(--gold-bright); letter-spacing: 1px; }
+.flame-bar-figures .fb-thr { color: var(--muted); font-size: .72em; }
+.flame-track { position: relative; height: clamp(16px,2vw,26px); border-radius: 999px; background: rgba(8,10,26,.6); border: 1px solid var(--gold-deep); overflow: hidden; box-shadow: inset 0 1px 4px rgba(0,0,0,.5); }
+.flame-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-dim) 0%, var(--gold) 45%, var(--gold-bright) 100%);
+  box-shadow: 0 0 16px rgba(245,166,35,.5), inset 0 1px 0 rgba(255,255,255,.35);
+  transition: width .9s cubic-bezier(.16,1,.3,1); }
+/* 火焰流光：填充區內持續流動的暖色高光，越接近滿格越明顯 */
+.flame-fill::after { content:''; position: absolute; inset: 0; border-radius: 999px; mix-blend-mode: screen; pointer-events: none;
+  background: linear-gradient(90deg, transparent 30%, rgba(255,249,230,.7) 50%, transparent 70%); background-size: 220% 100%;
+  animation: flame-sheen 2.6s linear infinite; }
+@keyframes flame-sheen { from{ background-position: 200% 0; } to{ background-position: -200% 0; } }
+.flame-fill.near { animation: flame-pulse 1.1s ease-in-out infinite; }
+@keyframes flame-pulse { 0%,100%{ box-shadow: 0 0 16px rgba(245,166,35,.5), inset 0 1px 0 rgba(255,255,255,.35); } 50%{ box-shadow: 0 0 34px rgba(245,166,35,.85), inset 0 1px 0 rgba(255,255,255,.5); } }
+.flame-fill.ready { background: linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 50%, #fff4c6 100%); }
+.flame-bar-hint { font-size: clamp(13px,1.6vw,20px); font-weight: 800; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 0 18px rgba(245,205,120,.5); text-align: center; animation: blink-soft 1.4s ease-in-out infinite; }
+#idle-flame-bar { width: min(86vw, 1080px); }
+#open-flame-bar { flex-shrink: 0; margin-bottom: clamp(10px,1.4vw,18px); }
+
+/* ── idle 大型排行榜 ── */
+#idle-leaderboard { width: min(86vw, 1080px); display: flex; flex-direction: column; gap: clamp(8px,1.1vw,14px); padding: clamp(18px,2.4vw,28px) clamp(22px,3vw,36px); }
+.lb-title { font-size: clamp(13px,1.6vw,18px); font-weight: 700; letter-spacing: 6px; color: var(--muted); margin-bottom: 4px; }
+.lb-row { display: flex; align-items: center; gap: clamp(14px,2vw,26px); border-radius: 14px; padding: clamp(10px,1.4vw,18px) clamp(16px,2.2vw,28px); background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); animation: slide-up .45s cubic-bezier(.16,1,.3,1) both; }
+.lb-row.r1 { border-color: var(--gold); border-left-color: var(--gold); background: linear-gradient(180deg, rgba(212,175,55,.22), rgba(212,175,55,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 30px rgba(245,166,35,.18); }
+.lb-row.r2 { border-left-color: rgba(212,175,55,.55); background: rgba(212,175,55,.05); }
+.lb-row.r3 { border-left-color: var(--gold-deep); background: rgba(212,175,55,.03); }
+.lb-badge { position: relative; overflow: hidden; width: clamp(40px,5vw,60px); height: clamp(40px,5vw,60px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-latin); font-size: clamp(16px,2vw,26px); font-weight: 900; flex-shrink: 0; background: rgba(212,175,55,.12); color: var(--muted); border: 1px solid var(--gold-deep); font-variant-numeric: tabular-nums; }
+.lb-team { flex: 1; font-family: var(--font-title); font-size: clamp(22px,3.4vw,44px); font-weight: 700; color: var(--ink); letter-spacing: 2px; display: flex; align-items: center; gap: 12px; }
+.lb-score { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-size: clamp(22px,3.2vw,42px); font-weight: 900; color: var(--gold-bright); letter-spacing: 1px; }
+.lb-row.r1 .lb-team { color: var(--gold-bright); font-weight: 900; font-size: clamp(26px,4.2vw,56px); }
+.lb-row.r1 .lb-score { font-size: clamp(28px,4vw,52px); text-shadow: 0 0 22px rgba(245,205,120,.5); }
+.lb-row.r1 .lb-crown { width: 1em; height: 1em; flex-shrink: 0; }
+.lb-row.r1 .lb-crown .flame { transform-origin: 50% 82%; }
+
+/* ── open 角落常駐小計分板 ── */
+#mini-scoreboard { position: absolute; right: clamp(20px,2.6vw,40px); bottom: clamp(20px,2.6vw,40px); z-index: 6; width: clamp(180px,18vw,260px); padding: clamp(10px,1.2vw,16px) clamp(12px,1.4vw,18px); display: none; flex-direction: column; gap: 6px; background: rgba(8,10,26,.62); opacity: .94; }
+#mini-scoreboard.show { display: flex; }
+.mini-head { font-size: clamp(9px,1vw,12px); font-weight: 700; letter-spacing: 4px; color: var(--muted); margin-bottom: 2px; }
+.mini-row { display: flex; align-items: center; gap: 8px; font-size: clamp(13px,1.4vw,18px); }
+.mini-row .mini-rank { font-family: var(--font-latin); font-variant-numeric: tabular-nums; width: 1.4em; flex-shrink: 0; color: var(--gold-dim); font-weight: 700; }
+.mini-row.r1 .mini-rank { color: var(--gold-bright); }
+.mini-row .mini-team { flex: 1; font-family: var(--font-title); font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-row.r1 .mini-team { color: var(--gold-bright); }
+.mini-row .mini-score { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-weight: 900; color: var(--gold-bright); }
+
+/* ── 分數變動：+10 跳動與上飄金字 ── */
+@keyframes score-pop { 0%{ transform: scale(1); } 35%{ transform: scale(1.18); } 100%{ transform: scale(1); } }
+.score-pop { animation: score-pop .55s cubic-bezier(.22,.61,.36,1); }
+.score-float { position: absolute; pointer-events: none; z-index: 7; font-family: var(--font-latin); font-weight: 900; color: var(--gold-bright); text-shadow: 0 0 16px rgba(245,205,120,.7); animation: score-float 1.2s ease-out forwards; }
+@keyframes score-float { 0%{ opacity: 0; transform: translate(-50%,0) scale(.7); } 18%{ opacity: 1; transform: translate(-50%,-12px) scale(1.1); } 100%{ opacity: 0; transform: translate(-50%,-52px) scale(1); } }
+
+/* ── 點燈動畫：希望之燈（晚會高潮）── */
+#ignite-overlay { display: none; position: fixed; inset: 0; z-index: 80; align-items: center; justify-content: center; flex-direction: column; pointer-events: none; overflow: hidden; }
+#ignite-overlay.show { display: flex; }
+#ignite-overlay .ig-dark { position: absolute; inset: 0; background: #03040c; animation: ig-dark 7s ease-in-out forwards; }
+@keyframes ig-dark { 0%{ opacity: 0; } 14%{ opacity: .92; } 60%{ opacity: .6; } 100%{ opacity: 0; } }
+#ignite-overlay .ig-rays { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%) scale(.1); width: 240vmax; height: 240vmax; mix-blend-mode: screen; opacity: 0; background: repeating-conic-gradient(from 0deg, rgba(245,205,120,.3) 0deg 4deg, transparent 4deg 12deg); animation: ig-rays 5s ease-out 2s forwards; }
+@keyframes ig-rays { 0%{ opacity: 0; transform: translate(-50%,-50%) scale(.1) rotate(0); } 30%{ opacity: .85; } 70%{ opacity: .5; } 100%{ opacity: 0; transform: translate(-50%,-50%) scale(1.1) rotate(26deg); } }
+#ignite-overlay .ig-glow { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%) scale(.2); width: 90vmax; height: 90vmax; border-radius: 50%; mix-blend-mode: screen; opacity: 0; background: radial-gradient(circle, rgba(255,249,230,.95), rgba(245,166,35,.45) 38%, transparent 70%); animation: ig-glow 5.5s ease-out 1.7s forwards; }
+@keyframes ig-glow { 0%{ opacity: 0; transform: translate(-50%,-50%) scale(.2); } 24%{ opacity: 1; } 60%{ opacity: .7; } 100%{ opacity: 0; transform: translate(-50%,-50%) scale(1.25); } }
+#ignite-overlay .ig-flame { position: relative; z-index: 2; width: clamp(180px,26vw,360px); height: auto; filter: drop-shadow(0 0 30px rgba(245,166,35,.7)); transform: scale(.4); opacity: 0; animation: ig-flame 5s cubic-bezier(.16,1,.3,1) 1.4s forwards; }
+@keyframes ig-flame { 0%{ opacity: 0; transform: scale(.4); } 22%{ opacity: 1; transform: scale(1); } 70%{ transform: scale(1.06); } 100%{ opacity: 1; transform: scale(1); } }
+#ignite-overlay .ig-titles { position: relative; z-index: 2; margin-top: clamp(14px,2vw,28px); text-align: center; opacity: 0; transform: translateY(16px); animation: ig-titles 4s cubic-bezier(.16,1,.3,1) 3.2s forwards; }
+#ignite-overlay .ig-title { font-family: var(--font-title); font-size: clamp(34px,6vw,84px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 40px rgba(245,205,120,.5); }
+#ignite-overlay .ig-latin { font-family: var(--font-display); font-size: clamp(13px,1.9vw,22px); font-weight: 700; letter-spacing: clamp(2px,.55vw,6px); color: var(--gold); margin-top: 10px; }
+@keyframes ig-titles { 0%{ opacity: 0; transform: translateY(16px); } 40%{ opacity: 1; transform: none; } 100%{ opacity: 1; transform: none; } }
+/* 已點燈最終態（F5 後直接顯示，不重播長動畫）：常駐金色「希望之燈」徽記 */
+#lit-badge { position: fixed; right: clamp(20px,2.6vw,40px); top: clamp(20px,2.6vw,40px); z-index: 6; display: none; align-items: center; gap: 10px; padding: clamp(8px,1vw,12px) clamp(14px,1.6vw,20px); background: rgba(8,10,26,.55); }
+#lit-badge.show { display: flex; }
+#lit-badge .lit-flame { width: clamp(22px,2.4vw,32px); height: auto; filter: drop-shadow(0 0 10px rgba(245,166,35,.6)); }
+#lit-badge .lit-text { font-family: var(--font-title); font-size: clamp(14px,1.7vw,22px); font-weight: 900; letter-spacing: 3px; color: var(--gold-bright); text-shadow: 0 0 18px rgba(245,205,120,.4); }
+
 @media (prefers-reduced-motion: reduce) {
   #audio-unlock { animation: none; }
+  .count-badge.paused, .flame-fill, .flame-fill::after, .flame-fill.near, .flame-bar-hint { animation: none; }
+  .flame-fill { transition: none; }
+  .lb-row, .score-pop, .score-float { animation: none; }
+  #ignite-overlay .ig-dark, #ignite-overlay .ig-rays, #ignite-overlay .ig-glow, #ignite-overlay .ig-flame, #ignite-overlay .ig-titles { animation: none; }
+  #ignite-overlay .ig-flame { opacity: 1; transform: none; }
+  #ignite-overlay .ig-titles { opacity: 1; transform: none; }
+  #ignite-overlay .ig-dark { opacity: .9; }
   .rank-row, .chip { animation: none; }
   .focus-indicator, .flame-dot, .idle-standby { animation: none; opacity: 1; }
   body.flash::after { animation: none; }
@@ -336,6 +424,19 @@ button, .town-btn { position: relative; overflow: hidden; }
     <div class="idle-sub">點燃聖火 · 照亮長夜</div>
   </div>
   <div class="meander-band idle-divider"></div>
+  <div id="idle-flame-bar" class="gold-frame" style="padding:clamp(16px,2vw,24px) clamp(22px,3vw,36px)">
+    <div class="sacred-flame-bar">
+      <div class="flame-bar-head">
+        <span class="flame-bar-label">聖火能量</span>
+        <span class="flame-bar-figures"><span class="fb-total">0</span> <span class="fb-thr">/ 0</span></span>
+      </div>
+      <div class="flame-track"><div class="flame-fill"></div></div>
+      <div class="flame-bar-hint" style="display:none">聖火將燃！</div>
+    </div>
+  </div>
+  <div id="idle-leaderboard" class="gold-frame" style="display:none">
+    <div class="lb-title">英雄榜</div>
+  </div>
   <div class="joined-panel gold-frame">
     <div class="joined-head">
       <span class="joined-label">已點亮城鎮</span>
@@ -353,6 +454,19 @@ button, .town-btn { position: relative; overflow: hidden; }
       <span class="cb-label">倒數</span>
       <span id="count-badge-num" class="num">--</span>
     </div>
+  </div>
+  <div id="open-flame-bar" class="gold-frame" style="padding:clamp(10px,1.4vw,16px) clamp(20px,2.6vw,34px)">
+    <div class="sacred-flame-bar">
+      <div class="flame-bar-head">
+        <span class="flame-bar-label">聖火能量</span>
+        <span class="flame-bar-figures"><span class="fb-total">0</span> <span class="fb-thr">/ 0</span></span>
+      </div>
+      <div class="flame-track"><div class="flame-fill"></div></div>
+      <div class="flame-bar-hint" style="display:none">聖火將燃！</div>
+    </div>
+  </div>
+  <div id="mini-scoreboard" class="gold-frame">
+    <div class="mini-head">英雄榜</div>
   </div>
   <div class="open-body">
     <div id="open-waiting" class="open-waiting">
@@ -379,6 +493,57 @@ button, .town-btn { position: relative; overflow: hidden; }
   <line x1="74" y1="26" x2="26" y2="74" stroke="url(#xGrad)" stroke-width="13" stroke-linecap="round"/>
 </svg></div>
 
+<!-- 點燈動畫：長夜中聖杯之火被重新點燃、光芒照破黑暗 -->
+<div id="ignite-overlay">
+  <div class="ig-dark"></div>
+  <div class="ig-rays"></div>
+  <div class="ig-glow"></div>
+  <svg class="ig-flame" viewBox="0 0 120 150">
+    <defs>
+      <radialGradient id="gl_ig" cx="50%" cy="42%" r="55%"><stop offset="0" stop-color="#ffcaa0" stop-opacity=".55"/><stop offset="45%" stop-color="#f5a623" stop-opacity=".22"/><stop offset="100%" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
+      <linearGradient id="cg_ig" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fbeab0"/><stop offset=".5" stop-color="#d8b347"/><stop offset="1" stop-color="#7c5a1f"/></linearGradient>
+      <linearGradient id="ff_ig" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e23a14"/><stop offset=".5" stop-color="#f5891f"/><stop offset="1" stop-color="#ffd066"/></linearGradient>
+      <linearGradient id="fi_ig" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f5a623"/><stop offset=".6" stop-color="#ffdf8a"/><stop offset="1" stop-color="#fffbe9"/></linearGradient>
+    </defs>
+    <ellipse cx="60" cy="56" rx="40" ry="50" fill="url(#gl_ig)"/>
+    <g fill="url(#cg_ig)">
+      <path d="M40 139 Q60 127 80 139 Q60 133.5 40 139 Z"/>
+      <rect x="58.5" y="120" width="3" height="6"/>
+      <path d="M55 106 Q56.5 114 52 121 L68 121 Q63.5 114 65 106 Z"/>
+      <ellipse cx="60" cy="108.5" rx="5.2" ry="3.6"/>
+      <path d="M41 88 Q60 92 79 88 Q76 104 60 106 Q44 104 41 88 Z"/>
+      <path d="M41 88 Q60 94 79 88 L77.5 91 Q60 96 42.5 91 Z" fill="#fff3cf" opacity=".5"/>
+    </g>
+    <path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_ig)"/>
+    <path class="flame" d="M60 40 C67 54 67 70 60 84 C53 70 53 54 60 40 Z" fill="url(#fi_ig)"/>
+    <path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/>
+  </svg>
+  <div class="ig-titles">
+    <div class="ig-title serif">希望之燈</div>
+    <div class="ig-latin">LAMP OF HOPE</div>
+  </div>
+</div>
+
+<!-- 已點燈最終態徽記（F5 重整後直接顯示，不重播長動畫）-->
+<div id="lit-badge">
+  <svg class="lit-flame" viewBox="0 0 120 150">
+    <defs>
+      <linearGradient id="ff_lb" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e23a14"/><stop offset=".5" stop-color="#f5891f"/><stop offset="1" stop-color="#ffd066"/></linearGradient>
+      <linearGradient id="cg_lb" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fbeab0"/><stop offset=".5" stop-color="#d8b347"/><stop offset="1" stop-color="#7c5a1f"/></linearGradient>
+    </defs>
+    <g fill="url(#cg_lb)">
+      <path d="M40 139 Q60 127 80 139 Q60 133.5 40 139 Z"/>
+      <rect x="58.5" y="120" width="3" height="6"/>
+      <path d="M55 106 Q56.5 114 52 121 L68 121 Q63.5 114 65 106 Z"/>
+      <ellipse cx="60" cy="108.5" rx="5.2" ry="3.6"/>
+      <path d="M41 88 Q60 92 79 88 Q76 104 60 106 Q44 104 41 88 Z"/>
+    </g>
+    <path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_lb)"/>
+    <path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/>
+  </svg>
+  <span class="lit-text">希望之燈 · 已點亮</span>
+</div>
+
 <script>
 const $ = id => document.getElementById(id);
 const escHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -386,7 +551,12 @@ const IC_CHECK = '<svg class="ic" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" f
 const IC_CROSS = '<svg class="ic" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
 
 let ws, audioCtx, countdownInterval = null, lastPhase = 'locked', prevBuzzCount = 0;
-const COUNT_FROM = 30;
+let prevScores = {};      // 上次 render 的各組分數，用來偵測變動播 +10 動畫
+let lastTeamOrder = [];   // 穩定 tiebreak 用的固定組別順序（首見即定序）
+let ignitePlayed = false; // 本 session 是否已播過點燈動畫，避免重複觸發
+// 倒數秒數 fallback：以伺服器下發的 state.countFrom 為權威來源，僅在尚未收到 state 時用此預設。
+// 同步成 server 預設 60，避免 remainingMs==null fallback 路徑顯示與伺服器不一致的秒數。
+let COUNT_FROM = 60;
 
 // ── 音效引擎（參考遊戲節目原型：明亮鐘聲、經典蜂鳴器；加殘響與壓縮使其專業不刺耳）──
 let masterGain, reverbSend;
@@ -494,6 +664,7 @@ function startCountdown(remainSec){
   clearInterval(countdownInterval); countdownInterval=null;
   let s = (remainSec!=null && remainSec>=0) ? remainSec : COUNT_FROM;
   const badge=$('count-badge'), numEl=$('count-badge-num');
+  badge.classList.remove('paused');
   numEl.textContent=s; badge.classList.toggle('low', s<=5);
   countdownInterval=setInterval(()=>{
     s--; numEl.textContent=Math.max(s,0);
@@ -505,6 +676,15 @@ function startCountdown(remainSec){
 function stopCountdownAtZero(){
   clearInterval(countdownInterval); countdownInterval=null;
   $('count-badge-num').textContent='0'; $('count-badge').classList.add('low');
+}
+// 拍燈定格：停表但不歸零，金色定格樣式（不轉紅）。remainMs 為伺服器下發的定格剩餘毫秒。
+function freezeCountdown(remainMs){
+  clearInterval(countdownInterval); countdownInterval=null;
+  const badge=$('count-badge'), numEl=$('count-badge-num');
+  const s = remainMs!=null ? Math.max(0, Math.ceil(remainMs/1000)) : 0;
+  numEl.textContent = s;
+  badge.classList.remove('low');
+  badge.classList.add('paused');
 }
 
 function renderChips(container, teams){
@@ -538,8 +718,133 @@ function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
   });
 }
 
+// 穩定排序：分數降序，同分時以「首見順序」(固定 idx) tiebreak，避免每次 render 跳動。
+function sortedScores(scores, teams){
+  (teams || []).forEach(t=>{ if(!lastTeamOrder.includes(t)) lastTeamOrder.push(t); });
+  const entries = Object.keys(scores||{}).map(team=>{
+    if(!lastTeamOrder.includes(team)) lastTeamOrder.push(team);
+    return { team, score: scores[team]||0, idx: lastTeamOrder.indexOf(team) };
+  });
+  entries.sort((a,b)=> (b.score-a.score) || (a.idx-b.idx));
+  return entries;
+}
+
+// 是否有任何非零分數（沒有就維持城鎮 chips / 隱藏計分板）
+function hasAnyScore(scores){ return Object.values(scores||{}).some(v=>v>0); }
+
+// idle 大型排行榜：名次徽章 + 組名 + 分數，冠軍列最大最亮可帶聖杯火焰
+function renderLeaderboard(scores, teams){
+  const wrap=$('idle-leaderboard');
+  const joinedPanel=document.querySelector('.joined-panel');
+  if(!hasAnyScore(scores)){
+    wrap.style.display='none';
+    if(joinedPanel) joinedPanel.style.display='';
+    return;
+  }
+  wrap.style.display='';
+  if(joinedPanel) joinedPanel.style.display='none';
+  const entries = sortedScores(scores, teams).filter(e=>e.score>0);
+  wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
+  entries.forEach((e,i)=>{
+    const rank=i+1;
+    const row=document.createElement('div');
+    row.className = `lb-row${rank<=3?` r${rank}`:''}`;
+    row.dataset.lbTeam = e.team;
+    row.style.animationDelay=`${Math.min(i,8)*0.05}s`;
+    const badgeCls = rank<=3 ? `r${rank}` : '';
+    const crown = rank===1 ? `<svg class="lb-crown" viewBox="0 0 120 150"><path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_d)"/><path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/></svg>` : '';
+    row.innerHTML=`
+      <div class="lb-badge ${badgeCls} num">${rank}</div>
+      <div class="lb-team">${crown}${escHtml(e.team)}</div>
+      <div class="lb-score num">${e.score}</div>`;
+    wrap.appendChild(row);
+  });
+}
+
+// open 角落常駐小計分板：top 5 緊湊列，不可遮擋中央順位
+function renderMiniScores(scores, teams){
+  const wrap=$('mini-scoreboard');
+  if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
+  const entries = sortedScores(scores, teams).filter(e=>e.score>0).slice(0,5);
+  wrap.querySelectorAll('.mini-row').forEach(r=>r.remove());
+  entries.forEach((e,i)=>{
+    const rank=i+1;
+    const row=document.createElement('div');
+    row.className=`mini-row${rank===1?' r1':''}`;
+    row.dataset.miniTeam = e.team;
+    row.innerHTML=`
+      <span class="mini-rank">${rank}</span>
+      <span class="mini-team">${escHtml(e.team)}</span>
+      <span class="mini-score num">${e.score}</span>`;
+    wrap.appendChild(row);
+  });
+  wrap.classList.add('show');
+}
+
+// 聖火進度條：填充寬度 = min(100%, total/threshold)，逼近門檻火苗加劇，達標滿格金光。
+function renderFlameBar(barEl, totalScore, threshold, canIgnite){
+  if(!barEl) return;
+  const total = totalScore||0, thr = threshold||0;
+  const ratio = thr>0 ? Math.min(1, total/thr) : (total>0?1:0);
+  const fill = barEl.querySelector('.flame-fill');
+  const figs = barEl.querySelector('.fb-total');
+  const thrEl = barEl.querySelector('.fb-thr');
+  const hint = barEl.querySelector('.flame-bar-hint');
+  if(figs) figs.textContent = total;
+  if(thrEl) thrEl.textContent = `/ ${thr}`;
+  if(fill){
+    fill.style.width = `${(ratio*100).toFixed(1)}%`;
+    fill.classList.toggle('near', ratio>=0.8 && !canIgnite);
+    fill.classList.toggle('ready', !!canIgnite);
+  }
+  if(hint) hint.style.display = canIgnite ? '' : 'none';
+}
+// idle 與 open 兩條進度條一起更新（兩處都看得到合作進度）
+function renderAllFlameBars(state){
+  renderFlameBar($('idle-flame-bar'), state.totalScore, state.threshold, state.canIgnite);
+  renderFlameBar($('open-flame-bar'), state.totalScore, state.threshold, state.canIgnite);
+}
+
+// 分數變動：對該組分數列播 +10 跳動 + 上飄金字
+function scoreFlash(team, delta){
+  if(!delta) return;
+  const sel = `[data-lb-team="${CSS.escape(team)}"], [data-mini-team="${CSS.escape(team)}"]`;
+  document.querySelectorAll(sel).forEach(el=>{
+    el.classList.remove('score-pop'); void el.offsetWidth; el.classList.add('score-pop');
+  });
+  // 上飄金字：錨在 idle 排行榜該組分數上方（找不到就略過，不影響流程）
+  const anchor = document.querySelector(`#idle-leaderboard [data-lb-team="${CSS.escape(team)}"]`);
+  if(anchor){
+    const r = anchor.getBoundingClientRect();
+    const f = document.createElement('div');
+    f.className='score-float';
+    f.textContent = `+${delta}`;
+    f.style.left = `${r.left + r.width/2}px`;
+    f.style.top  = `${r.top}px`;
+    f.style.fontSize = 'clamp(22px,3vw,40px)';
+    document.body.appendChild(f);
+    f.addEventListener('animationend', ()=>f.remove());
+    setTimeout(()=>f.remove(), 1500);
+  }
+}
+
+// 點燈動畫：壓暗長夜 → 聖杯火焰自暗處被點燃放大 → 金光擴散 → 「希望之燈」浮現
+function playIgnite(){
+  const ov=$('ignite-overlay'); if(!ov) return;
+  ov.classList.remove('show'); void ov.offsetWidth; ov.classList.add('show');
+  fireConfetti();
+  setTimeout(()=>fireConfetti(), 2200);
+  setTimeout(()=>{ ov.classList.remove('show'); showLitBadge(); }, 7200);
+}
+function showLitBadge(){ const b=$('lit-badge'); if(b) b.classList.add('show'); }
+
 function applyState(state){
+  // 以伺服器下發的 countFrom 為倒數權威值（同步後 remainingMs==null 的 fallback 路徑才不會與 server 不一致）
+  if(typeof state.countFrom === 'number' && state.countFrom > 0) COUNT_FROM = state.countFrom;
   const teams = state.joinedTeams || [];
+  renderAllFlameBars(state);
+  // F5/重連後若已點燈，直接顯示最終態徽記、不重播長動畫
+  if(state.lit){ ignitePlayed = true; showLitBadge(); }
   if(state.phase==='open'){
     showScreen('open');
     // 倒數續跑：第一個拍燈不再暫停；以伺服器剩餘秒數驅動，歸零（closed）即定格 0
@@ -556,12 +861,18 @@ function applyState(state){
     } else {
       renderChips($('open-waiting-chips'), teams);
     }
+    renderMiniScores(state.scores, teams);
   } else if(state.phase==='reviewing'){
-    clearInterval(countdownInterval); countdownInterval=null;
-    showScreen('rank');
-    renderOrderList($('rank-list'), state.buzzOrder, state.currentFocus, false);
+    // 拍燈定格：留在 open 畫面顯示定格倒數與順位（不切回顧），停表但不歸零
+    showScreen('open');
+    freezeCountdown(state.remainingMs);
+    $('open-waiting').style.display = 'none';
+    $('open-rank-list').style.display = 'flex';
+    renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
+    renderMiniScores(state.scores, teams);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
+    $('mini-scoreboard').classList.remove('show');
     $('x-overlay').classList.remove('show');
     if(state.buzzOrder.length){
       showScreen('rank');
@@ -570,9 +881,11 @@ function applyState(state){
       showScreen('idle');
       $('idle-count').textContent = teams.length;
       renderChips($('idle-chips'), teams);
+      renderLeaderboard(state.scores, teams);
     }
   }
   prevBuzzCount = state.buzzOrder.length;
+  prevScores = Object.assign({}, state.scores);
 }
 
 function handleMessage(msg){
@@ -597,14 +910,23 @@ function handleMessage(msg){
       playTimeUp();
       break;
     case 'verify_result':
-      if(msg.result==='correct'){ playSfx('correct'); celebrate(); fireConfetti(); }
-      else {
+      if(msg.result==='correct'){
+        playSfx('correct'); celebrate(); fireConfetti();
+        // 用本次廣播的最新分數先即時重排榜單，再對該組播 +10 跳動與上飄金字
+        const delta = (msg.scores?.[msg.team]||0) - (prevScores[msg.team]||0);
+        renderLeaderboard(msg.scores, lastTeamOrder);
+        renderMiniScores(msg.scores, lastTeamOrder);
+        scoreFlash(msg.team, delta>0 ? delta : 0);
+      } else {
         playSfx('wrong');
         const overlay=$('x-overlay'), icon=$('x-icon');
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
         setTimeout(()=>overlay.classList.remove('show'),1800);
       }
+      break;
+    case 'ignite':
+      if(!ignitePlayed){ ignitePlayed = true; playIgnite(); }
       break;
   }
 }

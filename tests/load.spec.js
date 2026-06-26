@@ -29,7 +29,7 @@ test.beforeAll(async () => {
 
 test.afterAll(() => { if (serverProc) serverProc.kill(); });
 
-test(`${N} 城鎮同時連線、進場顯示、同時搶答的順序正確且順暢`, async ({ browser }) => {
+test(`${N} 城鎮同時連線、進場顯示正確；搶答定格：第一人搶到後其他人被鎖`, async ({ browser }) => {
   test.setTimeout(60000);
   const ctx = await browser.newContext();
 
@@ -57,30 +57,31 @@ test(`${N} 城鎮同時連線、進場顯示、同時搶答的順序正確且順
   await expect(displayPage.locator('#idle-chips .chip')).toHaveCount(N, { timeout: WS_TIMEOUT });
 
   // 開搶；所有學員按鈕啟用
+  const t0 = Date.now();
   await hostPage.click('#btn-open');
   await Promise.all(clients.map(page =>
     expect(page.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT })
   ));
   await expect(displayPage.locator('#open-screen')).toBeVisible();
-
-  // N 城「同時」搶答
-  const t0 = Date.now();
-  await Promise.all(clients.map(page => page.click('#buzz-btn')));
-
-  await expect(hostPage.locator('#buzz-list li')).toHaveCount(N, { timeout: WS_TIMEOUT });
   const elapsed = Date.now() - t0;
-  await expect(displayPage.locator('#open-rank-list li')).toHaveCount(N, { timeout: WS_TIMEOUT });
-
-  await Promise.all(clients.map(page =>
-    expect(page.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT })
-  ));
-
-  // 排名標記應為 1..N 連續且唯一
-  const rankNums = await hostPage.locator('#buzz-list .rank-num').allInnerTexts();
-  const parsed = rankNums.map(s => parseInt(s.trim(), 10)).sort((a, b) => a - b);
-  expect(parsed).toEqual(Array.from({ length: N }, (_, i) => i + 1));
-
   expect(elapsed).toBeLessThan(5000);
+
+  // 新搶答機制：第一個城鎮搶答 → phase=reviewing → 其他城鎮被鎖
+  // 只讓城鎮一搶（第一人），其餘不搶，驗證第一人 rank=1、其他人被鎖
+  await clients[0].click('#buzz-btn');
+
+  // 主持端應只有 1 筆（第一人）
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('#buzz-list li').first()).toContainText(teamNames[0], { timeout: WS_TIMEOUT });
+
+  // 第一人按鈕應顯示 state-buzzed 且 rank=1
+  await expect(clients[0].locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
+  await expect(clients[0].locator('#buzz-btn')).toContainText('第 1 名', { timeout: WS_TIMEOUT });
+
+  // 其他城鎮應立即被鎖（phase=reviewing，非第一人搶到後其他人無法搶）
+  for (let i = 1; i < N; i++) {
+    await expect(clients[i].locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+  }
 
   await ctx.close();
 });

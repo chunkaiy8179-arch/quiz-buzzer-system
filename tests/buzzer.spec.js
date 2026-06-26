@@ -53,7 +53,7 @@ test('學員端未開搶時按鈕應為 disabled', async ({ page }) => {
   await expect(page.locator('#buzz-btn')).toHaveClass(/state-locked/);
 });
 
-test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) => {
+test('完整搶答流程：開搶→搶答→判錯出局→遞補驗證', async ({ browser }) => {
   const ctx = await browser.newContext();
   const [hostPage, displayPage, client1, client2] = await Promise.all([
     ctx.newPage(), ctx.newPage(), ctx.newPage(), ctx.newPage(),
@@ -74,24 +74,26 @@ test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) 
   await expect(client2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
   await expect(displayPage.locator('#open-screen')).toBeVisible({ timeout: WS_TIMEOUT });
 
-  // 城鎮一先搶，城鎮二後搶
+  // 城鎮一先搶 → phase=reviewing，城鎮二被鎖
   await client1.click('#buzz-btn');
-  await client2.click('#buzz-btn');
-
   await expect(client1.locator('#buzz-btn')).toHaveClass(/state-buzzed/, { timeout: WS_TIMEOUT });
   await expect(client1.locator('#buzz-btn')).toContainText('第 1 名');
+  await expect(client2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
 
   await expect(hostPage.locator('#buzz-list li').first()).toContainText('城鎮一', { timeout: WS_TIMEOUT });
-  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('城鎮二', { timeout: WS_TIMEOUT });
 
-  // 投影端開放畫面中即時順位列表（搶答時仍在 open phase，倒數移到角落）
+  // 投影端開放畫面中即時順位列表
   await expect(displayPage.locator('#open-screen')).toBeVisible();
   await expect(displayPage.locator('#open-rank-list li').first()).toContainText('城鎮一', { timeout: WS_TIMEOUT });
 
-  // 判城鎮一錯誤 → 城鎮二遞補
+  // 判城鎮一錯誤 → 城鎮一出局，phase 回 open，城鎮二解鎖
   const wrongBtn = hostPage.locator('.v-btn[data-result="wrong"]').first();
   await expect(wrongBtn).toBeVisible({ timeout: WS_TIMEOUT });
   await wrongBtn.click();
+
+  // 城鎮二解鎖後搶答
+  await expect(client2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await client2.click('#buzz-btn');
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
 
   // 判城鎮二正確 → 回到 locked
@@ -105,7 +107,7 @@ test('完整搶答流程：開搶→搶答→遞補驗證', async ({ browser }) 
   await ctx.close();
 });
 
-test('答對使回合結束後，剩餘未判定組不應再有判定鈕（bug 修正）', async ({ browser }) => {
+test('答對使回合結束後，剩餘未搶組不應有判定鈕（bug 修正）', async ({ browser }) => {
   const ctx = await browser.newContext();
   const [hostPage, c1, c2, c3] = await Promise.all([
     ctx.newPage(), ctx.newPage(), ctx.newPage(), ctx.newPage(),
@@ -119,18 +121,21 @@ test('答對使回合結束後，剩餘未判定組不應再有判定鈕（bug �
   await hostPage.click('#btn-open');
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
 
-  // 三組都搶（城鎮一、二、三）
+  // 城鎮一先搶 → phase=reviewing；城鎮二、三被鎖
   await c1.click('#buzz-btn');
-  await c2.click('#buzz-btn');
-  await c3.click('#buzz-btn');
-  await expect(hostPage.locator('#buzz-list li')).toHaveCount(3, { timeout: WS_TIMEOUT });
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
 
-  // 城鎮一錯 → 城鎮二對（回合結束，城鎮三從未被判）
+  // 城鎮一錯 → 出局、phase=open，城鎮二解鎖搶答
   await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await c2.click('#buzz-btn');
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
+
+  // 城鎮二對 → 回合結束（城鎮三從未搶過）
   await hostPage.locator('.v-btn[data-result="correct"]').first().click();
 
-  // 回合結束（LOCKED）：不應再有任何判定鈕，城鎮三不應顯示「待驗證」
+  // 回合結束（LOCKED）：不應再有任何判定鈕，不應有「待驗證」
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('.v-btn')).toHaveCount(0, { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('#buzz-list')).not.toContainText('待驗證');
@@ -214,7 +219,7 @@ test('開搶後 0 城搶答：投影維持開放等待、主持端列表空', as
   await ctx.close();
 });
 
-test('部分城鎮搶答：未搶城鎮按鈕仍可搶', async ({ browser }) => {
+test('部分城鎮搶答：未搶且未出局城鎮按鈕，判錯後仍可搶', async ({ browser }) => {
   const ctx = await browser.newContext();
   const hostPage = await freshHost(ctx);
   const [c1, c2, c3] = await Promise.all([ctx.newPage(), ctx.newPage(), ctx.newPage()]);
@@ -225,19 +230,31 @@ test('部分城鎮搶答：未搶城鎮按鈕仍可搶', async ({ browser }) => 
   await hostPage.click('#btn-open');
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
 
-  // 只有城鎮一、城鎮二搶
+  // 城鎮一先搶 → phase=reviewing；c2、c3 被鎖（定格期間不可搶）
   await c1.click('#buzz-btn');
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+  await expect(c3.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+
+  // 判城鎮一錯 → 出局，phase=open，c2 c3 解鎖
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await expect(c3.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // 城鎮二先搶 → phase=reviewing；城鎮三被鎖
   await c2.click('#buzz-btn');
-  await expect(hostPage.locator('#buzz-list li')).toHaveCount(2, { timeout: WS_TIMEOUT });
-  // 城鎮三未搶 → 按鈕仍可按
-  await expect(c3.locator('#buzz-btn')).toBeEnabled();
-  await expect(c3.locator('#buzz-btn')).toHaveClass(/state-open/);
+  await expect(c3.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+
+  // 判城鎮二錯 → 城鎮三解鎖（未出局、仍可搶）
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c3.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+  await expect(c3.locator('#buzz-btn')).toHaveClass(/state-open/, { timeout: WS_TIMEOUT });
 
   await hostPage.click('#btn-reset');
   await ctx.close();
 });
 
-test('連續答錯遞補：錯→錯→對，focus 依序遞補', async ({ browser }) => {
+test('連續答錯遞補：錯→錯→對，focus 依序遞補（新行為：逐一出局再搶）', async ({ browser }) => {
   const ctx = await browser.newContext();
   const hostPage = await freshHost(ctx);
   const [c1, c2, c3] = await Promise.all([ctx.newPage(), ctx.newPage(), ctx.newPage()]);
@@ -247,18 +264,33 @@ test('連續答錯遞補：錯→錯→對，focus 依序遞補', async ({ brows
 
   await hostPage.click('#btn-open');
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c1 先搶 → phase=reviewing，c2 c3 被鎖
   await c1.click('#buzz-btn');
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+
+  // 判 c1 錯 → c1 出局，phase=open，c2 c3 解鎖
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c2 搶 → phase=reviewing，c3 被鎖
   await c2.click('#buzz-btn');
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(2, { timeout: WS_TIMEOUT });
+  await expect(c3.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+  // 主持端顯示 c2 待驗證
+  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
+
+  // 判 c2 錯 → c2 出局，phase=open，c3 解鎖
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c3.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c3 搶 → 主持端顯示 c3 待驗證
   await c3.click('#buzz-btn');
   await expect(hostPage.locator('#buzz-list li')).toHaveCount(3, { timeout: WS_TIMEOUT });
-
-  // 第1名錯 → 第2名 focus
-  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
-  await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
-  // 第2名錯 → 第3名 focus
-  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
   await expect(hostPage.locator('#buzz-list li').nth(2)).toContainText('待驗證', { timeout: WS_TIMEOUT });
-  // 第3名對 → 回合結束
+
+  // 判 c3 對 → 回合結束 LOCKED
   await hostPage.locator('.v-btn[data-result="correct"]').first().click();
   await expect(hostPage.locator('#phase-badge')).toContainText('LOCKED', { timeout: WS_TIMEOUT });
   await expect(hostPage.locator('.v-btn')).toHaveCount(0);
@@ -267,7 +299,7 @@ test('連續答錯遞補：錯→錯→對，focus 依序遞補', async ({ brows
   await ctx.close();
 });
 
-test('全部答錯：無 focus、無判定鈕，可重設續行', async ({ browser }) => {
+test('全部答錯：無 focus、無判定鈕，可重設續行（新行為：逐一出局再搶）', async ({ browser }) => {
   const ctx = await browser.newContext();
   const hostPage = await freshHost(ctx);
   const [c1, c2] = await Promise.all([ctx.newPage(), ctx.newPage()]);
@@ -276,13 +308,22 @@ test('全部答錯：無 focus、無判定鈕，可重設續行', async ({ brows
 
   await hostPage.click('#btn-open');
   await expect(c1.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c1 先搶 → phase=reviewing；c2 被鎖
   await c1.click('#buzz-btn');
+  await expect(hostPage.locator('#buzz-list li')).toHaveCount(1, { timeout: WS_TIMEOUT });
+  await expect(c2.locator('#buzz-btn')).toBeDisabled({ timeout: WS_TIMEOUT });
+
+  // 判 c1 錯 → c1 出局，phase=open，c2 解鎖
+  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
+  await expect(c2.locator('#buzz-btn')).toBeEnabled({ timeout: WS_TIMEOUT });
+
+  // c2 搶 → 待驗證
   await c2.click('#buzz-btn');
   await expect(hostPage.locator('#buzz-list li')).toHaveCount(2, { timeout: WS_TIMEOUT });
-
-  // 兩組都判錯
-  await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
   await expect(hostPage.locator('#buzz-list li').nth(1)).toContainText('待驗證', { timeout: WS_TIMEOUT });
+
+  // 判 c2 錯 → 全部出局
   await hostPage.locator('.v-btn[data-result="wrong"]').first().click();
 
   // 全錯後：兩列皆「錯誤」、無待驗證、無判定鈕
