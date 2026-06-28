@@ -683,7 +683,6 @@ function renderState(state){
   state.buzzOrder.forEach((entry,i)=>{
     const isFocus = canVerify && state.currentFocus===entry.team && !entry.verified;
     const li = document.createElement('li');
-    const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
     const rowClass = entry.verified ? (entry.result==='correct'?'verified-correct':'verified-wrong') : (isFocus?'focus':'');
     li.className=`buzz-row ${rowClass}`;
     let rightContent='';
@@ -706,7 +705,6 @@ function renderState(state){
         </div>`;
     }
     li.innerHTML = `
-      <div class="rank-num ${rankClass}">${i+1}</div>
       <span class="team-name">${escHtml(entry.team)}</span>
       ${rightContent}`;
     list.appendChild(li);

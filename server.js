@@ -3,6 +3,7 @@ const http = require('http');
 const { WebSocketServer } = require('ws');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +19,8 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.redirect('/client.html'));
+// 保活/健康檢查端點：供外部排程 ping（cron-job.org / UptimeRobot）在活動期間避免 Render 免費方案休眠
+app.get('/healthz', (req, res) => res.json({ ok: true, up: process.uptime() }));
 
 // ── Host PIN ───────────────────────────────────────────────────────────────
 const HOST_PIN = process.env.HOST_PIN || Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -26,7 +29,7 @@ const HOST_PIN = process.env.HOST_PIN || Math.random().toString(36).slice(2, 6).
 const COUNT_FROM = Number(process.env.COUNT_FROM) || 60; // 搶答視窗秒數（伺服器權威，倒數歸零即關閉搶答）
 let state = {
   phase: 'locked',
-  buzzOrder: [],
+  firstBuzzer: null, // 只追蹤「第一位」拍燈者：{team,ts,verified,result,points} | null
   currentFocus: null,
   deadline: null, // open 期間的關閉時間戳（epoch ms）
   closed: false,  // 倒數歸零 → 搶答視窗關閉（仍可顯示順位與判定）
@@ -45,6 +48,31 @@ let lit = false;            // 希望之燈是否已點亮
 // 答錯鎖定模式：true=答錯出局不可再搶（現狀預設）；false=答錯不鎖、該組可再搶
 let lockOnWrong = (process.env.LOCK_ON_WRONG ?? 'true') !== 'false';
 const SCORE_DELTA = 10;     // 每次答對加分
+
+// ── 狀態持久化（次要保險：救本機/同進程崩潰重啟；Render 免費方案休眠會清磁碟，主防線是外部保活 ping）──
+const STATE_FILE = path.join(__dirname, 'state.json');
+try {
+  if (fs.existsSync(STATE_FILE)) {
+    const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (saved && typeof saved === 'object') {
+      if (saved.scores && typeof saved.scores === 'object') scores = saved.scores;
+      if (saved.scoreSince && typeof saved.scoreSince === 'object') scoreSince = saved.scoreSince;
+      if (Number.isFinite(saved.threshold)) threshold = saved.threshold;
+      if (typeof saved.lit === 'boolean') lit = saved.lit;
+      console.log('[load] restored persisted state from', STATE_FILE);
+    }
+  }
+} catch (e) { console.log('[load] no valid persisted state:', e.message); }
+
+let persistTimer = null;
+function persist() {
+  if (persistTimer) return; // 500ms 內合併多次寫入
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    try { fs.writeFileSync(STATE_FILE, JSON.stringify({ scores, scoreSince, threshold, lit })); }
+    catch (e) { /* 寫檔失敗不影響運行（如 Render 免費磁碟 ephemeral） */ }
+  }, 500);
+}
 
 let countdownTimer = null;
 function clearCountdown() {
@@ -106,7 +134,7 @@ function nameInUse(name, exceptWs) {
 function currentFocusTeam() {
   // 回合已結束（答對 → locked）時沒有待判 focus，避免剩餘組仍可被誤判而重開回合
   if (state.phase === 'locked') return null;
-  return state.buzzOrder.find(b => !b.verified) ?? null;
+  return (state.firstBuzzer && !state.firstBuzzer.verified) ? state.firstBuzzer : null;
 }
 
 function broadcast(msg) {
@@ -120,7 +148,7 @@ function stateMsg() {
   return {
     type: 'state',
     phase: state.phase,
-    buzzOrder: state.buzzOrder,
+    buzzOrder: state.firstBuzzer ? [state.firstBuzzer] : [], // 對外維持 ≤1 筆陣列，前端不改存取方式
     currentFocus: focus ? focus.team : null,
     joinedTeams: joinedTeams(),
     closed: state.closed,
@@ -144,6 +172,7 @@ function stateMsg() {
 
 function broadcastState() {
   broadcast(stateMsg());
+  persist(); // 任何狀態廣播後持久化（debounce 500ms，頻繁呼叫無妨）
 }
 
 // ── WebSocket ──────────────────────────────────────────────────────────────
@@ -151,10 +180,12 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify(stateMsg()));
 
   ws.on('close', () => {
-    if (sockets.has(ws)) {
+    const wasStudent = sockets.has(ws);
+    if (wasStudent) {
       sockets.delete(ws);
       broadcastState();
     }
+    console.log('[ws] close', wasStudent ? '(student)' : '(viewer/host)');
   });
 
   ws.on('message', (raw) => {
@@ -227,11 +258,12 @@ wss.on('connection', (ws) => {
       // 主持「清空所有連線」：清掉所有進場名單與回合，要求全部學員重新選城鎮
       case 'host_clear': {
         if (!checkPin()) return;
+        console.log('[clear] all connections + scores wiped by host');
         clearCountdown();
         sockets.clear();
         teamTokens.clear();
         state.phase = 'locked';
-        state.buzzOrder = [];
+        state.firstBuzzer = null;
         state.currentFocus = null;
         state.closed = false;
         // 整場重來：分數歸零、熄燈、清出局與定格倒數
@@ -250,7 +282,7 @@ wss.on('connection', (ws) => {
         if (!checkPin()) return;
         if (state.phase !== 'locked') return;
         state.phase = 'open';
-        state.buzzOrder = [];
+        state.firstBuzzer = null;
         state.currentFocus = null;
         state.closed = false;
         // 新回合：清出局與定格倒數（分數與燈狀態跨回合保留，不動）
@@ -267,7 +299,7 @@ wss.on('connection', (ws) => {
         if (!checkPin()) return;
         clearCountdown();
         state.phase = 'locked';
-        state.buzzOrder = [];
+        state.firstBuzzer = null;
         state.currentFocus = null;
         state.closed = false;
         // 結束回合：清出局與定格倒數（分數與燈狀態保留）
@@ -288,36 +320,29 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'buzz_rejected', team }));
           return;
         }
-        // 自己已在 buzzOrder 且「尚未判定」（已搶到、待判）：正常情況，不回 reject（reject 會誤解鎖樂觀鎖）。
-        // 已判定（鎖模式答錯留下 verified=true 的 wrong entry）不在此擋下，
-        // 讓流程往下走到 eliminated 檢查（回 buzz_rejected）或（解放後）重新搶答。
-        if (state.buzzOrder.find(b => b.team === team && !b.verified)) return;
+        // 同一人重複拍（已是當前待判的第一位）：正常情況，不回 reject（reject 會誤解鎖樂觀鎖）
+        if (state.firstBuzzer && state.firstBuzzer.team === team && !state.firstBuzzer.verified) return;
+        // 已有他人持有答題權（理論上 phase 已轉 reviewing 會先被上面擋掉；此為同 tick 競態保險）
+        if (state.firstBuzzer && !state.firstBuzzer.verified) {
+          ws.send(JSON.stringify({ type: 'buzz_rejected', team }));
+          return;
+        }
         // 本回合已答錯出局者不可再搶：回 reject 讓 client 解鎖，後續靠 state.eliminated 正確顯示出局
         if (state.eliminated.includes(team)) {
           ws.send(JSON.stringify({ type: 'buzz_rejected', team }));
           return;
         }
 
-        const isFirst = state.buzzOrder.length === 0;
-        // Always use server timestamp — client ts is ignored to prevent rank manipulation
-        state.buzzOrder.push({ team, ts: Date.now(), verified: false, result: null });
-        state.buzzOrder.sort((a, b) => a.ts - b.ts);
-        const rank = state.buzzOrder.findIndex(b => b.team === team) + 1;
+        // 只記錄「第一位」拍燈者（用伺服器時戳，client ts 一律忽略以防作弊）
+        state.firstBuzzer = { team, ts: Date.now(), verified: false, result: null };
 
         // 拍燈即定格：保存剩餘倒數、停表並進入判定，避免主持判定期間倒數繼續跑
         state.remainingMs = state.deadline ? Math.max(0, state.deadline - Date.now()) : 0;
         clearCountdown();
         state.phase = 'reviewing';
-        // 阻斷 H-1：判錯續跑期間有新搶答者拍燈，環境已變，前一筆判定不可再撤——
-        // 否則 host_unverify 會用過時的 lastVerify 快照還原，造成 buzzOrder 出現兩個未判定組、
-        // currentFocus 跳回舊組、remainingMs 被舊定格值覆蓋等非法中間態。
-        state.lastVerify = null;
+        state.lastVerify = null; // 新搶答者出現，前一筆判定不可再撤
 
-        if (isFirst) {
-          broadcast({ type: 'first_buzz', team, rank: 1 });
-        } else {
-          broadcast({ type: 'buzz_registered', team, rank });
-        }
+        broadcast({ type: 'first_buzz', team, rank: 1 });
         broadcastState();
         break;
       }
@@ -326,8 +351,8 @@ wss.on('connection', (ws) => {
         if (!checkPin()) return;
         const { team, result } = msg;
         if (!team || !['correct', 'wrong'].includes(result)) return;
-        const entry = state.buzzOrder.find(b => b.team === team);
-        if (!entry || entry.verified) return; // 防重複判定（達標廣播只計一次）
+        const entry = state.firstBuzzer;
+        if (!entry || entry.team !== team || entry.verified) return; // 防重複判定（達標廣播只計一次）
 
         // 每題可設加分值：correct 用傳入 points（clamp 1~200），預設 SCORE_DELTA；wrong 不加分
         const pts = Number.isFinite(Number(msg.points))
@@ -344,7 +369,7 @@ wss.on('connection', (ws) => {
           points: result === 'correct' ? pts : 0,
           prevRemainingMs: state.remainingMs,
           prevEliminated: [...state.eliminated],
-          prevBuzzOrder: state.buzzOrder.map(b => ({ ...b })),
+          prevFirstBuzzer: state.firstBuzzer ? { ...state.firstBuzzer } : null,
           lockOnWrong,
         };
 
@@ -352,26 +377,19 @@ wss.on('connection', (ws) => {
           // 答對：加分（用本題分值）、回合結束鎖定，清出局與定格倒數
           entry.verified = true;
           entry.result = result;
+          entry.points = pts; // 記錄本題分值，供撤銷與顯示用
           scores[team] = (scores[team] || 0) + pts;
           scoreSince[team] = Date.now(); // 達到新分數的時間戳，供平手排序
-          entry.points = pts; // 記錄本題分值，供撤銷與顯示用
           state.phase = 'locked';
           state.eliminated = [];
           state.remainingMs = null;
           clearCountdown();
           state.closed = false;
         } else {
-          // 答錯：依模式分流
-          if (lockOnWrong) {
-            // 鎖定模式（現狀）：該組本回合出局、不可再搶
-            entry.verified = true;
-            entry.result = result;
-            state.eliminated.push(team);
-          } else {
-            // 不鎖模式：移除該組 entry 讓它回乾淨可搶狀態（不設 verified、不進 eliminated）
-            state.buzzOrder = state.buzzOrder.filter(b => b.team !== team);
-          }
-          // 兩模式共同：從拍燈定格的剩餘倒數續跑，讓其他組（不鎖時含本組）搶答
+          // 答錯：鎖定模式下該組本回合出局、不可再搶；兩模式都清掉 firstBuzzer 讓下一位可成為新的答題者
+          if (lockOnWrong) state.eliminated.push(team);
+          state.firstBuzzer = null;
+          // 從拍燈定格的剩餘倒數續跑，讓其他組（不鎖時含本組）繼續搶
           const ms = state.remainingMs ?? 0;
           state.remainingMs = null;
           state.phase = 'open';
@@ -406,10 +424,8 @@ wss.on('connection', (ws) => {
         // 撤銷視為當下一次分數變動（近似，不存歷史）：仍在 scores 內才更新時間戳
         if (scores[lv.team] !== undefined) scoreSince[lv.team] = Date.now();
 
-        // 用判定前完整順位深拷貝統一還原 buzzOrder，一次涵蓋三情況：
-        // correct / 鎖模式 wrong 的 entry.verified 復原為 false、
-        // 非鎖模式 wrong 被移除的 entry 也一併回來。
-        state.buzzOrder = lv.prevBuzzOrder.map(b => ({ ...b }));
+        // 還原判定前的第一位搶答者快照（correct / wrong 皆回到「該組剛拍燈、定格待判」）
+        state.firstBuzzer = lv.prevFirstBuzzer ? { ...lv.prevFirstBuzzer } : null;
 
         // 還原狀態回 reviewing 定格：用快照覆蓋出局名單，
         // 回填拍燈當下的剩餘毫秒，reviewing 不跑倒數＝定格。
@@ -466,9 +482,6 @@ wss.on('connection', (ws) => {
         lockOnWrong = msg.lock;
         if (!lockOnWrong) {
           state.eliminated = []; // 切到可再搶 → 全部解放（使用者指定）
-          // 清掉鎖模式期間留下的已判錯 entry，讓被解放的組回到乾淨可搶狀態。
-          // 否則修法1放行後再拍燈，buzzOrder 會多 push 一筆，出現同隊重複 entry。
-          state.buzzOrder = state.buzzOrder.filter(b => b.result !== 'wrong');
           // 跨模式切換視為新決策點，舊判定快照已失真，禁止用它撤銷（避免還原出非法中間態）。
           state.lastVerify = null;
         }

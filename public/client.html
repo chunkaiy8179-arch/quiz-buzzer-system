@@ -222,6 +222,47 @@ button, .town-btn { position: relative; overflow: hidden; }
 .ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.24) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,0) 70%); animation: ripple-anim .58s ease-out forwards; }
 @keyframes ripple-anim { from { transform: scale(0); opacity: .5; } to { transform: scale(2.3); opacity: 0; } }
 @media (prefers-reduced-motion: reduce){ .ripple { display: none; } }
+
+/* ════ 圖像化搶答鈕：覆寫大理石樣式，改用希臘石雕獎章 ════
+   完整獎章 /img/buzz.png = 可搶 / 已搶到；破損獎章 /img/buzz-broken.png = 待命 / 驗證中 / 出局 / 時間到 */
+#buzz-btn { background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.95) !important; }
+/* 文字底襯 scrim（z-index:-1 → 蓋在獎章上、文字下）：保證字在浮雕人臉上仍可讀 */
+#buzz-btn::after, #buzz-btn.state-out::after {
+  content:'' !important; position:absolute !important; inset:auto !important;
+  left:50% !important; top:50% !important; transform:translate(-50%,-50%) !important;
+  width:88% !important; height:52% !important; border-radius:50% !important;
+  z-index:-1 !important; opacity:1 !important; mix-blend-mode:normal !important; pointer-events:none !important;
+  background: radial-gradient(ellipse 60% 52% at 50% 50%, rgba(6,5,2,.74), rgba(6,5,2,.28) 60%, transparent 82%) !important; }
+/* 完整獎章：可搶 / 已搶到——金光浮起 */
+#buzz-btn.state-open, #buzz-btn.state-buzzed {
+  background-image: url('/img/buzz.png') !important; color: var(--gold-bright) !important;
+  box-shadow: 0 16px 34px rgba(0,0,0,.55), 0 0 0 5px rgba(212,175,55,.3), 0 0 40px rgba(245,166,35,.35) !important;
+  animation: slab-rise 2.8s ease-in-out infinite !important; }
+@keyframes slab-rise { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+/* 按下去：石板被壓進底座 */
+#buzz-btn.state-open:active {
+  transform: translateY(7px) scale(.97) !important; animation: none !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5), inset 0 0 36px rgba(0,0,0,.5), 0 0 0 4px rgba(212,175,55,.22) !important; }
+/* 已搶到：完整獎章 + 更強金光 */
+#buzz-btn.state-buzzed { animation: none !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,.55), 0 0 0 7px rgba(245,215,122,.5), 0 0 56px rgba(245,215,122,.5) !important; }
+/* 破損獎章：待命 / 驗證中 / 出局——去飽和、壓陷、不可互動 */
+#buzz-btn.state-locked, #buzz-btn.state-review, #buzz-btn.state-out {
+  background-image: url('/img/buzz-broken.png') !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.4) !important; }
+#buzz-btn.state-locked { filter: grayscale(.5) brightness(.82) !important; animation: locked-dim 4.2s ease-in-out infinite !important; }
+@keyframes locked-dim { 0%,100% { filter: grayscale(.55) brightness(.78); } 50% { filter: grayscale(.45) brightness(.92); } }
+#buzz-btn.state-review { filter: grayscale(.3) brightness(.92) !important; color: var(--gold-bright) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 4px rgba(245,215,122,.28) !important;
+  animation: review-ring 1.9s ease-in-out infinite !important; }
+@keyframes review-ring { 0%,100% { box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 4px rgba(245,215,122,.2); } 50% { box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 8px rgba(245,215,122,.36), 0 0 26px rgba(245,215,122,.32); } }
+#buzz-btn.state-out { filter: grayscale(.78) brightness(.6) !important; }
+#buzz-btn.state-out .out-text { color: #f0e6d0 !important; text-shadow: 0 2px 4px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9) !important; }
+#buzz-btn.state-out .out-crack { filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)) !important; }
+@media (prefers-reduced-motion: reduce) {
+  #buzz-btn.state-open, #buzz-btn.state-buzzed, #buzz-btn.state-locked, #buzz-btn.state-review { animation: none !important; }
+}
 </style>
 </head>
 <body>
@@ -451,8 +492,7 @@ function handleMessage(msg){
       showSelection();
       break;
     case 'first_buzz':
-    case 'buzz_registered':
-      if(msg.team===myTeam) setBuzzLocked(msg.rank);
+      if(msg.team===myTeam) setBuzzLocked(1);
       else lockForReview();
       break;
     // 主持人判定結果（答對/答錯均廣播）：解除樂觀鎖並立即用快取 state 重繪，
@@ -515,16 +555,16 @@ function applyState(msg){
 function setBuzzLocked(rank){
   buzzed=true;
   const btn=$('buzz-btn');
-  btn.disabled=true; btn.className='state-buzzed'; btn.textContent=`第 ${rank} 名`;
-  setStatus('已點燃聖火，等待驗證', 'active'); $('phase-label').textContent=`RANK ${rank}`;
+  btn.disabled=true; btn.className='state-buzzed'; btn.textContent='您搶到啦！';
+  setStatus('恭喜獲得答題權！等待主持人驗證', 'active'); $('phase-label').textContent='GOT IT';
   // M-1：一次性回饋（震動/金光爆裂/閃屏）只在「搶到順位」的邊沿播一次。
   // applyState 對已在 buzzOrder 的自己每收一次 state 都會呼叫本函式（reviewing 定格期間任何
   // broadcastState — 別人 join/撤銷/調分 — 都會進來），用 buzzFeedbackDone 旗標擋掉重播，
   // 避免反覆重震重閃。pointerdown 已先設 buzzed=true（樂觀鎖），故不能用 buzzed 當邊沿，需獨立旗標。
   if(!buzzFeedbackDone){
     buzzFeedbackDone = true;
-    // 依名次差異化震動：搶到第一強震，其餘短震（統一在此給，避免 buzz 當下尚不知名次）
-    if(navigator.vibrate) navigator.vibrate(rank===1 ? [180] : [90]);
+    // 搶到答題權：強震一次回饋
+    if(navigator.vibrate) navigator.vibrate([180]);
     // 搶到瞬間金光爆裂（一次性，播完移除以便下回合可再觸發）
     btn.classList.remove('buzz-burst'); void btn.offsetWidth; btn.classList.add('buzz-burst');
     setTimeout(()=>btn.classList.remove('buzz-burst'),600);

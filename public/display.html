@@ -312,13 +312,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 #open-leaderboard.dense .lb-row.r1 .lb-team { font-size: clamp(16px,1.6vw,24px); }
 #open-leaderboard.dense .lb-row.r1 .lb-score { font-size: clamp(17px,1.6vw,24px); }
 /* 窄屏 / 直式投影：側欄改回橫向置底，中央順位不被擠壓 */
-@media (max-aspect-ratio: 5/4) {
-  .open-main { flex-direction: column; }
-  #open-leaderboard { width: 100%; flex-shrink: 1; max-height: 30vh; }
-  #open-leaderboard.show { flex-flow: row wrap; align-content: flex-start; gap: clamp(6px,1vw,12px); }
-  #open-leaderboard .lb-title { width: 100%; }
-  #open-leaderboard .lb-row { flex: 1 1 clamp(160px,28%,240px); }
-}
+/* （舊 .open-main 窄屏橫向佈局已隨 5 段式 Grid 重構移除） */
 
 /* ── open 角落常駐小計分板（保留 DOM，open 已改用右側完整榜）── */
 #mini-scoreboard { position: absolute; right: clamp(20px,2.6vw,40px); bottom: clamp(20px,2.6vw,40px); z-index: 6; width: clamp(180px,18vw,260px); padding: clamp(10px,1.2vw,16px) clamp(12px,1.4vw,18px); display: none; flex-direction: column; gap: 6px; background: rgba(8,10,26,.62); opacity: .94; }
@@ -398,6 +392,47 @@ button, .town-btn { position: relative; overflow: hidden; }
 .ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.24) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,0) 70%); animation: ripple-anim .58s ease-out forwards; }
 @keyframes ripple-anim { from { transform: scale(0); opacity: .5; } to { transform: scale(2.3); opacity: 0; } }
 @media (prefers-reduced-motion: reduce){ .ripple { display: none; } }
+
+/* ════════ Display 大廳重構：5 段式 Grid + 直立能量條 + 中央 hero + 英雄榜 FLIP + 點燈遮罩 ════════ */
+#open-screen { display: grid; grid-template-rows: minmax(0,1fr) minmax(0,4fr); gap: clamp(10px,1.6vw,20px); padding: clamp(20px,2.4vw,34px) clamp(26px,3vw,52px); }
+.open-top { margin-bottom: 0; }
+.open-stage { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); gap: clamp(14px,2vw,28px); min-height: 0; }
+.open-left, .open-center, .open-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.open-left { padding: clamp(14px,1.8vw,22px) clamp(10px,1.3vw,16px); }
+.open-center { position: relative; align-items: center; justify-content: center; }
+#open-flame-bar { margin-bottom: 0; flex: 1; }
+
+/* 左欄：直立式聖火能量條（idle 仍橫向） */
+.flame-vertical { flex: 1; min-height: 0; }
+.flame-vertical .flame-bar-head { flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; text-align: center; }
+.flame-vertical .flame-track { flex: 1; width: clamp(26px,2.6vw,44px); height: auto; min-height: 0; align-self: center; }
+.flame-vertical .flame-fill { left: 0; right: 0; top: auto; bottom: 0; width: 100%; height: 0; transition: height .9s cubic-bezier(.16,1,.3,1); }
+.flame-vertical .flame-fill::after { background: linear-gradient(0deg, transparent 30%, rgba(255,249,230,.7) 50%, transparent 70%); background-size: 100% 220%; }
+.flame-vertical .flame-bar-hint { flex-shrink: 0; }
+
+/* 中央 hero 大字卡 */
+.open-hero { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px,1.6vw,22px); text-align: center; }
+.hero-team { font-family: var(--font-title); font-weight: 900; font-size: clamp(40px,7.5vw,104px); line-height: 1.04; letter-spacing: 2px; }
+.hero-sub { font-size: clamp(22px,3.6vw,52px); font-weight: 900; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 0 26px rgba(245,205,120,.5); }
+.hero-pts { font-family: var(--font-latin); font-weight: 900; font-size: clamp(36px,6vw,88px); color: var(--gold-bright); text-shadow: 0 0 30px rgba(245,205,120,.6); }
+.open-hero.hero-correct .hero-team { color: #bff5d4; }
+.open-hero.hero-correct .hero-sub { color: #8ff0b8; text-shadow: 0 0 30px rgba(63,174,107,.6); }
+.open-hero.hero-wrong .hero-sub { color: #e3897f; }
+.open-hero.hero-wrong .hero-team { filter: grayscale(.35) brightness(.82); }
+.open-hero.hero-focus { animation: hero-pop .45s cubic-bezier(.16,1,.3,1) both; }
+@keyframes hero-pop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce){ .open-hero.hero-focus { animation: none; } }
+
+/* 右欄：英雄榜全顯示、禁捲動、各列等分填滿；換位用 FLIP 滑動 */
+#open-leaderboard { width: 100%; height: 100%; gap: clamp(5px,.8vw,10px); padding: clamp(12px,1.6vw,20px) clamp(12px,1.6vw,22px); overflow: hidden; }
+#open-leaderboard .lb-title { flex-shrink: 0; }
+#open-leaderboard.show .lb-row { flex: 1 1 0; min-height: 0; }
+.lb-row { animation: none; }
+
+/* 點燈：z-index 高於一切；背景畫面壓暗，聖杯+標題獨佔（取代 .ig-dark 末段淡回 0 透出背景） */
+#ignite-overlay { z-index: 10000; }
+body.igniting #idle-screen, body.igniting #open-screen, body.igniting #rank-screen { filter: brightness(.1) saturate(.5); transition: filter .5s ease; }
+body.igniting #lit-badge { display: none !important; }
 </style>
 </head>
 <body>
@@ -525,29 +560,26 @@ button, .town-btn { position: relative; overflow: hidden; }
       <span id="count-badge-num" class="num">--</span>
     </div>
   </div>
-  <div id="open-flame-bar" class="gold-frame" style="padding:clamp(10px,1.4vw,16px) clamp(20px,2.6vw,34px)">
-    <div class="sacred-flame-bar">
-      <div class="flame-bar-head">
-        <span class="flame-bar-label">聖火能量</span>
-        <span class="flame-bar-figures"><span class="fb-total">0</span> <span class="fb-thr">/ 0</span></span>
+  <div class="open-stage">
+    <aside id="open-flame-bar" class="open-left gold-frame">
+      <div class="sacred-flame-bar flame-vertical">
+        <div class="flame-bar-head">
+          <span class="flame-bar-label">聖火能量</span>
+          <span class="flame-bar-figures"><span class="fb-total">0</span> <span class="fb-thr">/ 0</span></span>
+        </div>
+        <div class="flame-track"><div class="flame-fill"></div></div>
+        <div class="flame-bar-hint" style="display:none">聖火將燃！</div>
       </div>
-      <div class="flame-track"><div class="flame-fill"></div></div>
-      <div class="flame-bar-hint" style="display:none">聖火將燃！</div>
-    </div>
-  </div>
-  <div id="mini-scoreboard" class="gold-frame">
-    <div class="mini-head">英雄榜</div>
-  </div>
-  <div class="open-main">
-    <div class="open-body">
+    </aside>
+    <div class="open-center">
       <div id="open-waiting" class="open-waiting">
         <div class="open-waiting-title serif gold-foil">聖火開放！</div>
         <div class="open-waiting-sub">衝五步 · 拍燈搶答</div>
         <div id="open-waiting-chips" class="chips"></div>
       </div>
-      <ol id="open-rank-list" class="order-list" style="display:none"></ol>
+      <div id="open-hero" class="open-hero" style="display:none"></div>
     </div>
-    <aside id="open-leaderboard" class="gold-frame">
+    <aside id="open-leaderboard" class="open-right gold-frame">
       <div class="lb-title">英雄榜</div>
     </aside>
   </div>
@@ -555,10 +587,10 @@ button, .town-btn { position: relative; overflow: hidden; }
 
 <div id="rank-screen" class="screen">
   <div class="rank-head">
-    <div class="rank-title serif gold-foil">聖火順位</div>
+    <div class="rank-title serif gold-foil">本題結果</div>
     <div class="meander-band"></div>
   </div>
-  <ol id="rank-list" class="order-list"></ol>
+  <div id="rank-hero" class="open-hero" style="flex:1"></div>
 </div>
 
 <div id="burst"><div class="rays"></div><div class="flash"></div></div>
@@ -753,6 +785,8 @@ function playSfx(name){
   const a = sfx[name]; if(!a) return;
   try { a.currentTime = 0; const p = a.play(); if(p) p.catch(()=>{}); } catch(e){}
 }
+// 停止某段取樣音效（修音效重疊：答錯 mp3 仍在播時，恢復「開放搶答」前先停掉它）
+function stopSfx(name){ const a = sfx[name]; if(a){ try { a.pause(); a.currentTime = 0; } catch(e){} } }
 function primeSfx(){ // 解鎖手勢內先靜音播一次，確保之後可程式化播放
   Object.values(sfx).forEach(a=>{
     a.muted = true;
@@ -856,6 +890,34 @@ function sortedScores(scores, teams, scoreSince){
 // 是否有任何非零分數（沒有就維持城鎮 chips / 隱藏計分板）
 function hasAnyScore(scores){ return Object.values(scores||{}).some(v=>v>0); }
 
+// ── 英雄榜換位滑動（FLIP）：記錄重建前各列位置，重建後反向位移再過渡回 0 ──
+function flipCapture(wrap){
+  if(!wrap || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
+  return new Map([...wrap.querySelectorAll('.lb-row')].map(r=>[r.dataset.lbTeam, r.getBoundingClientRect().top]));
+}
+function flipPlay(wrap, prev){
+  if(!wrap || !prev) return;
+  wrap.querySelectorAll('.lb-row').forEach(r=>{
+    const o = prev.get(r.dataset.lbTeam); if(o==null) return;
+    const dy = o - r.getBoundingClientRect().top; if(!dy) return;
+    r.style.transition='none'; r.style.transform=`translateY(${dy}px)`;
+    requestAnimationFrame(()=>{ r.style.transition='transform .5s cubic-bezier(.16,1,.3,1)'; r.style.transform=''; });
+  });
+}
+
+// 中央「誰搶到 / 答對 / 答錯」大字卡（取代多列順位；只呈現單一搶答者，移除名次）
+function renderHero(el, entry){
+  if(!el) return;
+  if(!entry){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='flex';
+  let st='hero-focus', sub='獲得答題權！';
+  if(entry.verified && entry.result==='correct'){ st='hero-correct'; sub='答對！'; }
+  else if(entry.verified && entry.result==='wrong'){ st='hero-wrong'; sub='答錯'; }
+  el.className = `open-hero ${st}`;
+  const pts = (entry.verified && entry.result==='correct' && entry.points!=null) ? `<div class="hero-pts num">+${entry.points}</div>` : '';
+  el.innerHTML = `<div class="hero-team serif gold-foil">${escHtml(entry.team)}</div><div class="hero-sub">${sub}</div>${pts}`;
+}
+
 // idle 大型排行榜：名次徽章 + 組名 + 分數，冠軍列最大最亮可帶聖杯火焰。
 // idle 一律完整列出所有參賽城鎮（含 0 分），取代原本城鎮 chips 面板。
 function renderLeaderboard(scores, teams, scoreSince){
@@ -870,6 +932,7 @@ function renderLeaderboard(scores, teams, scoreSince){
   wrap.style.display='';
   if(joinedPanel) joinedPanel.style.display='none';
   wrap.classList.toggle('dense', entries.length>6);
+  const _fp = flipCapture(wrap);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
   entries.forEach((e,i)=>{
     const rank=i+1;
@@ -885,27 +948,10 @@ function renderLeaderboard(scores, teams, scoreSince){
       <div class="lb-score num">${e.score}</div>`;
     wrap.appendChild(row);
   });
+  flipPlay(wrap, _fp);
 }
 
-// open 角落常駐小計分板：top 5 緊湊列，不可遮擋中央順位
-function renderMiniScores(scores, teams, scoreSince){
-  const wrap=$('mini-scoreboard');
-  if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
-  const entries = sortedScores(scores, teams, scoreSince).filter(e=>e.score>0).slice(0,5);
-  wrap.querySelectorAll('.mini-row').forEach(r=>r.remove());
-  entries.forEach((e,i)=>{
-    const rank=i+1;
-    const row=document.createElement('div');
-    row.className=`mini-row${rank===1?' r1':''}`;
-    row.dataset.miniTeam = e.team;
-    row.innerHTML=`
-      <span class="mini-rank">${rank}</span>
-      <span class="mini-team">${escHtml(e.team)}</span>
-      <span class="mini-score num">${e.score}</span>`;
-    wrap.appendChild(row);
-  });
-  wrap.classList.add('show');
-}
+// （renderMiniScores 已移除：open 改用右欄常駐英雄榜，不再有角落小計分板）
 
 // open 右側常駐完整榜：顯示所有有分數的組（降序，不切片），>8 隊壓密度。
 // row 帶 data-lb-team，與 idle 大榜共用 scoreFlash 的 [data-lb-team] 選擇器。
@@ -914,6 +960,7 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
   if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
   const entries = sortedScores(scores, teams, scoreSince).filter(e=>e.score>0);
   wrap.classList.toggle('dense', entries.length>8);
+  const _fp = flipCapture(wrap);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
   entries.forEach((e,i)=>{
     const rank=i+1;
@@ -929,6 +976,7 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
       <div class="lb-score num">${e.score}</div>`;
     wrap.appendChild(row);
   });
+  flipPlay(wrap, _fp);
   wrap.classList.add('show');
 }
 
@@ -947,7 +995,9 @@ function renderFlameBar(barEl, totalScore, threshold, canIgnite){
   if(thrEl) thrEl.textContent = `/ ${thr}`;
   if(bar) bar.classList.toggle('near', near);
   if(fill){
-    fill.style.width = `${(ratio*100).toFixed(1)}%`;
+    const vertical = bar && bar.classList.contains('flame-vertical');
+    if(vertical){ fill.style.height = `${(ratio*100).toFixed(1)}%`; fill.style.width = '100%'; }
+    else { fill.style.width = `${(ratio*100).toFixed(1)}%`; }
     fill.classList.toggle('near', near);
     fill.classList.toggle('ready', !!canIgnite);
     // 越接近滿格流光越快（2.6s → 1.0s），近滿時火光更躁動
@@ -1001,10 +1051,11 @@ function scoreFlash(team, delta){
 function playIgnite(){
   const ov=$('ignite-overlay'); if(!ov) return;
   playIgniteSound();
+  document.body.classList.add('igniting'); // 背景所有畫面壓暗，聖杯+標題獨佔整屏
   ov.classList.remove('show'); void ov.offsetWidth; ov.classList.add('show');
   fireConfetti();
   setTimeout(()=>fireConfetti(), 2200);
-  setTimeout(()=>{ ov.classList.remove('show'); showLitBadge(); }, 7200);
+  setTimeout(()=>{ ov.classList.remove('show'); document.body.classList.remove('igniting'); showLitBadge(); }, 7200);
 }
 function showLitBadge(){ const b=$('lit-badge'); if(b) b.classList.add('show'); }
 
@@ -1035,37 +1086,38 @@ function applyState(state){
   prevTotal = total;
   if(state.phase==='open'){
     showScreen('open');
-    // 倒數續跑：第一個拍燈不再暫停；以伺服器剩餘秒數驅動，歸零（closed）即定格 0
+    // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0
     if(state.closed){
       stopCountdownAtZero();
     } else if(!countdownInterval){
       startCountdown(state.remainingMs!=null ? Math.round(state.remainingMs/1000) : COUNT_FROM);
     }
-    const hasBuzz = state.buzzOrder.length>0;
-    $('open-waiting').style.display = hasBuzz ? 'none' : 'flex';
-    $('open-rank-list').style.display = hasBuzz ? 'flex' : 'none';
-    if(hasBuzz){
-      renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
+    const entry = state.buzzOrder[0] || null; // 只追蹤第一位（open 期間通常為 null：拍燈即轉 reviewing）
+    if(entry){
+      $('open-waiting').style.display = 'none';
+      renderHero($('open-hero'), entry);
     } else {
+      $('open-hero').style.display = 'none';
+      $('open-waiting').style.display = 'flex';
       renderChips($('open-waiting-chips'), teams);
     }
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else if(state.phase==='reviewing'){
-    // 拍燈定格：留在 open 畫面顯示定格倒數與順位（不切回顧），停表但不歸零
+    // 拍燈定格：留在 open 畫面顯示「誰搶到」與定格倒數（不切回顧），停表但不歸零
     showScreen('open');
     freezeCountdown(state.remainingMs);
     $('open-waiting').style.display = 'none';
-    $('open-rank-list').style.display = 'flex';
-    renderOrderList($('open-rank-list'), state.buzzOrder, state.currentFocus, state.buzzOrder.length>prevBuzzCount);
+    renderHero($('open-hero'), state.buzzOrder[0] || null);
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
     $('open-leaderboard').classList.remove('show');
     $('x-overlay').classList.remove('show');
-    if(state.buzzOrder.length){
+    const winner = state.buzzOrder[0] || null; // 答對者（locked 由答對而來）
+    if(winner){
       showScreen('rank');
-      renderOrderList($('rank-list'), state.buzzOrder, state.currentFocus, false);
-      // 回顧 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
+      renderHero($('rank-hero'), winner);
+      // 短回顧 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
       rankAutoTimer = setTimeout(()=>{
         rankAutoTimer = null;
         showScreen('idle');
@@ -1103,7 +1155,8 @@ function applyState(state){
 function handleMessage(msg){
   switch(msg.type){
     case 'state':
-      if(lastPhase!=='open' && msg.phase==='open') playOpenBeep();
+      // 恢復「開放搶答」前先停掉仍在播的答錯音，避免兩段音效重疊
+      if(lastPhase!=='open' && msg.phase==='open'){ stopSfx('wrong'); playOpenBeep(); }
       lastPhase=msg.phase;
       applyState(msg);
       break;
@@ -1123,7 +1176,7 @@ function handleMessage(msg){
       break;
     case 'verify_result':
       if(msg.result==='correct'){
-        playSfx('correct'); celebrate(); fireConfetti();
+        stopSfx('wrong'); playSfx('correct'); celebrate(); fireConfetti();
         // 標記本組已在此處理，緊接而來的 state(applyState) 對該組略過一次分數動畫避免重複
         justVerified = msg.team;
         // 用本次廣播的最新分數先即時重排榜單，再對該組播 +10 跳動與上飄金字
@@ -1132,7 +1185,7 @@ function handleMessage(msg){
         renderOpenLeaderboard(msg.scores, lastJoined, lastScoreSince);
         scoreFlash(msg.team, delta>0 ? delta : 0);
       } else {
-        playSfx('wrong');
+        stopSfx('correct'); playSfx('wrong');
         const overlay=$('x-overlay'), icon=$('x-icon');
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');

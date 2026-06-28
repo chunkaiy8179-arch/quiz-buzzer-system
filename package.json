@@ -5,8 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "playwright test",
-    "stress": "node tests/stress-concurrency.js"
+    "test": "node tests/sim-8users.js && node tests/display-capture.js",
+    "sim": "node tests/sim-8users.js",
+    "capture": "node tests/display-capture.js && node tests/client-capture.js",
+    "stress": "node tests/sim-8users.js"
   },
   "keywords": [],
   "author": "",

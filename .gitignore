@@ -5,6 +5,11 @@ playwright-report/
 .screenshots/
 *.png
 *.log
+state.json
+
+# 例外：搶答鈕圖檔是 app 必要資產，需進 repo（蓋過上面的 *.png）
+!public/img/
+!public/img/*.png
 
 # Claude Code 本地設定（agent / 指令等，不進 repo）
 .claude/
