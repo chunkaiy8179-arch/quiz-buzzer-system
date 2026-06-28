@@ -512,3 +512,8 @@ server.listen(PORT, () => {
   console.log(`  投影端: http://localhost:${PORT}/display.html`);
   console.log(`  主持端 PIN: ${HOST_PIN}`);
 });
+
+// 收到終止訊號（Render 休眠/部署、Ctrl-C）時做最後一次持久化 flush，補 debounce 來不及落地的最後一筆
+function flushAndExit() { try { fs.writeFileSync(STATE_FILE, JSON.stringify({ scores, scoreSince, threshold, lit })); } catch {} process.exit(0); }
+process.on('SIGTERM', flushAndExit);
+process.on('SIGINT', flushAndExit);

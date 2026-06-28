@@ -1155,8 +1155,15 @@ function applyState(state){
 function handleMessage(msg){
   switch(msg.type){
     case 'state':
-      // 恢復「開放搶答」前先停掉仍在播的答錯音，避免兩段音效重疊
-      if(lastPhase!=='open' && msg.phase==='open'){ stopSfx('wrong'); playOpenBeep(); }
+      // 恢復「開放搶答」：若答錯音正在播，等它播完再放開放音（先答錯、後開放、不重疊，且答錯音不被切掉）；否則直接放
+      if(lastPhase!=='open' && msg.phase==='open'){
+        const w = sfx.wrong;
+        if(w && !w.paused && !w.ended){
+          w.addEventListener('ended', ()=>{ if(lastPhase==='open') playOpenBeep(); }, { once:true });
+        } else {
+          playOpenBeep();
+        }
+      }
       lastPhase=msg.phase;
       applyState(msg);
       break;
@@ -1165,10 +1172,6 @@ function handleMessage(msg){
       document.body.classList.add('flash');
       setTimeout(()=>document.body.classList.remove('flash'),700);
       playSfx('firstBuzz');
-      break;
-    case 'buzz_registered':
-      // 後續搶答者（第 2、3…名）：一聲叮
-      playDing();
       break;
     case 'time_up':
       stopCountdownAtZero();
