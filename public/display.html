@@ -113,11 +113,11 @@ body::before{
 
 /* ── 聖杯火焰標記 ── */
 .emblem { display: block; position: relative; }
-.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; width: clamp(200px,25vw,310px); height: clamp(200px,25vw,310px); filter: drop-shadow(0 0 26px rgba(245,166,35,.4)); }
+.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: clamp(110px, min(20vw,17vh), 300px); height: clamp(110px, min(20vw,17vh), 300px); filter: drop-shadow(0 0 26px rgba(245,166,35,.4)); }
 .emblem-wrap .laurel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 0 8px rgba(245,166,35,.22)); }
 
 /* ── Idle ── */
-#idle-screen { align-items: center; justify-content: center; gap: clamp(18px,2.4vw,30px); padding: 48px; }
+#idle-screen { align-items: center; justify-content: center; gap: clamp(8px,1.5vh,26px); padding: clamp(14px,2.5vh,40px) clamp(24px,4vw,56px); overflow: hidden; }
 /* 金箔角落紋飾：L 形雙線框角，襯托舞台儀式感 */
 .corner-frame { position: absolute; inset: clamp(20px,2.8vw,46px); z-index: 0; pointer-events: none; }
 .corner-frame .corner { position: absolute; width: clamp(34px,4vw,64px); height: auto; filter: drop-shadow(0 0 6px rgba(245,166,35,.3)); }
@@ -125,11 +125,11 @@ body::before{
 .corner.tr { top: 0; right: 0; transform: scaleX(-1); }
 .corner.bl { bottom: 0; left: 0; transform: scaleY(-1); }
 .corner.br { bottom: 0; right: 0; transform: scale(-1,-1); }
-.idle-title { font-size: clamp(40px, 6.5vw, 88px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.15; }
+.idle-title { font-size: clamp(30px, min(6.5vw,8.5vh), 88px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.12; }
 .idle-sub { font-size: clamp(13px, 1.8vw, 20px); letter-spacing: clamp(5px,1.2vw,12px); color: var(--muted); }
 .idle-latin { font-family: var(--font-display); font-size: clamp(13px,1.9vw,22px); font-weight: 700; letter-spacing: clamp(2px,.55vw,6px); color: var(--gold); text-shadow: 0 0 22px rgba(245,166,35,.25); }
 .idle-divider { width: clamp(180px,30vw,360px); }
-.joined-panel { width: min(86vw, 1080px); padding: clamp(20px,2.6vw,30px) clamp(24px,3.4vw,40px); display: flex; flex-direction: column; gap: 16px; }
+.joined-panel { width: min(86vw, 1080px); flex: 0 1 auto; min-height: 0; max-height: 50vh; overflow-y: auto; padding: clamp(14px,2vh,30px) clamp(24px,3.4vw,40px); display: flex; flex-direction: column; gap: clamp(10px,1.4vh,16px); }
 .joined-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .joined-label { font-size: clamp(13px,1.6vw,18px); font-weight: 700; letter-spacing: 5px; color: var(--muted); }
 .joined-count { font-family: var(--font-title); font-size: clamp(22px,2.8vw,34px); font-weight: 900; color: var(--gold-bright); }
@@ -221,15 +221,15 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 
 /* ── 啟用音效按鈕 ── */
 #audio-unlock {
-  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+  position: fixed; right: clamp(12px,1.4vw,22px); bottom: clamp(12px,1.6vh,22px); z-index: 60;
   background: linear-gradient(160deg,#ffd96b,#f5a623 60%,#c0390f); color: #3a1900;
-  border: none; border-radius: 12px; padding: 12px 24px; cursor: pointer;
-  font-family: var(--font-title); font-size: clamp(14px,1.6vw,20px); font-weight: 800; letter-spacing: 2px;
-  box-shadow: 0 8px 30px rgba(232,67,31,.45);
+  border: none; border-radius: 10px; padding: 8px 16px; cursor: pointer;
+  font-family: var(--font-title); font-size: clamp(12px,1.2vw,16px); font-weight: 800; letter-spacing: 1px;
+  box-shadow: 0 6px 20px rgba(232,67,31,.45);
   animation: au-pulse 1.6s ease-in-out infinite;
 }
 #audio-unlock.hidden { display: none; }
-@keyframes au-pulse { 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.05);} }
+@keyframes au-pulse { 0%,100%{transform: scale(1);} 50%{transform: scale(1.05);} }
 
 /* ── 定格倒數：拍燈後金色定格、不歸零不轉紅 ── */
 .count-badge.paused #count-badge-num { color: var(--gold-bright); text-shadow: 0 0 22px rgba(245,205,120,.55); }
@@ -269,7 +269,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 #open-flame-bar { flex-shrink: 0; margin-bottom: clamp(10px,1.4vw,18px); }
 
 /* ── idle 大型排行榜 ── */
-#idle-leaderboard { width: min(86vw, 1080px); max-height: 64vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: clamp(8px,1.1vw,14px); padding: clamp(18px,2.4vw,28px) clamp(22px,3vw,36px); }
+#idle-leaderboard { width: min(86vw, 1080px); flex: 0 1 auto; min-height: 0; max-height: 44vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: clamp(6px,1vh,14px); padding: clamp(12px,1.8vh,28px) clamp(22px,3vw,36px); }
 /* 隊伍多時（>6）壓密度，讓 8-10 隊全 0 分也能完整列出不溢出 */
 #idle-leaderboard.dense { gap: clamp(5px,.7vw,9px); }
 #idle-leaderboard.dense .lb-row { padding: clamp(6px,.9vw,12px) clamp(14px,2vw,24px); }
@@ -394,7 +394,7 @@ button, .town-btn { position: relative; overflow: hidden; }
 @media (prefers-reduced-motion: reduce){ .ripple { display: none; } }
 
 /* ════════ Display 大廳重構：5 段式 Grid + 直立能量條 + 中央 hero + 英雄榜 FLIP + 點燈遮罩 ════════ */
-#open-screen { display: grid; grid-template-rows: minmax(0,1fr) minmax(0,4fr); gap: clamp(10px,1.6vw,20px); padding: clamp(20px,2.4vw,34px) clamp(26px,3vw,52px); }
+#open-screen.active { display: grid; grid-template-rows: minmax(0,1fr) minmax(0,4fr); gap: clamp(10px,1.6vw,20px); padding: clamp(20px,2.4vw,34px) clamp(26px,3vw,52px); }
 .open-top { margin-bottom: 0; }
 .open-stage { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); gap: clamp(14px,2vw,28px); min-height: 0; }
 .open-left, .open-center, .open-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
@@ -845,34 +845,7 @@ function renderChips(container, teams){
   teams.forEach(t=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; container.appendChild(s); });
 }
 
-function renderOrderList(listEl, buzzOrder, currentFocus, highlightNew){
-  listEl.innerHTML='';
-  listEl.classList.toggle('few', buzzOrder.length <= 5);
-  listEl.classList.toggle('dense', buzzOrder.length > 6);
-  buzzOrder.forEach((entry,i)=>{
-    const isFocus = currentFocus===entry.team && !entry.verified;
-    const rowCls = entry.verified ? (entry.result==='correct'?'correct':'wrong') : (isFocus?'focus':'');
-    const li=document.createElement('li');
-    li.className=`rank-row ${rowCls}`;
-    li.style.animationDelay=`${Math.min(i,8)*0.05}s`;
-    if(highlightNew && i===buzzOrder.length-1 && !entry.verified) li.classList.add('just-buzzed');
-    let badge='';
-    if(entry.verified){
-      if(entry.result==='correct'){
-        const pts = (entry.points!=null) ? `<span class="pts">+${entry.points}</span>` : '';
-        badge = `<span class="result-tag tag-correct">${IC_CHECK}正確${pts}</span>`;
-      } else {
-        badge = `<span class="result-tag tag-wrong">${IC_CROSS}錯誤</span>`;
-      }
-    } else if(isFocus){ badge='<span class="focus-indicator">待驗證</span>'; }
-    const numCls = i<3 ? `r${i+1}` : '';
-    li.innerHTML=`
-      <div class="rank-num ${numCls} num">${i+1}</div>
-      <span class="rank-team">${escHtml(entry.team)}</span>
-      ${badge}`;
-    listEl.appendChild(li);
-  });
-}
+// （renderOrderList 已移除：搶答改為只記第一位、中央改用 renderHero 單一大字卡，不再有多列順位）
 
 // 穩定排序：以 joinedTeams 為全集（含 0 分）。分數降序，同分時依 server 的 scoreSince
 // （達到當前分數的時間戳，0 分組=加入時間）由小到大（先到在上），最終以首見順序 idx tiebreak。
@@ -957,8 +930,8 @@ function renderLeaderboard(scores, teams, scoreSince){
 // row 帶 data-lb-team，與 idle 大榜共用 scoreFlash 的 [data-lb-team] 選擇器。
 function renderOpenLeaderboard(scores, teams, scoreSince){
   const wrap=$('open-leaderboard');
-  if(!hasAnyScore(scores)){ wrap.classList.remove('show'); return; }
-  const entries = sortedScores(scores, teams, scoreSince).filter(e=>e.score>0);
+  const entries = sortedScores(scores, teams, scoreSince); // 一開始就列所有已加入城鎮（含 0 分），之後依分數重排
+  if(entries.length===0){ wrap.classList.remove('show'); return; }
   wrap.classList.toggle('dense', entries.length>8);
   const _fp = flipCapture(wrap);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
