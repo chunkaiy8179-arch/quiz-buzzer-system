@@ -1,5 +1,5 @@
 # 對話交接筆記
-> 產生時間：2026-06-26 ｜ 工作目錄：C:\ClaudeCodeDev\quiz-buzzer-system
+> 產生時間：2026-06-28 ｜ 工作目錄：C:\ClaudeCodeDev\quiz-buzzer-system
 
 ## 背景與目標
 升級「拍燈搶答系統」(quiz-buzzer-system,三端 WebSocket 即時搶答,希臘金箔暗夜風,活動「聖火之夜」用)。**全程用使用者的 agent 隊伍**(planner/coder/reviewer/debugger/tester/approver)+ `/ship` 分級調度。已連做五大批,**全部上線 Render**。最終目標:做出能跑完整場活動的搶答+計分+合作點燈系統,主持端主要用手機。
@@ -30,7 +30,7 @@
 
 ## 相關檔案 / 指令 / 連結
 - 專案根:`C:\ClaudeCodeDev\quiz-buzzer-system`(GitHub: chunkaiy8179-arch/quiz-buzzer-system,分支 master)
-- 核心:`server.js`(WS 狀態機+協定)、`public/{client,console,display}.html`(三端)、`public/sw.js`(改前端要升 CACHE 版號,目前 buzzer-v35)
+- 核心:`server.js`(WS 狀態機+協定)、`public/{client,console,display}.html`(三端)、`public/sw.js`(**改前端務必升第 1 行 CACHE 版號**,否則 SW 快取不更新到客戶端;以檔案實際值為準)
 - 線上:https://quiz-buzzer-system.onrender.com/{client,console,display}.html (push master→Render 自動部署)
 - 主持端 PIN:Render 後台環境變數 `HOST_PIN`(舊值 810709,以後台為準)
 - 測試:`cd C:\ClaudeCodeDev\quiz-buzzer-system && npx playwright test --workers=1`(59 passed;務必 --workers=1,否則 port 撞)

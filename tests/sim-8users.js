@@ -60,6 +60,36 @@ async function main() {
 
   const hpin = o => send(host, { ...o, pin: PIN });
 
+  // ── 倒數計時開關：預設關閉 → 開搶不啟動伺服器倒數（remainingMs 恆為 null、不會逾時鎖定）──
+  clear([host, ...clients]);
+  check('倒數開關預設 enableCountdown=false', host._lastState.enableCountdown === false);
+  hpin({ type: 'host_open' });
+  await delay(150);
+  check('倒數關閉：開搶 phase=open', host._lastState.phase === 'open');
+  check('倒數關閉：remainingMs 為 null', host._lastState.remainingMs === null);
+  await delay(COUNT_FROM * 1000 + 600); // 靜候超過原倒數秒數，確認不會自動逾時
+  check('倒數關閉：久候不廣播 time_up', !has(host, 'time_up'));
+  check('倒數關閉：久候後仍 phase=open（未被逾時鎖定）', host._lastState.phase === 'open');
+  check('倒數關閉：久候後 closed=false', host._lastState.closed === false);
+  hpin({ type: 'host_reset' });
+  await delay(120);
+
+  // 開啟倒數計時開關，供後續「倒數定格 / 逾時鎖定」情境驗證
+  clear([host]);
+  hpin({ type: 'host_set_countdown', enable: true });
+  await delay(120);
+  check('倒數開關切換為開啟', host._lastState.enableCountdown === true);
+
+  // ── 聖火能量顯示開關：預設關閉 → 切換開啟/關閉都應正確廣播 state（純顯示旗標，不影響計分/點燈邏輯）──
+  clear([host]);
+  check('聖火開關預設 showFlame=false', host._lastState.showFlame === false);
+  hpin({ type: 'host_set_flame', show: true });
+  await delay(120);
+  check('聖火開關切換為開啟', host._lastState.showFlame === true);
+  hpin({ type: 'host_set_flame', show: false });
+  await delay(120);
+  check('聖火開關切換回關閉', host._lastState.showFlame === false);
+
   // ── 核心情境：3 回合「8 人同 tick 搶答 → 1 勝 7 鎖」+ 答錯續搶 + 答對加分 ──
   let cumulativeWins = {};
   for (let round = 1; round <= 3; round++) {

@@ -16,11 +16,7 @@
   --flame-red:#e8431f; --flame-amber:#f5a623;
   --ink:#f3ecd9; --muted:#a99a76; --line:rgba(212,175,55,.28);
   --up:#3fae6b; --wrong:#c0392b;
-  /* 石板：暖白大理石（浮起）→ 灰大理石（待命/時間到）；脈絡用極淡灰；底座暗影/亮邊做 neumorphism */
-  --slab-warm:#ece6d8; --slab-warm-hi:#fbf8f0; --slab-warm-lo:#cabfa8;
-  --slab-gray:#9a958c; --slab-gray-hi:#bdb8ad; --slab-gray-lo:#5e5a52;
-  --slab-vein:rgba(120,108,84,.16);
-  --slab-shadow-dark:rgba(40,30,18,.55); --slab-shadow-light:rgba(255,250,238,.85);
+  /* 搶答鈕改用一般紅色按鈕，原石板色系變數已移除 */
   /* 字體：標題/隊名=Noto Serif HK（厚重明體）、內文=Noto Sans TC、英文小標/數字=Cinzel、大標=Cinzel Decorative */
   --font-body:'Noto Sans TC', -apple-system, 'Segoe UI', sans-serif;
   --font-title:'Noto Serif HK', 'Noto Serif TC', serif;
@@ -116,85 +112,28 @@ body { background: transparent; }
 @keyframes dot-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
 
 .btn-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 24px; }
-/* ── 石板搶答鈕：希臘白大理石板 + 金箔刻字（neumorphism 浮起／按壓下凹）── */
-#buzz-btn { width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,56px); font-weight: 900; letter-spacing: 4px; cursor: not-allowed; transition: transform .12s cubic-bezier(.2,.7,.3,1), background .2s, color .2s, box-shadow .2s; outline: none; touch-action: manipulation; }
-/* 大理石脈絡：所有石板共用的極淡灰脈絡 + noise，疊在各狀態底色之上 */
-#buzz-btn::after { content:''; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; z-index: 0; opacity: .5; mix-blend-mode: multiply;
-  background:
-    radial-gradient(ellipse 60% 18% at 32% 30%, var(--slab-vein) 0%, transparent 60%),
-    radial-gradient(ellipse 14% 52% at 68% 58%, var(--slab-vein) 0%, transparent 62%),
-    linear-gradient(118deg, transparent 42%, var(--slab-vein) 47%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)' opacity='0.45'/%3E%3C/svg%3E");
-  background-size: auto, auto, auto, 130px 130px; }
-/* 灰大理石板：待命 / 時間到——沉穩、僅微浮、不亮起 */
-#buzz-btn.state-locked { color: var(--slab-gray-lo);
-  background: radial-gradient(circle at 38% 32%, var(--slab-gray-hi) 0%, var(--slab-gray) 58%, var(--slab-gray-lo) 100%);
-  text-shadow: 0 1px 0 rgba(255,255,255,.3), 0 -1px 1px rgba(0,0,0,.35);
-  box-shadow: inset 4px 4px 9px rgba(255,255,255,.28), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 16px rgba(0,0,0,.45), -4px -4px 12px rgba(255,250,238,.06);
-  animation: locked-breath 4.2s ease-in-out infinite; }
-@keyframes locked-breath {
-  0%,100% { box-shadow: inset 4px 4px 9px rgba(255,255,255,.26), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 16px rgba(0,0,0,.45), -4px -4px 12px rgba(255,250,238,.05); }
-  50% { box-shadow: inset 4px 4px 9px rgba(255,255,255,.34), inset -5px -6px 12px rgba(20,16,10,.5), 5px 6px 18px rgba(0,0,0,.5), -4px -4px 14px rgba(255,250,238,.1); }
-}
-/* 白大理石板浮起 + 金箔刻「搶答」（letterpress：一道亮上、一道暗下模擬凹刻浮雕）*/
-#buzz-btn.state-open { cursor: pointer;
-  background: radial-gradient(circle at 38% 30%, var(--slab-warm-hi) 0%, var(--slab-warm) 56%, var(--slab-warm-lo) 100%);
-  color: var(--gold-deep);
-  text-shadow: 0 2px 0 rgba(255,250,235,.85), 0 -1px 1px rgba(90,60,15,.7), 0 0 12px rgba(245,215,122,.35);
-  box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 6px rgba(212,175,55,.12);
-  animation: slab-float 2.6s ease-in-out infinite; }
-/* 金箔刻字：用漸層裁切到文字（state-open / state-buzzed 共用）*/
-#buzz-btn.state-open, #buzz-btn.state-buzzed { background-clip: padding-box; }
-@keyframes slab-float {
-  0%,100% { box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 6px rgba(212,175,55,.12); }
-  50% { box-shadow: inset 6px 6px 12px rgba(255,253,246,.78), inset -7px -8px 16px rgba(120,98,60,.46), 12px 15px 30px rgba(0,0,0,.55), -8px -8px 22px rgba(255,250,238,.24), 0 0 0 9px rgba(212,175,55,.18); }
-}
-/* 按壓下凹：石板被壓進底座——inset 內陰影 + 下沉縮小 */
-#buzz-btn.state-open:active { transform: translateY(5px) scale(.97);
-  box-shadow: inset 8px 9px 20px rgba(120,98,60,.55), inset -6px -6px 14px rgba(255,253,246,.5), 3px 4px 10px rgba(0,0,0,.4), 0 0 0 5px rgba(212,175,55,.14);
-  animation: none; }
-/* 已搶到：白大理石板浮起 + 金箔刻「第N名」（保留浮起感、金邊更深，與可搶區隔）*/
-#buzz-btn.state-buzzed { color: var(--gold-deep); font-size: clamp(22px,6vw,34px); letter-spacing: 2px;
-  background: radial-gradient(circle at 38% 30%, var(--slab-warm-hi) 0%, var(--slab-warm) 56%, var(--slab-warm-lo) 100%);
-  text-shadow: 0 2px 0 rgba(255,250,235,.85), 0 -1px 1px rgba(90,60,15,.7), 0 0 14px rgba(245,215,122,.45);
-  box-shadow: inset 6px 6px 12px rgba(255,253,246,.7), inset -7px -8px 16px rgba(120,98,60,.42), 9px 11px 24px rgba(0,0,0,.5), -7px -7px 18px rgba(255,250,238,.18), 0 0 0 7px rgba(212,175,55,.28), 0 0 30px rgba(245,215,122,.3); }
-/* 搶到瞬間：周圍金光爆裂（一次性，由 JS 加 .buzz-burst 觸發後移除）*/
-#buzz-btn { position: relative; }
-#buzz-btn.buzz-burst::before { content:''; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; z-index: 2;
-  background: radial-gradient(circle, rgba(255,243,200,.85) 0%, rgba(245,166,35,.5) 35%, rgba(245,166,35,0) 68%);
-  animation: buzz-burst .55s cubic-bezier(.18,.9,.32,1) forwards; }
-@keyframes buzz-burst { 0% { opacity: .95; transform: scale(.55); } 100% { opacity: 0; transform: scale(1.7); } }
-/* 出局：裂痕石板——灰大理石深陷卡死 + 1-2 道裂縫，比正常更低，整題不可玩 */
-#buzz-btn.state-out { color: var(--slab-gray-lo); font-size: clamp(20px,5.4vw,30px); letter-spacing: 1px; cursor: not-allowed;
-  background: radial-gradient(circle at 40% 34%, var(--slab-gray-hi) 0%, var(--slab-gray) 56%, var(--slab-gray-lo) 100%);
-  /* 深 inset 下陷：比待命更陷，卡死感 */
-  box-shadow: inset 9px 10px 22px rgba(20,16,10,.6), inset -6px -7px 16px rgba(255,250,238,.16), 2px 3px 8px rgba(0,0,0,.35); }
-/* 裂縫石板覆層：覆寫全域脈絡 ::after，改放兩道鋸齒裂縫 + 淡石粉脈絡 */
-#buzz-btn.state-out::after { content:''; position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; z-index: 0; opacity: 1; mix-blend-mode: normal;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M50 2 L46 22 L55 34 L48 50 L57 64 L50 82 L54 98' stroke='rgba(30,24,16,.5)' stroke-width='1.4'/%3E%3Cpath d='M50 2 L46 22 L55 34 L48 50 L57 64 L50 82 L54 98' stroke='rgba(255,250,238,.28)' stroke-width='.5' transform='translate(.8,.8)'/%3E%3Cpath d='M20 40 L34 46 L44 43 L58 51 L72 47 L86 55' stroke='rgba(30,24,16,.4)' stroke-width='1.1'/%3E%3Cpath d='M20 40 L34 46 L44 43 L58 51 L72 47 L86 55' stroke='rgba(255,250,238,.22)' stroke-width='.4' transform='translate(.7,.7)'/%3E%3C/g%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='o'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23o)' opacity='0.3'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 130px 130px; }
-#buzz-btn.state-out .out-mark { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: var(--font-title); }
-#buzz-btn.state-out .out-crack { display: block; width: 1.5em; height: auto; filter: drop-shadow(0 1px 1px rgba(255,250,238,.4)); }
-/* 放大答錯提示字 + 石刻陰影（letterpress 凹刻）*/
-#buzz-btn.state-out .out-text { display: block; font-size: .74em; letter-spacing: 4px; font-weight: 900; color: #46423a;
-  text-shadow: 0 1px 0 rgba(255,250,238,.5), 0 -1px 1px rgba(20,16,10,.55); }
-/* 驗證中：微亮石板 + 金邊呼吸微光，和 state-locked（灰待命沉穩）區分——正在判定、可能放我再搶 */
-#buzz-btn.state-review { color: var(--gold-dim); font-size: clamp(22px,6vw,34px); letter-spacing: 2px; cursor: not-allowed;
-  background: radial-gradient(circle at 38% 33%, var(--slab-warm) 0%, var(--slab-warm-lo) 60%, var(--slab-gray) 100%);
-  text-shadow: 0 1px 0 rgba(255,250,235,.55), 0 -1px 1px rgba(90,60,15,.5);
-  box-shadow: inset 5px 5px 11px rgba(255,253,246,.5), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 18px rgba(0,0,0,.42), 0 0 0 4px rgba(245,215,122,.2);
-  animation: review-pulse 1.9s ease-in-out infinite; }
-@keyframes review-pulse {
-  0%,100% { box-shadow: inset 5px 5px 11px rgba(255,253,246,.5), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 18px rgba(0,0,0,.42), 0 0 0 4px rgba(245,215,122,.16); }
-  50% { box-shadow: inset 5px 5px 11px rgba(255,253,246,.58), inset -6px -7px 14px rgba(120,98,60,.42), 6px 7px 20px rgba(0,0,0,.46), 0 0 0 7px rgba(245,215,122,.3), 0 0 24px rgba(245,215,122,.28); }
-}
+/* ── 一般紅色搶答鈕：圓形、扁平、各狀態單色底 + 白字（文字置中） ── */
+#buzz-btn { position: relative; width: min(80vw,330px); height: min(80vw,330px); border-radius: 50%; border: none; font-family:var(--font-title); font-size: clamp(36px,10vw,52px); font-weight: 900; letter-spacing: 3px; color:#fff; cursor: not-allowed; display: flex; align-items: center; justify-content: center; text-align: center; padding: 18px; transition: background .2s, transform .12s, box-shadow .2s; outline: none; touch-action: manipulation; }
+/* 待命 / 時間到：灰、不可按 */
+/* 待命/時間到：紅色反灰、按不下去 */
+#buzz-btn.state-locked { background: linear-gradient(180deg,#7e4f49,#5f3a35); color:#d8c4c1; box-shadow: 0 6px 0 #3f2a27, 0 11px 18px rgba(0,0,0,.42), inset 0 3px 5px rgba(255,255,255,.12); }
+/* 可搶：鮮紅、厚底座強立體、可點——按下整顆下沉到底座（明顯回饋） */
+#buzz-btn.state-open { cursor: pointer; background: linear-gradient(180deg,#f0524a,#d32f2f); color:#fff;
+  box-shadow: 0 16px 0 #9e2019, 0 26px 36px rgba(0,0,0,.52), inset 0 7px 11px rgba(255,255,255,.5), inset 0 -12px 20px rgba(120,10,5,.42); }
+#buzz-btn.state-open:active { transform: translateY(14px);
+  box-shadow: 0 2px 0 #9e2019, 0 5px 12px rgba(0,0,0,.45), inset 0 5px 9px rgba(255,255,255,.42), inset 0 -6px 12px rgba(120,10,5,.45); }
+/* 已搶到：紅色反灰、按不下去（不變綠色） */
+#buzz-btn.state-buzzed { background: linear-gradient(180deg,#a85a4f,#853f37); color:#ffe9b8; font-size: clamp(22px,6vw,32px); letter-spacing: 2px; cursor: not-allowed;
+  box-shadow: 0 6px 0 #3f2a27, 0 11px 18px rgba(0,0,0,.4), inset 0 3px 6px rgba(255,255,255,.2), 0 0 0 5px rgba(212,175,55,.6), 0 0 44px rgba(245,205,120,.5); }
+/* 出局：紅色反灰更暗、下陷不可按 */
+#buzz-btn.state-out { background: linear-gradient(180deg,#4a2e2b,#3a2422); color:#a58681; font-size: clamp(20px,5.4vw,28px); letter-spacing: 1px; cursor: not-allowed; box-shadow: inset 0 5px 15px rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.3); }
+/* 驗證中：紅色反灰、按不下去（不變橘色） */
+#buzz-btn.state-review { background: linear-gradient(180deg,#7e4f49,#5f3a35); color:#d8c4c1; font-size: clamp(22px,6vw,32px); letter-spacing: 2px; cursor: not-allowed; box-shadow: 0 6px 0 #3f2a27, 0 11px 18px rgba(0,0,0,.4), inset 0 3px 5px rgba(255,255,255,.12); }
 #buzz-btn.state-review .review-dots::after { content:'…'; display: inline-block; font-size: .7em; letter-spacing: 2px; animation: review-dots 1.4s steps(4,end) infinite; width: 1.4em; text-align: left; overflow: hidden; vertical-align: bottom; }
 @keyframes review-dots { 0%{ clip-path: inset(0 100% 0 0); } 100%{ clip-path: inset(0 0 0 0); } }
 @keyframes body-flash { 0%{background:rgba(245,215,122,.5);} 18%{background:rgba(212,175,55,.32);} 100%{background:transparent;} }
 body.buzz-flash { animation: body-flash .5s ease-out forwards; }
-@media (prefers-reduced-motion: reduce) { #buzz-btn.state-open, #buzz-btn.state-locked, #buzz-btn.state-out, #buzz-btn.state-buzzed, #buzz-btn.state-review, #buzz-btn.state-review .review-dots::after, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash, #buzz-btn.buzz-burst::before { animation: none; } #buzz-btn.buzz-burst::before { display: none; } }
+@media (prefers-reduced-motion: reduce) { #buzz-btn.state-review .review-dots::after, .flame, #ws-dot.reconnecting, .gold-foil-shine, .metal::before, #login-screen .emblem-wrap, #login-screen .login-headings, #login-screen .pick-label, #login-screen .town-grid { animation: none; } body.buzz-flash { animation: none; } }
 
 .status-bar { width: 100%; padding: 18px 24px 36px; text-align: center; border-top: 1px solid var(--line); min-height: 82px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 #status-msg { font-size: 16px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; transition: color .3s, background .3s; }
@@ -222,47 +161,6 @@ button, .town-btn { position: relative; overflow: hidden; }
 .ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.24) 0%, rgba(255,255,255,.07) 45%, rgba(255,255,255,0) 70%); animation: ripple-anim .58s ease-out forwards; }
 @keyframes ripple-anim { from { transform: scale(0); opacity: .5; } to { transform: scale(2.3); opacity: 0; } }
 @media (prefers-reduced-motion: reduce){ .ripple { display: none; } }
-
-/* ════ 圖像化搶答鈕：覆寫大理石樣式，改用希臘石雕獎章 ════
-   完整獎章 /img/buzz.png = 可搶 / 已搶到；破損獎章 /img/buzz-broken.png = 待命 / 驗證中 / 出局 / 時間到 */
-#buzz-btn { background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
-  text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.95) !important; }
-/* 文字底襯 scrim（z-index:-1 → 蓋在獎章上、文字下）：保證字在浮雕人臉上仍可讀 */
-#buzz-btn::after, #buzz-btn.state-out::after {
-  content:'' !important; position:absolute !important; inset:auto !important;
-  left:50% !important; top:50% !important; transform:translate(-50%,-50%) !important;
-  width:88% !important; height:52% !important; border-radius:50% !important;
-  z-index:-1 !important; opacity:1 !important; mix-blend-mode:normal !important; pointer-events:none !important;
-  background: radial-gradient(ellipse 60% 52% at 50% 50%, rgba(6,5,2,.74), rgba(6,5,2,.28) 60%, transparent 82%) !important; }
-/* 完整獎章：可搶 / 已搶到——金光浮起 */
-#buzz-btn.state-open, #buzz-btn.state-buzzed {
-  background-image: url('/img/buzz.png') !important; color: var(--gold-bright) !important;
-  box-shadow: 0 16px 34px rgba(0,0,0,.55), 0 0 0 5px rgba(212,175,55,.3), 0 0 40px rgba(245,166,35,.35) !important;
-  animation: slab-rise 2.8s ease-in-out infinite !important; }
-@keyframes slab-rise { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-/* 按下去：石板被壓進底座 */
-#buzz-btn.state-open:active {
-  transform: translateY(7px) scale(.97) !important; animation: none !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,.5), inset 0 0 36px rgba(0,0,0,.5), 0 0 0 4px rgba(212,175,55,.22) !important; }
-/* 已搶到：完整獎章 + 更強金光 */
-#buzz-btn.state-buzzed { animation: none !important;
-  box-shadow: 0 16px 38px rgba(0,0,0,.55), 0 0 0 7px rgba(245,215,122,.5), 0 0 56px rgba(245,215,122,.5) !important; }
-/* 破損獎章：待命 / 驗證中 / 出局——去飽和、壓陷、不可互動 */
-#buzz-btn.state-locked, #buzz-btn.state-review, #buzz-btn.state-out {
-  background-image: url('/img/buzz-broken.png') !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.4) !important; }
-#buzz-btn.state-locked { filter: grayscale(.5) brightness(.82) !important; animation: locked-dim 4.2s ease-in-out infinite !important; }
-@keyframes locked-dim { 0%,100% { filter: grayscale(.55) brightness(.78); } 50% { filter: grayscale(.45) brightness(.92); } }
-#buzz-btn.state-review { filter: grayscale(.3) brightness(.92) !important; color: var(--gold-bright) !important;
-  box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 4px rgba(245,215,122,.28) !important;
-  animation: review-ring 1.9s ease-in-out infinite !important; }
-@keyframes review-ring { 0%,100% { box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 4px rgba(245,215,122,.2); } 50% { box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 0 44px rgba(0,0,0,.3), 0 0 0 8px rgba(245,215,122,.36), 0 0 26px rgba(245,215,122,.32); } }
-#buzz-btn.state-out { filter: grayscale(.78) brightness(.6) !important; }
-#buzz-btn.state-out .out-text { color: #f0e6d0 !important; text-shadow: 0 2px 4px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9) !important; }
-#buzz-btn.state-out .out-crack { filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)) !important; }
-@media (prefers-reduced-motion: reduce) {
-  #buzz-btn.state-open, #buzz-btn.state-buzzed, #buzz-btn.state-locked, #buzz-btn.state-review { animation: none !important; }
-}
 </style>
 </head>
 <body>
@@ -313,7 +211,7 @@ button, .town-btn { position: relative; overflow: hidden; }
     <div id="ws-dot"></div>
   </div>
   <div class="btn-area">
-    <button id="buzz-btn" class="state-locked" disabled>BUZZ</button>
+    <button id="buzz-btn" class="state-locked" disabled>待命</button>
   </div>
   <div class="status-bar">
     <div id="status-msg" aria-live="polite" aria-atomic="true">等待主持人點燃聖火</div>
@@ -334,17 +232,8 @@ let ws, myTeam = null, buzzed = false, myEliminated = false, joinedTeams = [];
 let buzzFeedbackDone = false;
 let lastState = null; // 最近一次 state 廣播快取：收到 buzz_rejected 解鎖後立即用它重繪
 
-// 出局鈕面：裂痕石板圖示 + 放大「答錯出局」字，集中定義避免兩處出局分支重複
-const OUT_HTML = '<span class="out-mark">'
-  + '<svg class="out-crack" viewBox="0 0 120 120" aria-hidden="true">'
-  + '<g fill="none" stroke-linecap="round">'
-  + '<path d="M60 8 L54 36 L67 56 L51 82 L60 112" stroke="#3a352d" stroke-width="3.2"/>'
-  + '<path d="M60 8 L54 36 L67 56 L51 82 L60 112" stroke="#efeae0" stroke-width="1.1" transform="translate(1.5,1.5)" opacity=".75"/>'
-  + '<path d="M67 56 L88 50 L104 60" stroke="#3a352d" stroke-width="2.4"/>'
-  + '<path d="M67 56 L88 50 L104 60" stroke="#efeae0" stroke-width=".8" transform="translate(1.2,1.2)" opacity=".7"/>'
-  + '</g>'
-  + '</svg>'
-  + '<span class="out-text">答錯出局</span></span>';
+// 出局鈕面：一般紅色按鈕直接顯示「答錯出局」文字
+const OUT_HTML = '答錯出局';
 const REVIEW_HTML = '驗證中<span class="review-dots"></span>';
 
 // 記住所選城鎮：F5 重整後自動回到原本的隊伍畫面，而非重選
@@ -547,7 +436,7 @@ function applyState(msg){
     btn.disabled=true; btn.className='state-review'; btn.innerHTML=REVIEW_HTML;
     setStatus('主持人驗證中', ''); $('phase-label').textContent='REVIEW';
   } else { // locked
-    buzzed=false; buzzFeedbackDone=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='BUZZ';
+    buzzed=false; buzzFeedbackDone=false; btn.disabled=true; btn.className='state-locked'; btn.textContent='待命';
     setStatus('等待主持人點燃聖火', ''); $('phase-label').textContent='LOCKED';
   }
 }
@@ -565,9 +454,6 @@ function setBuzzLocked(rank){
     buzzFeedbackDone = true;
     // 搶到答題權：強震一次回饋
     if(navigator.vibrate) navigator.vibrate([180]);
-    // 搶到瞬間金光爆裂（一次性，播完移除以便下回合可再觸發）
-    btn.classList.remove('buzz-burst'); void btn.offsetWidth; btn.classList.add('buzz-burst');
-    setTimeout(()=>btn.classList.remove('buzz-burst'),600);
     document.body.classList.add('buzz-flash');
     setTimeout(()=>document.body.classList.remove('buzz-flash'),500);
   }

@@ -113,7 +113,7 @@ body::before{
 
 /* ── 聖杯火焰標記 ── */
 .emblem { display: block; position: relative; }
-.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: clamp(110px, min(20vw,17vh), 300px); height: clamp(110px, min(20vw,17vh), 300px); filter: drop-shadow(0 0 26px rgba(245,166,35,.4)); }
+.emblem-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: clamp(96px, min(16vw,13vh), 280px); height: clamp(96px, min(16vw,13vh), 280px); filter: drop-shadow(0 0 26px rgba(245,166,35,.4)); }
 .emblem-wrap .laurel { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 0 8px rgba(245,166,35,.22)); }
 
 /* ── Idle ── */
@@ -125,7 +125,7 @@ body::before{
 .corner.tr { top: 0; right: 0; transform: scaleX(-1); }
 .corner.bl { bottom: 0; left: 0; transform: scaleY(-1); }
 .corner.br { bottom: 0; right: 0; transform: scale(-1,-1); }
-.idle-title { font-size: clamp(30px, min(6.5vw,8.5vh), 88px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.12; }
+.idle-title { font-size: clamp(28px, min(6vw,7.5vh), 80px); font-weight: 900; color: var(--gold-bright); letter-spacing: clamp(6px,1.4vw,16px); text-shadow: 0 0 36px rgba(245,166,35,.3); line-height: 1.12; }
 .idle-sub { font-size: clamp(13px, 1.8vw, 20px); letter-spacing: clamp(5px,1.2vw,12px); color: var(--muted); }
 .idle-latin { font-family: var(--font-display); font-size: clamp(13px,1.9vw,22px); font-weight: 700; letter-spacing: clamp(2px,.55vw,6px); color: var(--gold); text-shadow: 0 0 22px rgba(245,166,35,.25); }
 .idle-divider { width: clamp(180px,30vw,360px); }
@@ -267,17 +267,13 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 }
 #idle-flame-bar { width: min(86vw, 1080px); }
 #open-flame-bar { flex-shrink: 0; margin-bottom: clamp(10px,1.4vw,18px); }
+/* 主持端可切換的顯隱：聖火能量條（預設關）、未啟用倒數時的倒數牌 */
+.is-hidden { display: none !important; }
 
 /* ── idle 大型排行榜 ── */
 #idle-leaderboard { width: min(86vw, 1080px); flex: 0 1 auto; min-height: 0; max-height: 44vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: clamp(6px,1vh,14px); padding: clamp(12px,1.8vh,28px) clamp(22px,3vw,36px); }
 /* 隊伍多時（>6）壓密度，讓 8-10 隊全 0 分也能完整列出不溢出 */
-#idle-leaderboard.dense { gap: clamp(5px,.7vw,9px); }
-#idle-leaderboard.dense .lb-row { padding: clamp(6px,.9vw,12px) clamp(14px,2vw,24px); }
-#idle-leaderboard.dense .lb-badge { width: clamp(34px,4vw,50px); height: clamp(34px,4vw,50px); font-size: clamp(14px,1.7vw,22px); }
-#idle-leaderboard.dense .lb-team { font-size: clamp(18px,2.7vw,36px); }
-#idle-leaderboard.dense .lb-score { font-size: clamp(18px,2.6vw,34px); }
-#idle-leaderboard.dense .lb-row.r1 .lb-team { font-size: clamp(20px,3vw,40px); }
-#idle-leaderboard.dense .lb-row.r1 .lb-score { font-size: clamp(20px,2.9vw,38px); }
+/* （舊 #idle-leaderboard.dense 大字級規則已移除：改由文末「緊湊有上限+隨高縮放」規則統一控管，避免特異性蓋過） */
 .lb-title { font-size: clamp(13px,1.6vw,18px); font-weight: 700; letter-spacing: 6px; color: var(--muted); margin-bottom: 4px; }
 .lb-row { display: flex; align-items: center; gap: clamp(14px,2vw,26px); border-radius: 14px; padding: clamp(10px,1.4vw,18px) clamp(16px,2.2vw,28px); background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); border: 1px solid var(--line); border-left: 4px solid var(--line); animation: slide-up .45s cubic-bezier(.16,1,.3,1) both; }
 .lb-row.r1 { border-color: var(--gold); border-left-color: var(--gold); background: linear-gradient(180deg, rgba(212,175,55,.22), rgba(212,175,55,.05)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 30px rgba(245,166,35,.18); }
@@ -397,6 +393,8 @@ button, .town-btn { position: relative; overflow: hidden; }
 #open-screen.active { display: grid; grid-template-rows: minmax(0,1fr) minmax(0,4fr); gap: clamp(10px,1.6vw,20px); padding: clamp(20px,2.4vw,34px) clamp(26px,3vw,52px); }
 .open-top { margin-bottom: 0; }
 .open-stage { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); gap: clamp(14px,2vw,28px); min-height: 0; }
+/* 聖火能量條隱藏時：收掉左欄改兩欄（hero 佔大欄置中 + 英雄榜固定最右），避免 hero 掉進窄欄被切字 */
+.open-stage.flame-off { grid-template-columns: minmax(0,1fr) clamp(240px,24vw,360px); }
 .open-left, .open-center, .open-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .open-left { padding: clamp(14px,1.8vw,22px) clamp(10px,1.3vw,16px); }
 .open-center { position: relative; align-items: center; justify-content: center; }
@@ -412,7 +410,7 @@ button, .town-btn { position: relative; overflow: hidden; }
 
 /* 中央 hero 大字卡 */
 .open-hero { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px,1.6vw,22px); text-align: center; }
-.hero-team { font-family: var(--font-title); font-weight: 900; font-size: clamp(40px,7.5vw,104px); line-height: 1.04; letter-spacing: 2px; }
+.hero-team { font-family: var(--font-title); font-weight: 900; font-size: clamp(40px,7.5vw,104px); line-height: 1.32; letter-spacing: 2px; padding-bottom: .14em; }
 .hero-sub { font-size: clamp(22px,3.6vw,52px); font-weight: 900; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 0 26px rgba(245,205,120,.5); }
 .hero-pts { font-family: var(--font-latin); font-weight: 900; font-size: clamp(36px,6vw,88px); color: var(--gold-bright); text-shadow: 0 0 30px rgba(245,205,120,.6); }
 .open-hero.hero-correct .hero-team { color: #bff5d4; }
@@ -433,6 +431,34 @@ button, .town-btn { position: relative; overflow: hidden; }
 #ignite-overlay { z-index: 10000; }
 body.igniting #idle-screen, body.igniting #open-screen, body.igniting #rank-screen { filter: brightness(.1) saturate(.5); transition: filter .5s ease; }
 body.igniting #lit-badge { display: none !important; }
+
+/* ── 英雄榜（idle 大榜 + open 右欄）：絕不捲動、所有城鎮一次全顯示、每列緊湊有上限不被撐大 ── */
+#idle-leaderboard, #open-leaderboard { overflow: hidden; }
+#idle-leaderboard { flex: 1 1 auto; min-height: 0; max-height: 66vh; justify-content: flex-start; gap: clamp(3px,.6vh,8px); }
+#idle-leaderboard .lb-row { flex: 1 1 0; min-height: 0; max-height: clamp(30px,6vh,56px); padding: clamp(2px,.5vh,7px) clamp(12px,1.8vw,24px); gap: clamp(8px,1.4vw,18px); }
+#idle-leaderboard .lb-badge { width: clamp(20px,min(2.2vw,3.1vh),34px); height: clamp(20px,min(2.2vw,3.1vh),34px); font-size: clamp(11px,min(1.5vw,2.1vh),18px); }
+#idle-leaderboard .lb-team { font-size: clamp(14px,min(2.1vw,2.9vh),28px); letter-spacing: 1px; }
+#idle-leaderboard .lb-score { font-size: clamp(14px,min(2.1vw,2.9vh),28px); }
+#idle-leaderboard .lb-row.r1 .lb-team { font-size: clamp(15px,min(2.5vw,3.2vh),31px); }
+#idle-leaderboard .lb-row.r1 .lb-score { font-size: clamp(15px,min(2.5vw,3.2vh),31px); }
+#idle-leaderboard .lb-row.r1 .lb-crown { width: .8em; height: .8em; }
+/* open 右欄：每列同樣設上限緊湊 */
+#open-leaderboard.show .lb-row { flex: 1 1 0; min-height: 0; max-height: clamp(28px,6vh,52px); }
+#open-leaderboard .lb-row.r1 .lb-team { font-size: clamp(14px,1.5vw,22px); }
+#open-leaderboard .lb-row.r1 .lb-score { font-size: clamp(14px,1.5vw,22px); }
+/* 進場面板（0 城時）也不捲動 */
+.joined-panel { overflow: hidden; }
+/* 矮螢幕（如 1366x768 視窗、非全螢幕）：頭部讓位給榜單，確保 10 城也全進、零卷軸 */
+@media (max-height: 880px) {
+  #idle-screen .idle-latin, #idle-screen .idle-sub, #idle-screen .idle-divider { display: none; }
+  #idle-screen .emblem-wrap { width: clamp(54px, 9.5vh, 110px); height: clamp(54px, 9.5vh, 110px); }
+  #idle-flame-bar { padding: clamp(5px,.7vh,10px) clamp(16px,2.4vw,28px); }
+  #idle-leaderboard { max-height: 74vh; gap: clamp(2px,.3vh,5px); }
+  #idle-leaderboard .lb-row { max-height: clamp(22px,4.4vh,40px); padding: clamp(1px,.3vh,4px) clamp(12px,1.8vw,24px); gap: clamp(6px,1.2vw,14px); }
+  #idle-leaderboard .lb-badge { width: clamp(15px,2.2vh,26px); height: clamp(15px,2.2vh,26px); font-size: clamp(9px,1.7vh,15px); }
+  #idle-leaderboard .lb-team, #idle-leaderboard .lb-score { font-size: clamp(11px,2vh,21px); }
+  #idle-leaderboard .lb-row.r1 .lb-team, #idle-leaderboard .lb-row.r1 .lb-score { font-size: clamp(12px,2.3vh,23px); }
+}
 </style>
 </head>
 <body>
@@ -1018,6 +1044,13 @@ function applyState(state){
   const teams = state.joinedTeams || [];
   const scoreSince = state.scoreSince || {};
   renderAllFlameBars(state);
+  // 聖火能量條顯隱（主持端開關；預設關 → 兩條都不顯示）
+  const showFlame = (state.showFlame === true);
+  $('idle-flame-bar').classList.toggle('is-hidden', !showFlame);
+  $('open-flame-bar').classList.toggle('is-hidden', !showFlame);
+  document.querySelector('.open-stage')?.classList.toggle('flame-off', !showFlame); // 聖火隱藏→open 改兩欄,英雄榜固定最右、hero 不被切
+  // 倒數牌顯隱：未啟用倒數（server enableCountdown=false，reviewing 定格值為 0 非 null）時整個隱藏
+  $('count-badge').classList.toggle('is-hidden', state.enableCountdown !== true);
   // F5/重連後若已點燈，直接顯示最終態徽記、不重播長動畫
   if(state.lit){ ignitePlayed = true; showLitBadge(); }
   // 聖火能量提示音（首個 state 僅同步基準、不觸發，避免 F5 重連誤播）
@@ -1037,8 +1070,11 @@ function applyState(state){
   prevTotal = total;
   if(state.phase==='open'){
     showScreen('open');
-    // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0
-    if(state.closed){
+    // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0。
+    // 未啟用倒數時 server 不下發 deadline（remainingMs=null），不啟本地倒數避免空轉與逐秒 tick 音效。
+    if(state.enableCountdown !== true){
+      clearInterval(countdownInterval); countdownInterval=null;
+    } else if(state.closed){
       stopCountdownAtZero();
     } else if(!countdownInterval){
       startCountdown(state.remainingMs!=null ? Math.round(state.remainingMs/1000) : COUNT_FROM);
