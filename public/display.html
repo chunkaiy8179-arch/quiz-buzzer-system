@@ -946,7 +946,7 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
     row.dataset.lbTeam = e.team;
     row.style.animationDelay=`${Math.min(i,8)*0.05}s`;
     const badgeCls = rank<=3 ? `r${rank}` : '';
-    const crown = rank===1 ? `<svg class="lb-crown" viewBox="0 0 120 150"><path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="#f5a623"/><path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/></svg>` : '';
+    const crown = ''; // 英雄榜第一名不顯示聖火火把圖示（使用者要求移除；r1 仍靠金框＋大字突出）
     row.innerHTML=`
       <div class="lb-badge ${badgeCls} num">${rank}</div>
       <div class="lb-team">${crown}${escHtml(e.team)}</div>
