@@ -600,7 +600,7 @@ body.igniting #lit-badge { display: none !important; }
     <div class="open-center">
       <div id="open-waiting" class="open-waiting">
         <div class="open-waiting-title serif gold-foil">聖火開放！</div>
-        <div class="open-waiting-sub">衝五步 · 拍燈搶答</div>
+        <div class="open-waiting-sub">拍燈搶答</div>
         <div id="open-waiting-chips" class="chips"></div>
       </div>
       <div id="open-hero" class="open-hero" style="display:none"></div>
@@ -1102,9 +1102,14 @@ function applyState(state){
     $('x-overlay').classList.remove('show');
     const winner = state.buzzOrder[0] || null; // 答對者（locked 由答對而來）
     if(winner){
-      showScreen('rank');
-      renderHero($('rank-hero'), winner);
-      // 短回顧 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
+      // 答對後不跳 rank 畫面：留在 open 畫面，用中央大字卡顯示答對者（XXX 答對！+分數）＋右側英雄榜
+      showScreen('open');
+      $('count-badge').classList.add('is-hidden');   // 答對展示時不需倒數牌
+      $('open-waiting').style.display='none';
+      renderHero($('open-hero'), winner);
+      $('open-leaderboard').classList.add('show');
+      renderOpenLeaderboard(state.scores, teams, scoreSince);
+      // 顯示 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
       rankAutoTimer = setTimeout(()=>{
         rankAutoTimer = null;
         showScreen('idle');
