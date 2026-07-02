@@ -5,10 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/sim-8users.js && node tests/display-capture.js && node tests/overlap-check.js && node tests/lb-check.js",
+    "test": "node tests/sim-8users.js && node tests/display-capture.js && node tests/overlap-check.js && node tests/lb-check.js && node tests/toggle-features-check.js",
     "sim": "node tests/sim-8users.js",
     "overlap": "node tests/overlap-check.js",
     "lb": "node tests/lb-check.js",
+    "toggle": "node tests/toggle-features-check.js",
     "capture": "node tests/display-capture.js && node tests/client-capture.js",
     "stress": "node tests/sim-8users.js"
   },

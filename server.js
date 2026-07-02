@@ -47,6 +47,10 @@ let threshold = Number(process.env.LIGHT_THRESHOLD) || 120; // 希望之燈點�
 let lit = false;            // 希望之燈是否已點亮
 // 答錯鎖定模式：true=答錯出局不可再搶（現狀預設）；false=答錯不鎖、該組可再搶
 let lockOnWrong = (process.env.LOCK_ON_WRONG ?? 'true') !== 'false';
+// 倒數計時開關：預設關閉，開放搶答時不啟動伺服器倒數（靠主持人手動判定收束）
+let enableCountdown = false;
+// 聖火能量顯示開關：預設關閉，控制投影端兩條聖火能量條是否顯示（僅顯示切換，不影響計分/點燈）
+let showFlame = false;
 const SCORE_DELTA = 10;     // 每次答對加分
 
 // ── 狀態持久化（次要保險：救本機/同進程崩潰重啟；Render 免費方案休眠會清磁碟，主防線是外部保活 ping）──
@@ -167,6 +171,8 @@ function stateMsg() {
     lit: lit,                             // 希望之燈是否已亮
     canUndo: !!state.lastVerify,          // 是否有可撤銷的最後一筆判定（無則主持端不顯示撤銷鈕）
     lockOnWrong: lockOnWrong,             // 答錯鎖定模式：true=出局不可再搶；false=不鎖可再搶
+    enableCountdown: enableCountdown,     // 倒數計時開關：false=不啟動伺服器倒數（投影端隱藏倒數牌）
+    showFlame: showFlame,                 // 聖火能量顯示開關：false=投影端隱藏兩條能量條
   };
 }
 
@@ -289,8 +295,9 @@ wss.on('connection', (ws) => {
         state.eliminated = [];
         state.remainingMs = null;
         state.lastVerify = null; // 開新回合：上一回合的判定不可再撤
-        // 伺服器權威倒數：到時即關閉搶答視窗（buzzOrder/順位仍保留供判定）
-        startCountdownFrom(COUNT_FROM * 1000);
+        // 伺服器權威倒數：到時即關閉搶答視窗（buzzOrder/順位仍保留供判定）。
+        // 倒數關閉時不啟動，deadline 維持 null → state.remainingMs 下發 null，收束靠主持人手動判定。
+        if (enableCountdown) startCountdownFrom(COUNT_FROM * 1000);
         broadcastState();
         break;
       }
@@ -394,7 +401,9 @@ wss.on('connection', (ws) => {
           state.remainingMs = null;
           state.phase = 'open';
           state.closed = false;
-          startCountdownFrom(ms); // ms<=0 時內部會把 closed 設回 true
+          // 倒數關閉時不重啟倒數（否則 ms=0 會誤判為到時而關閉視窗），維持 deadline=null 讓搶答續開
+          if (enableCountdown) startCountdownFrom(ms); // ms<=0 時內部會把 closed 設回 true
+          else clearCountdown();
         }
 
         const next = currentFocusTeam();
@@ -485,6 +494,24 @@ wss.on('connection', (ws) => {
           // 跨模式切換視為新決策點，舊判定快照已失真，禁止用它撤銷（避免還原出非法中間態）。
           state.lastVerify = null;
         }
+        broadcastState();
+        break;
+      }
+
+      // 切換倒數計時開關：true=開放搶答時啟動伺服器倒數；false=不倒數（投影端隱藏倒數牌）
+      case 'host_set_countdown': {
+        if (!checkPin()) return;
+        if (typeof msg.enable !== 'boolean') return;
+        enableCountdown = msg.enable;
+        broadcastState();
+        break;
+      }
+
+      // 切換聖火能量顯示開關：僅控制投影端兩條能量條是否顯示（不影響計分/點燈）
+      case 'host_set_flame': {
+        if (!checkPin()) return;
+        if (typeof msg.show !== 'boolean') return;
+        showFlame = msg.show;
         broadcastState();
         break;
       }

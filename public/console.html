@@ -262,6 +262,14 @@ body.reviewing .buzz-row.focus { box-shadow: 0 0 0 2px rgba(245,166,35,.35), 0 4
 .score-adj button:active { transform: scale(.88); filter: brightness(1.18); }
 .s-plus { background: var(--up); }
 .s-minus { background: var(--wrong); }
+.score-adj.locked { opacity: .4; }
+.score-adj.locked button { cursor: not-allowed; }
+/* 記分板編輯鎖開關：置於 score-head，不搶 title 的伸縮空間、縮小軌道 */
+.score-edit-switch { flex: 0 0 auto; gap: 8px; min-height: 0; }
+.score-edit-switch .lock-track { width: 48px; height: 26px; }
+.score-edit-switch .lock-track::before { width: 20px; height: 20px; }
+.score-edit-switch input:checked + .lock-track::before { transform: translateX(22px); }
+.score-edit-switch .lock-mode-text { font-size: 12px; }
 
 /* ── 點擊水波回饋（ripple）── */
 button, .town-btn { position: relative; overflow: hidden; }
@@ -365,6 +373,22 @@ button, .town-btn { position: relative; overflow: hidden; }
       <span class="lock-mode-text locked" id="lock-mode-text">出局鎖定</span>
     </label>
   </div>
+  <div class="lock-set">
+    <span class="ls-label">倒數計時</span>
+    <label class="lock-switch">
+      <input id="countdown-toggle" type="checkbox">
+      <span class="lock-track"></span>
+      <span class="lock-mode-text locked" id="countdown-mode-text">關</span>
+    </label>
+  </div>
+  <div class="lock-set">
+    <span class="ls-label">聖火能量顯示</span>
+    <label class="lock-switch">
+      <input id="flame-toggle" type="checkbox">
+      <span class="lock-track"></span>
+      <span class="lock-mode-text locked" id="flame-mode-text">關</span>
+    </label>
+  </div>
   <button id="btn-ignite" disabled>點燃希望之燈</button>
 </div>
 
@@ -388,6 +412,8 @@ const $ = id => document.getElementById(id);
 let lastState = null;
 // 判對加分值（分值選擇器，預設 10）
 let selectedPoints = 10;
+// 記分板編輯鎖（純前端，不送 server）：預設鎖定，避免主持手機誤觸加減分/歸零
+let scoreEditMode = false;
 
 // ── 金箔風確認對話框：取代原生 confirm()，回傳 Promise<boolean> ──
 function confirmDialog(message, opts={}){
@@ -524,6 +550,30 @@ function setLockModeText(locked){
   el.classList.toggle('open', !locked);
 }
 
+// 倒數計時：勾選=開放搶答時啟動伺服器倒數，取消=不倒數（投影端隱藏倒數牌）
+$('countdown-toggle').addEventListener('change', e=>{
+  setCountdownText(e.target.checked);
+  sendHost({ type:'host_set_countdown', enable: e.target.checked });
+});
+function setCountdownText(on){
+  const el = $('countdown-mode-text');
+  el.textContent = on ? '開' : '關';
+  el.classList.toggle('open', on);
+  el.classList.toggle('locked', !on);
+}
+
+// 聖火能量顯示：勾選=投影端顯示兩條能量條，取消=隱藏（僅顯示切換，不影響計分/點燈）
+$('flame-toggle').addEventListener('change', e=>{
+  setFlameText(e.target.checked);
+  sendHost({ type:'host_set_flame', show: e.target.checked });
+});
+function setFlameText(on){
+  const el = $('flame-mode-text');
+  el.textContent = on ? '開' : '關';
+  el.classList.toggle('open', on);
+  el.classList.toggle('locked', !on);
+}
+
 $('btn-ignite').addEventListener('click', async ()=>{
   if($('btn-ignite').disabled) return;
   if(!await confirmDialog('確定點燃希望之燈？此動作會觸發全場點燈動畫，且無法復原。', { danger:true, okText:'點燃' })) return;
@@ -532,10 +582,18 @@ $('btn-ignite').addEventListener('click', async ()=>{
 
 // 計分板按鈕：事件委派，避免每次 render 重複綁定
 $('score-board').addEventListener('click', async e=>{
+  if(!scoreEditMode) return; // 編輯鎖定時忽略所有加減分/歸零（雙保險，按鈕本身也已 disabled）
   const adj = e.target.closest('.score-adj button');
   if(adj){ sendHost({ type:'host_score_adjust', team:adj.dataset.team, delta:parseInt(adj.dataset.delta,10) }); return; }
   const rst = e.target.closest('.btn-score-reset');
   if(rst && await confirmDialog('確定清空所有分數？', { danger:true, okText:'分數歸零' })) sendHost({ type:'host_score_reset' });
+});
+
+// 記分板編輯鎖切換（純前端）：checkbox 於 renderScores 動態產生，故用委派監聽 change
+$('score-board').addEventListener('change', e=>{
+  if(e.target.id !== 'score-edit-toggle') return;
+  scoreEditMode = e.target.checked;
+  if(lastState) renderScores(lastState); // 立即重繪，套用鎖定/解鎖狀態
 });
 
 // ── 分值選擇器：chip / 自訂輸入共用 selectedPoints ──
@@ -735,6 +793,22 @@ function renderState(state){
     setLockModeText(locked);
   }
 
+  // 倒數計時回填（同 focus 守衛；預設關）
+  const ct = $('countdown-toggle');
+  if(ct && document.activeElement !== ct){
+    const on = (state.enableCountdown === true);
+    ct.checked = on;
+    setCountdownText(on);
+  }
+
+  // 聖火能量顯示回填（同 focus 守衛；預設關）
+  const ft = $('flame-toggle');
+  if(ft && document.activeElement !== ft){
+    const on = (state.showFlame === true);
+    ft.checked = on;
+    setFlameText(on);
+  }
+
   // 點燈鈕：僅 canIgnite 才 enable 並發亮；已點燈顯示狀態
   const ignite = $('btn-ignite');
   if(state.lit){
@@ -762,6 +836,8 @@ function renderScores(state){
 
   // ± 步進與分值選擇器共用 selectedPoints，主持判分與微調一致
   const step = selectedPoints;
+  const dis = scoreEditMode ? '' : ' disabled';       // 鎖定時停用加減分
+  const locked = scoreEditMode ? '' : ' locked';      // 鎖定時整排半透明
   let rows='';
   teams.forEach(team=>{
     const val = scores[team] ?? 0;
@@ -772,9 +848,9 @@ function renderScores(state){
         <span class="s-name">${escHtml(team)}</span>
         ${out?'<span class="s-tag">出局</span>':''}
         <span class="s-val">${val}</span>
-        <div class="score-adj">
-          <button class="s-minus" data-team="${a}" data-delta="${-step}" aria-label="減 ${step}">−</button>
-          <button class="s-plus" data-team="${a}" data-delta="${step}" aria-label="加 ${step}">+</button>
+        <div class="score-adj${locked}">
+          <button class="s-minus" data-team="${a}" data-delta="${-step}" aria-label="減 ${step}"${dis}>−</button>
+          <button class="s-plus" data-team="${a}" data-delta="${step}" aria-label="加 ${step}"${dis}>+</button>
         </div>
       </div>`;
   });
@@ -782,7 +858,12 @@ function renderScores(state){
   board.innerHTML = `
     <div class="score-head">
       <span class="score-title">計分板</span>
-      <button class="btn-score-reset">分數歸零</button>
+      <label class="lock-switch score-edit-switch">
+        <input id="score-edit-toggle" type="checkbox"${scoreEditMode?' checked':''}>
+        <span class="lock-track"></span>
+        <span class="lock-mode-text ${scoreEditMode?'open':'locked'}">${scoreEditMode?'編輯中':'編輯鎖定'}</span>
+      </label>
+      <button class="btn-score-reset"${scoreEditMode?'':' disabled'}>分數歸零</button>
     </div>
     ${rows}`;
 }

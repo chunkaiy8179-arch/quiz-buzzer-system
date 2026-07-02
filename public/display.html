@@ -267,6 +267,8 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 }
 #idle-flame-bar { width: min(86vw, 1080px); }
 #open-flame-bar { flex-shrink: 0; margin-bottom: clamp(10px,1.4vw,18px); }
+/* 主持端可切換的顯隱：聖火能量條（預設關）、未啟用倒數時的倒數牌 */
+.is-hidden { display: none !important; }
 
 /* ── idle 大型排行榜 ── */
 #idle-leaderboard { width: min(86vw, 1080px); flex: 0 1 auto; min-height: 0; max-height: 44vh; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: clamp(6px,1vh,14px); padding: clamp(12px,1.8vh,28px) clamp(22px,3vw,36px); }
@@ -1062,6 +1064,12 @@ function applyState(state){
   const teams = state.joinedTeams || [];
   const scoreSince = state.scoreSince || {};
   renderAllFlameBars(state);
+  // 聖火能量條顯隱（主持端開關；預設關 → 兩條都不顯示）
+  const showFlame = (state.showFlame === true);
+  $('idle-flame-bar').classList.toggle('is-hidden', !showFlame);
+  $('open-flame-bar').classList.toggle('is-hidden', !showFlame);
+  // 倒數牌顯隱：未啟用倒數（server enableCountdown=false，reviewing 定格值為 0 非 null）時整個隱藏
+  $('count-badge').classList.toggle('is-hidden', state.enableCountdown !== true);
   // F5/重連後若已點燈，直接顯示最終態徽記、不重播長動畫
   if(state.lit){ ignitePlayed = true; showLitBadge(); }
   // 聖火能量提示音（首個 state 僅同步基準、不觸發，避免 F5 重連誤播）
@@ -1081,8 +1089,11 @@ function applyState(state){
   prevTotal = total;
   if(state.phase==='open'){
     showScreen('open');
-    // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0
-    if(state.closed){
+    // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0。
+    // 未啟用倒數時 server 不下發 deadline（remainingMs=null），不啟本地倒數避免空轉與逐秒 tick 音效。
+    if(state.enableCountdown !== true){
+      clearInterval(countdownInterval); countdownInterval=null;
+    } else if(state.closed){
       stopCountdownAtZero();
     } else if(!countdownInterval){
       startCountdown(state.remainingMs!=null ? Math.round(state.remainingMs/1000) : COUNT_FROM);

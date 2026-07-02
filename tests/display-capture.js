@@ -63,10 +63,33 @@ async function main() {
   await delay(500);
   await display.screenshot({ path: path.join(SHOTS, '01-idle-8隊.png') });
 
+  // ── 聖火/倒數開關新預設（關閉）：display 對應區塊應整個隱藏、不佔版面 ──
+  const flameHiddenByDefault = await display.evaluate(() => {
+    const idle = document.getElementById('idle-flame-bar');
+    const open = document.getElementById('open-flame-bar');
+    return idle.classList.contains('is-hidden') && open.classList.contains('is-hidden')
+      && idle.getBoundingClientRect().width === 0 && open.getBoundingClientRect().width === 0;
+  });
+  check('聖火開關預設關閉：idle/open 能量條皆隱藏且不佔版面', flameHiddenByDefault);
+  const countBadgeHiddenByDefault = await display.evaluate(() => document.getElementById('count-badge').classList.contains('is-hidden'));
+  check('倒數開關預設關閉：count-badge 隱藏', countBadgeHiddenByDefault);
+
+  // 主持端開啟聖火/倒數開關（實際點擊 UI 上的 <label>，如同使用者點擊視覺化開關）
+  await con.click('label:has(#flame-toggle)');
+  await con.click('label:has(#countdown-toggle)');
+  await delay(300);
+  const flameShownAfterToggle = await display.evaluate(() => {
+    const idle = document.getElementById('idle-flame-bar');
+    return !idle.classList.contains('is-hidden') && idle.getBoundingClientRect().width > 0;
+  });
+  check('聖火開關開啟後：idle 能量條顯示', flameShownAfterToggle);
+
   // 開搶 → 截 open（5 段三欄）
   await con.click('#btn-open');
   await delay(500);
   await display.screenshot({ path: path.join(SHOTS, '02-open-五段三欄.png') });
+  const countBadgeShown = await display.evaluate(() => !document.getElementById('count-badge').classList.contains('is-hidden'));
+  check('倒數開關開啟後：開搶時 count-badge 顯示', countBadgeShown);
 
   // 斷言：左/中/右三欄存在且水平不重疊
   const cols = await display.evaluate(() => {
