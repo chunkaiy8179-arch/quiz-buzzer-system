@@ -393,6 +393,8 @@ button, .town-btn { position: relative; overflow: hidden; }
 #open-screen.active { display: grid; grid-template-rows: minmax(0,1fr) minmax(0,4fr); gap: clamp(10px,1.6vw,20px); padding: clamp(20px,2.4vw,34px) clamp(26px,3vw,52px); }
 .open-top { margin-bottom: 0; }
 .open-stage { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,3fr) minmax(0,1fr); gap: clamp(14px,2vw,28px); min-height: 0; }
+/* 聖火能量條隱藏時：收掉左欄改兩欄（hero 佔大欄置中 + 英雄榜固定最右），避免 hero 掉進窄欄被切字 */
+.open-stage.flame-off { grid-template-columns: minmax(0,1fr) clamp(240px,24vw,360px); }
 .open-left, .open-center, .open-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .open-left { padding: clamp(14px,1.8vw,22px) clamp(10px,1.3vw,16px); }
 .open-center { position: relative; align-items: center; justify-content: center; }
@@ -408,7 +410,7 @@ button, .town-btn { position: relative; overflow: hidden; }
 
 /* 中央 hero 大字卡 */
 .open-hero { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px,1.6vw,22px); text-align: center; }
-.hero-team { font-family: var(--font-title); font-weight: 900; font-size: clamp(40px,7.5vw,104px); line-height: 1.04; letter-spacing: 2px; }
+.hero-team { font-family: var(--font-title); font-weight: 900; font-size: clamp(40px,7.5vw,104px); line-height: 1.32; letter-spacing: 2px; padding-bottom: .14em; }
 .hero-sub { font-size: clamp(22px,3.6vw,52px); font-weight: 900; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 0 26px rgba(245,205,120,.5); }
 .hero-pts { font-family: var(--font-latin); font-weight: 900; font-size: clamp(36px,6vw,88px); color: var(--gold-bright); text-shadow: 0 0 30px rgba(245,205,120,.6); }
 .open-hero.hero-correct .hero-team { color: #bff5d4; }
@@ -1068,6 +1070,7 @@ function applyState(state){
   const showFlame = (state.showFlame === true);
   $('idle-flame-bar').classList.toggle('is-hidden', !showFlame);
   $('open-flame-bar').classList.toggle('is-hidden', !showFlame);
+  document.querySelector('.open-stage')?.classList.toggle('flame-off', !showFlame); // 聖火隱藏→open 改兩欄,英雄榜固定最右、hero 不被切
   // 倒數牌顯隱：未啟用倒數（server enableCountdown=false，reviewing 定格值為 0 非 null）時整個隱藏
   $('count-badge').classList.toggle('is-hidden', state.enableCountdown !== true);
   // F5/重連後若已點燈，直接顯示最終態徽記、不重播長動畫

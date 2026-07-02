@@ -251,6 +251,8 @@ body.reviewing .buzz-row.focus { box-shadow: 0 0 0 2px rgba(245,166,35,.35), 0 4
 .btn-score-reset { border: 1px solid rgba(192,57,43,.6); border-radius: 8px; padding: 11px 14px; min-height: 44px; font-family: var(--font-title); font-size: 13px; font-weight: 800; letter-spacing: 1px; line-height: 1; white-space: nowrap; color: #eaa399; background: linear-gradient(160deg, rgba(192,57,43,.2), rgba(192,57,43,.07)); cursor: pointer; transition: transform .1s, filter .15s, background .15s; touch-action: manipulation; }
 .btn-score-reset:hover { filter: brightness(1.1); color: #f3b8ae; }
 .btn-score-reset:active { transform: scale(.97); background: linear-gradient(160deg, rgba(192,57,43,.34), rgba(192,57,43,.16)); }
+.btn-score-reset:disabled { opacity: .4; filter: grayscale(.6); cursor: not-allowed; box-shadow: none; }
+.btn-score-reset:disabled:hover { filter: grayscale(.6); color: #eaa399; }
 .score-row { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
 .score-row.eliminated { opacity: .45; }
 .score-row .s-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-title); font-size: clamp(15px,4vw,17px); font-weight: 700; color: var(--ink); letter-spacing: .5px; }
