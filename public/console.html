@@ -391,6 +391,14 @@ button, .town-btn { position: relative; overflow: hidden; }
       <span class="lock-mode-text locked" id="flame-mode-text">關</span>
     </label>
   </div>
+  <div class="lock-set">
+    <span class="ls-label">答錯後續搶</span>
+    <label class="lock-switch">
+      <input id="reopen-toggle" type="checkbox" checked>
+      <span class="lock-track"></span>
+      <span class="lock-mode-text open" id="reopen-mode-text">繼續開放</span>
+    </label>
+  </div>
   <button id="btn-ignite" disabled>點燃希望之燈</button>
 </div>
 
@@ -572,6 +580,18 @@ $('flame-toggle').addEventListener('change', e=>{
 function setFlameText(on){
   const el = $('flame-mode-text');
   el.textContent = on ? '開' : '關';
+  el.classList.toggle('open', on);
+  el.classList.toggle('locked', !on);
+}
+
+// 答錯後續搶：勾選=答錯後繼續開放讓其他組續搶（預設）；取消=答錯即結束本題
+$('reopen-toggle').addEventListener('change', e=>{
+  setReopenText(e.target.checked);
+  sendHost({ type:'host_set_reopen', reopen: e.target.checked });
+});
+function setReopenText(on){
+  const el = $('reopen-mode-text');
+  el.textContent = on ? '繼續開放' : '答錯即結束';
   el.classList.toggle('open', on);
   el.classList.toggle('locked', !on);
 }
@@ -809,6 +829,14 @@ function renderState(state){
     const on = (state.showFlame === true);
     ft.checked = on;
     setFlameText(on);
+  }
+
+  // 答錯後續搶回填（同 focus 守衛；預設開＝繼續開放）
+  const rt = $('reopen-toggle');
+  if(rt && document.activeElement !== rt){
+    const on = (state.reopenOnWrong !== false);
+    rt.checked = on;
+    setReopenText(on);
   }
 
   // 點燈鈕：僅 canIgnite 才 enable 並發亮；已點燈顯示狀態

@@ -51,6 +51,8 @@ let lockOnWrong = (process.env.LOCK_ON_WRONG ?? 'true') !== 'false';
 let enableCountdown = false;
 // 聖火能量顯示開關：預設關閉，控制投影端兩條聖火能量條是否顯示（僅顯示切換，不影響計分/點燈）
 let showFlame = false;
+// 答錯後續搶開關：預設 true=答錯後繼續開放讓其他組續搶（現狀）；false=答錯即結束本題（回待命、不加分）
+let reopenOnWrong = true;
 const SCORE_DELTA = 10;     // 每次答對加分
 
 // ── 狀態持久化（次要保險：救本機/同進程崩潰重啟；Render 免費方案休眠會清磁碟，主防線是外部保活 ping）──
@@ -173,6 +175,7 @@ function stateMsg() {
     lockOnWrong: lockOnWrong,             // 答錯鎖定模式：true=出局不可再搶；false=不鎖可再搶
     enableCountdown: enableCountdown,     // 倒數計時開關：false=不啟動伺服器倒數（投影端隱藏倒數牌）
     showFlame: showFlame,                 // 聖火能量顯示開關：false=投影端隱藏兩條能量條
+    reopenOnWrong: reopenOnWrong,         // 答錯後續搶：false=答錯即結束本題（不再開放搶答）
   };
 }
 
@@ -392,8 +395,8 @@ wss.on('connection', (ws) => {
           state.remainingMs = null;
           clearCountdown();
           state.closed = false;
-        } else {
-          // 答錯：鎖定模式下該組本回合出局、不可再搶；兩模式都清掉 firstBuzzer 讓下一位可成為新的答題者
+        } else if (reopenOnWrong) {
+          // 答錯 + 續搶（預設）：鎖定模式下該組出局、不可再搶；清掉 firstBuzzer 讓下一位可成為新答題者
           if (lockOnWrong) state.eliminated.push(team);
           state.firstBuzzer = null;
           // 從拍燈定格的剩餘倒數續跑，讓其他組（不鎖時含本組）繼續搶
@@ -404,6 +407,14 @@ wss.on('connection', (ws) => {
           // 倒數關閉時不重啟倒數（否則 ms=0 會誤判為到時而關閉視窗），維持 deadline=null 讓搶答續開
           if (enableCountdown) startCountdownFrom(ms); // ms<=0 時內部會把 closed 設回 true
           else clearCountdown();
+        } else {
+          // 答錯 + 不續搶：直接結束本題——回 locked、清定格倒數（不加分），主持人再開下一題
+          if (lockOnWrong) state.eliminated.push(team);
+          state.firstBuzzer = null;
+          state.phase = 'locked';
+          state.remainingMs = null;
+          clearCountdown();
+          state.closed = false;
         }
 
         const next = currentFocusTeam();
@@ -494,6 +505,15 @@ wss.on('connection', (ws) => {
           // 跨模式切換視為新決策點，舊判定快照已失真，禁止用它撤銷（避免還原出非法中間態）。
           state.lastVerify = null;
         }
+        broadcastState();
+        break;
+      }
+
+      // 切換「答錯後續搶」：true=答錯後繼續開放讓其他組搶；false=答錯即結束本題
+      case 'host_set_reopen': {
+        if (!checkPin()) return;
+        if (typeof msg.reopen !== 'boolean') return;
+        reopenOnWrong = msg.reopen;
         broadcastState();
         break;
       }
