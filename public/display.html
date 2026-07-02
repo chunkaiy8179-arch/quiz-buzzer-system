@@ -444,8 +444,8 @@ body.igniting #lit-badge { display: none !important; }
 #idle-leaderboard .lb-row.r1 .lb-crown { width: .8em; height: .8em; }
 /* open 右欄：每列同樣設上限緊湊 */
 #open-leaderboard.show .lb-row { flex: 1 1 0; min-height: 0; max-height: clamp(28px,6vh,52px); }
-#open-leaderboard .lb-row.r1 .lb-team { font-size: clamp(14px,1.5vw,22px); }
-#open-leaderboard .lb-row.r1 .lb-score { font-size: clamp(14px,1.5vw,22px); }
+#open-leaderboard .lb-row.r1 .lb-team { font-size: clamp(18px,1.9vw,30px); }
+#open-leaderboard .lb-row.r1 .lb-score { font-size: clamp(18px,1.9vw,30px); }
 /* 進場面板（0 城時）也不捲動 */
 .joined-panel { overflow: hidden; }
 /* 矮螢幕（如 1366x768 視窗、非全螢幕）：頭部讓位給榜單，確保 10 城也全進、零卷軸 */
@@ -946,7 +946,7 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
     row.dataset.lbTeam = e.team;
     row.style.animationDelay=`${Math.min(i,8)*0.05}s`;
     const badgeCls = rank<=3 ? `r${rank}` : '';
-    const crown = rank===1 ? `<svg class="lb-crown" viewBox="0 0 120 150"><path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_d)"/><path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/></svg>` : '';
+    const crown = rank===1 ? `<svg class="lb-crown" viewBox="0 0 120 150"><path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="#f5a623"/><path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/></svg>` : '';
     row.innerHTML=`
       <div class="lb-badge ${badgeCls} num">${rank}</div>
       <div class="lb-team">${crown}${escHtml(e.team)}</div>
