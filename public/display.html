@@ -161,6 +161,17 @@ body::before{
 .open-waiting-sub { font-size: clamp(14px,1.8vw,22px); color: var(--muted); letter-spacing: 5px; }
 .open-waiting .chips { justify-content: center; max-width: 80vw; }
 
+/* 單一畫面待機態：中央聖火之夜氛圍（聖杯 + 標題 + 等待字），佔滿 open-center 置中 */
+.open-standby { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px,2vw,26px); text-align: center; }
+.open-standby .emblem-wrap { width: clamp(140px,18vw,260px); height: clamp(140px,18vw,260px); }
+.open-standby-hint { font-size: clamp(14px,1.8vw,22px); color: var(--muted); letter-spacing: 5px; margin-top: clamp(6px,1vw,12px); }
+
+/* 提示文字：搶到 / 答對 / 答錯 一行，置中於狀態列下方，與中央大字並存 */
+.open-tip { position: absolute; top: clamp(70px,8vw,120px); left: 0; right: 0; z-index: 6; text-align: center; font-family: var(--font-title); font-size: clamp(20px,2.8vw,40px); font-weight: 900; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 22px rgba(245,205,120,.5); pointer-events: none; animation: tip-pop .4s cubic-bezier(.16,1,.3,1) both; }
+.open-tip.correct { color: #7dff9a; text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 24px rgba(90,255,140,.55); }
+.open-tip.wrong { color: #ff8a6a; text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 24px rgba(255,120,80,.5); }
+@keyframes tip-pop { 0%{ transform: translateY(-10px); opacity: 0; } 100%{ transform: translateY(0); opacity: 1; } }
+
 /* ── 順位列表（open 即時 / rank 回顧 共用）── */
 .order-list { list-style: none; width: 100%; max-width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(8px,1.2vw,14px); overflow-y: auto; overflow-x: hidden; padding: 6px 0; }
 .order-list.few { justify-content: center; }  /* 隊伍少時垂直置中，多時回頂端可捲動 */
@@ -482,7 +493,7 @@ body.igniting #lit-badge { display: none !important; }
   </defs>
 </svg>
 
-<div id="idle-screen" class="screen active">
+<div id="idle-screen" class="screen">
   <div class="corner-frame"><svg class="corner tl" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
  <defs><linearGradient id="cgtl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".5" stop-color="#d4af37"/><stop offset="1" stop-color="#9c7a2c"/></linearGradient></defs>
  <g fill="none" stroke="url(#cgtl)" stroke-linecap="round">
@@ -578,9 +589,10 @@ body.igniting #lit-badge { display: none !important; }
   <div class="idle-standby">STANDBY · 等待主持人點燃聖火</div>
 </div>
 
-<div id="open-screen" class="screen">
+<div id="open-screen" class="screen active">
   <div class="open-top">
-    <div class="open-status"><span class="flame-dot"></span>聖火開放 · 搶答中</div>
+    <div class="open-status"><span class="flame-dot"></span><span id="open-status-text">等待主持人點燃聖火</span></div>
+    <div id="open-tip" class="open-tip" style="display:none"></div>
     <div id="count-badge" class="count-badge gold-frame">
       <span class="cb-label">倒數</span>
       <span id="count-badge-num" class="num">--</span>
@@ -598,6 +610,40 @@ body.igniting #lit-badge { display: none !important; }
       </div>
     </aside>
     <div class="open-center">
+      <!-- 待機態：聖火之夜氛圍（聖杯 emblem + 標題三行 + 等待字）。單一畫面全程不切換，由 JS 控制顯隱 -->
+      <div id="open-standby" class="open-standby" style="display:none">
+        <div class="emblem-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" class="laurel" aria-hidden="true">
+<defs><linearGradient id="lg_s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4c6"/><stop offset=".5" stop-color="#e7c25a"/><stop offset="1" stop-color="#9c7328"/></linearGradient></defs>
+<g><g fill="url(#lg_s)"><ellipse cx="100.7" cy="198.5" rx="8.4" ry="3.0" transform="rotate(216.0 100.7 198.5)"/><ellipse cx="101.7" cy="188.6" rx="7.2" ry="2.6" transform="rotate(164.0 101.7 188.6)"/><ellipse cx="80.3" cy="193.9" rx="9.6" ry="3.5" transform="rotate(229.5 80.3 193.9)"/><ellipse cx="83.6" cy="184.5" rx="8.2" ry="3.0" transform="rotate(177.5 83.6 184.5)"/><ellipse cx="61.5" cy="184.6" rx="10.8" ry="3.9" transform="rotate(243.0 61.5 184.6)"/><ellipse cx="67.0" cy="176.3" rx="9.2" ry="3.4" transform="rotate(191.0 67.0 176.3)"/><ellipse cx="45.4" cy="171.3" rx="11.7" ry="4.2" transform="rotate(256.5 45.4 171.3)"/><ellipse cx="52.7" cy="164.4" rx="10.1" ry="3.7" transform="rotate(204.5 52.7 164.4)"/><ellipse cx="32.9" cy="154.5" rx="12.5" ry="4.5" transform="rotate(270.0 32.9 154.5)"/><ellipse cx="41.6" cy="149.5" rx="10.7" ry="3.9" transform="rotate(218.0 41.6 149.5)"/><ellipse cx="24.7" cy="135.3" rx="13.0" ry="4.7" transform="rotate(283.5 24.7 135.3)"/><ellipse cx="34.3" cy="132.4" rx="11.1" ry="4.1" transform="rotate(231.5 34.3 132.4)"/><ellipse cx="21.1" cy="114.7" rx="13.1" ry="4.8" transform="rotate(297.0 21.1 114.7)"/><ellipse cx="31.1" cy="114.1" rx="11.3" ry="4.1" transform="rotate(245.0 31.1 114.1)"/><ellipse cx="22.5" cy="93.8" rx="13.0" ry="4.7" transform="rotate(310.5 22.5 93.8)"/><ellipse cx="32.3" cy="95.6" rx="11.1" ry="4.1" transform="rotate(258.5 32.3 95.6)"/><ellipse cx="28.7" cy="73.8" rx="12.5" ry="4.5" transform="rotate(324.0 28.7 73.8)"/><ellipse cx="37.8" cy="77.9" rx="10.7" ry="3.9" transform="rotate(272.0 37.8 77.9)"/><ellipse cx="39.4" cy="55.8" rx="11.7" ry="4.2" transform="rotate(337.5 39.4 55.8)"/><ellipse cx="47.3" cy="61.9" rx="10.1" ry="3.7" transform="rotate(285.5 47.3 61.9)"/><ellipse cx="54.0" cy="40.8" rx="10.8" ry="3.9" transform="rotate(351.0 54.0 40.8)"/><ellipse cx="60.3" cy="48.6" rx="9.2" ry="3.4" transform="rotate(299.0 60.3 48.6)"/><ellipse cx="71.7" cy="29.7" rx="9.6" ry="3.5" transform="rotate(364.5 71.7 29.7)"/><ellipse cx="76.0" cy="38.7" rx="8.2" ry="3.0" transform="rotate(312.5 76.0 38.7)"/><ellipse cx="91.5" cy="22.9" rx="8.4" ry="3.0" transform="rotate(378.0 91.5 22.9)"/><ellipse cx="93.6" cy="32.7" rx="7.2" ry="2.6" transform="rotate(326.0 93.6 32.7)"/><circle cx="101.2" cy="193.5" r="3"/></g><path d="M 101.2 193.5 A 84 84 0 0 0 92.5 27.8" fill="none" stroke="url(#lg_s)" stroke-width="2.2"/></g><g transform="translate(220,0) scale(-1,1)"><g fill="url(#lg_s)"><ellipse cx="100.7" cy="198.5" rx="8.4" ry="3.0" transform="rotate(216.0 100.7 198.5)"/><ellipse cx="101.7" cy="188.6" rx="7.2" ry="2.6" transform="rotate(164.0 101.7 188.6)"/><ellipse cx="80.3" cy="193.9" rx="9.6" ry="3.5" transform="rotate(229.5 80.3 193.9)"/><ellipse cx="83.6" cy="184.5" rx="8.2" ry="3.0" transform="rotate(177.5 83.6 184.5)"/><ellipse cx="61.5" cy="184.6" rx="10.8" ry="3.9" transform="rotate(243.0 61.5 184.6)"/><ellipse cx="67.0" cy="176.3" rx="9.2" ry="3.4" transform="rotate(191.0 67.0 176.3)"/><ellipse cx="45.4" cy="171.3" rx="11.7" ry="4.2" transform="rotate(256.5 45.4 171.3)"/><ellipse cx="52.7" cy="164.4" rx="10.1" ry="3.7" transform="rotate(204.5 52.7 164.4)"/><ellipse cx="32.9" cy="154.5" rx="12.5" ry="4.5" transform="rotate(270.0 32.9 154.5)"/><ellipse cx="41.6" cy="149.5" rx="10.7" ry="3.9" transform="rotate(218.0 41.6 149.5)"/><ellipse cx="24.7" cy="135.3" rx="13.0" ry="4.7" transform="rotate(283.5 24.7 135.3)"/><ellipse cx="34.3" cy="132.4" rx="11.1" ry="4.1" transform="rotate(231.5 34.3 132.4)"/><ellipse cx="21.1" cy="114.7" rx="13.1" ry="4.8" transform="rotate(297.0 21.1 114.7)"/><ellipse cx="31.1" cy="114.1" rx="11.3" ry="4.1" transform="rotate(245.0 31.1 114.1)"/><ellipse cx="22.5" cy="93.8" rx="13.0" ry="4.7" transform="rotate(310.5 22.5 93.8)"/><ellipse cx="32.3" cy="95.6" rx="11.1" ry="4.1" transform="rotate(258.5 32.3 95.6)"/><ellipse cx="28.7" cy="73.8" rx="12.5" ry="4.5" transform="rotate(324.0 28.7 73.8)"/><ellipse cx="37.8" cy="77.9" rx="10.7" ry="3.9" transform="rotate(272.0 37.8 77.9)"/><ellipse cx="39.4" cy="55.8" rx="11.7" ry="4.2" transform="rotate(337.5 39.4 55.8)"/><ellipse cx="47.3" cy="61.9" rx="10.1" ry="3.7" transform="rotate(285.5 47.3 61.9)"/><ellipse cx="54.0" cy="40.8" rx="10.8" ry="3.9" transform="rotate(351.0 54.0 40.8)"/><ellipse cx="60.3" cy="48.6" rx="9.2" ry="3.4" transform="rotate(299.0 60.3 48.6)"/><ellipse cx="71.7" cy="29.7" rx="9.6" ry="3.5" transform="rotate(364.5 71.7 29.7)"/><ellipse cx="76.0" cy="38.7" rx="8.2" ry="3.0" transform="rotate(312.5 76.0 38.7)"/><ellipse cx="91.5" cy="22.9" rx="8.4" ry="3.0" transform="rotate(378.0 91.5 22.9)"/><ellipse cx="93.6" cy="32.7" rx="7.2" ry="2.6" transform="rotate(326.0 93.6 32.7)"/><circle cx="101.2" cy="193.5" r="3"/></g><path d="M 101.2 193.5 A 84 84 0 0 0 92.5 27.8" fill="none" stroke="url(#lg_s)" stroke-width="2.2"/></g></svg>
+          <svg class="emblem" viewBox="0 0 120 150" style="width:clamp(66px,8.4vw,104px);height:auto;top:3px">
+          <defs>
+            <radialGradient id="gl_s" cx="50%" cy="42%" r="55%"><stop offset="0" stop-color="#ffcaa0" stop-opacity=".55"/><stop offset="45%" stop-color="#f5a623" stop-opacity=".22"/><stop offset="100%" stop-color="#f5a623" stop-opacity="0"/></radialGradient>
+            <linearGradient id="cg_s" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#fbeab0"/><stop offset=".5" stop-color="#d8b347"/><stop offset="1" stop-color="#7c5a1f"/></linearGradient>
+            <linearGradient id="ff_s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e23a14"/><stop offset=".5" stop-color="#f5891f"/><stop offset="1" stop-color="#ffd066"/></linearGradient>
+            <linearGradient id="fi_s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f5a623"/><stop offset=".6" stop-color="#ffdf8a"/><stop offset="1" stop-color="#fffbe9"/></linearGradient>
+          </defs>
+          <ellipse cx="60" cy="56" rx="40" ry="50" fill="url(#gl_s)"/>
+          <g fill="url(#cg_s)">
+            <path d="M40 139 Q60 127 80 139 Q60 133.5 40 139 Z"/>
+            <rect x="58.5" y="120" width="3" height="6"/>
+            <path d="M55 106 Q56.5 114 52 121 L68 121 Q63.5 114 65 106 Z"/>
+            <ellipse cx="60" cy="108.5" rx="5.2" ry="3.6"/>
+            <path d="M41 88 Q60 92 79 88 Q76 104 60 106 Q44 104 41 88 Z"/>
+            <path d="M41 88 Q60 94 79 88 L77.5 91 Q60 96 42.5 91 Z" fill="#fff3cf" opacity=".5"/>
+          </g>
+          <path class="flame" d="M60 22 C72 44 74 66 60 86 C46 66 48 44 60 22 Z" fill="url(#ff_s)"/>
+          <path class="flame" d="M60 40 C67 54 67 70 60 84 C53 70 53 54 60 40 Z" fill="url(#fi_s)"/>
+          <path class="flame" d="M60 56 C63.5 64 63.5 74 60 82 C56.5 74 56.5 64 60 56 Z" fill="#fffdf2"/>
+        </svg>
+        </div>
+        <div class="idle-headings" style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px">
+          <div class="idle-title serif gold-foil-shine">聖火之夜</div>
+          <div class="idle-latin">NIGHT OF THE SACRED FLAME</div>
+          <div class="idle-sub">點燃聖火 · 照亮長夜</div>
+        </div>
+        <div class="open-standby-hint">等待主持人開始搶答</div>
+      </div>
       <div id="open-waiting" class="open-waiting">
         <div class="open-waiting-title serif gold-foil">聖火開放！</div>
         <div class="open-waiting-sub">拍燈搶答</div>
@@ -691,6 +737,7 @@ let ignitePlayed = false; // 本 session 是否已播過點燈動畫，避免重
 let prevCanIgnite = false;// 上次 state 是否已達標，用來偵測「剛達標」播提示音；首個 state 先同步不觸發
 let prevTotal = 0;        // 上次聖火總分，偵測分數上升播逼近漸強音
 let justVerified = null;  // verify_result correct 後設此旗標，下一次 applyState 對該組略過分數動畫避免重複
+let wrongTipUntil = 0;    // 答錯提示保留窗（時間戳）：窗內擋掉其他 state 對 open-tip 的覆蓋，讓「答錯」穩定顯示數秒
 let stateInited = false;  // 第一次 applyState 僅同步基準值（prevCanIgnite/prevTotal/prevScores），不播任何分數/達標音效
 // 倒數秒數 fallback：以伺服器下發的 state.countFrom 為權威來源，僅在尚未收到 state 時用此預設。
 // 同步成 server 預設 60，避免 remainingMs==null fallback 路徑顯示與伺服器不一致的秒數。
@@ -834,6 +881,31 @@ function celebrate(){ // 答對：金光爆發 + 神殿短暫發光
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=$(`${name}-screen`); if(el) el.classList.add('active');
+}
+
+// open 單一畫面狀態列文字（待機「等待主持人點燃聖火」/ 搶答「聖火開放 · 搶答中」）
+function setOpenStatus(text){ const el=$('open-status-text'); if(el) el.textContent = text; }
+// open 單一畫面提示文字（搶到/答對/答錯一行）。text 為空則隱藏。kind: ''|'correct'|'wrong'
+function setOpenTip(text, kind){
+  const el=$('open-tip'); if(!el) return;
+  // 答錯提示保留窗內：擋掉非 wrong 的覆蓋（含清空），讓「答錯」穩定顯示數秒
+  if(kind!=='wrong' && Date.now() < wrongTipUntil) return;
+  if(!text){ el.style.display='none'; el.textContent=''; el.className='open-tip'; return; }
+  el.className = `open-tip${kind?` ${kind}`:''}`;
+  el.textContent = text;
+  el.style.display='block';
+  void el.offsetWidth; // 重觸發 tip-pop 動畫
+}
+// open 單一畫面「待機態」：中央顯示聖火之夜氛圍、隱藏大字卡與提示、右側英雄榜常駐
+function showOpenStandby(scores, teams, scoreSince){
+  showScreen('open');
+  $('open-standby').style.display = 'flex';
+  $('open-hero').style.display = 'none';
+  $('open-waiting').style.display = 'none';
+  setOpenStatus('等待主持人點燃聖火');
+  setOpenTip('', '');
+  $('open-leaderboard').classList.add('show');
+  renderOpenLeaderboard(scores, teams, scoreSince);
 }
 
 function startCountdown(remainSec){
@@ -1070,6 +1142,8 @@ function applyState(state){
   prevTotal = total;
   if(state.phase==='open'){
     showScreen('open');
+    $('open-standby').style.display = 'none'; // 搶答中隱藏待機氛圍
+    setOpenStatus('聖火開放 · 搶答中');
     // 倒數續跑：以伺服器剩餘秒數驅動，歸零（closed）即定格 0。
     // 未啟用倒數時 server 不下發 deadline（remainingMs=null），不啟本地倒數避免空轉與逐秒 tick 音效。
     if(state.enableCountdown !== true){
@@ -1083,45 +1157,49 @@ function applyState(state){
     if(entry){
       $('open-waiting').style.display = 'none';
       renderHero($('open-hero'), entry);
+      setOpenTip(`${entry.team} 搶到了！`, ''); // 中央大字卡 + 上方一行提示並存
     } else {
       $('open-hero').style.display = 'none';
       $('open-waiting').style.display = 'flex';
       renderChips($('open-waiting-chips'), teams);
+      setOpenTip('', '');
     }
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else if(state.phase==='reviewing'){
     // 拍燈定格：留在 open 畫面顯示「誰搶到」與定格倒數（不切回顧），停表但不歸零
     showScreen('open');
+    $('open-standby').style.display = 'none';
+    setOpenStatus('聖火開放 · 搶答中');
     freezeCountdown(state.remainingMs);
     $('open-waiting').style.display = 'none';
-    renderHero($('open-hero'), state.buzzOrder[0] || null);
+    const rv = state.buzzOrder[0] || null;
+    renderHero($('open-hero'), rv);
+    setOpenTip(rv ? `${rv.team} 搶到了！` : '', '');
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
-    $('open-leaderboard').classList.remove('show');
     $('x-overlay').classList.remove('show');
     const winner = state.buzzOrder[0] || null; // 答對者（locked 由答對而來）
     if(winner){
       // 答對後不跳 rank 畫面：留在 open 畫面，用中央大字卡顯示答對者（XXX 答對！+分數）＋右側英雄榜
       showScreen('open');
+      $('open-standby').style.display = 'none';
       $('count-badge').classList.add('is-hidden');   // 答對展示時不需倒數牌
       $('open-waiting').style.display='none';
       renderHero($('open-hero'), winner);
+      setOpenStatus('聖火開放 · 搶答中');
+      const pts = (winner.result==='correct' && winner.points!=null) ? `＋${winner.points}` : '';
+      setOpenTip(`答對！${pts}`, 'correct');
       $('open-leaderboard').classList.add('show');
       renderOpenLeaderboard(state.scores, teams, scoreSince);
-      // 顯示 RANK_REVIEW_MS 後若仍 locked，自動切回 idle 城鎮看板（用快取避免閉包抓舊值）
+      // 顯示 RANK_REVIEW_MS 後若仍 locked，回單一畫面待機態（不切 idle；用快取避免閉包抓舊值）
       rankAutoTimer = setTimeout(()=>{
         rankAutoTimer = null;
-        showScreen('idle');
-        $('idle-count').textContent = lastJoined.length;
-        renderChips($('idle-chips'), lastJoined);
-        renderLeaderboard(lastScores, lastJoined, lastScoreSince);
+        showOpenStandby(lastScores, lastJoined, lastScoreSince);
       }, RANK_REVIEW_MS);
     } else {
-      showScreen('idle');
-      $('idle-count').textContent = teams.length;
-      renderChips($('idle-chips'), teams);
-      renderLeaderboard(state.scores, teams, scoreSince);
+      // 待機（無 winner）：單一畫面待機態，右側英雄榜常駐
+      showOpenStandby(state.scores, teams, scoreSince);
     }
   }
   prevBuzzCount = state.buzzOrder.length;
@@ -1185,6 +1263,9 @@ function handleMessage(msg){
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
         setTimeout(()=>overlay.classList.remove('show'),1800);
+        // 中央上方一行提示「答錯」；設保留窗擋掉後續 state 覆蓋，窗過即由下個 state 接管清除
+        setOpenTip(`${msg.team} 答錯`, 'wrong');
+        wrongTipUntil = Date.now() + 1800;
       }
       break;
     case 'ignite':
@@ -1223,6 +1304,7 @@ function unlockAudio(){
 $('audio-unlock').addEventListener('click', unlockAudio);
 document.addEventListener('click', unlockAudio, { once:true });
 document.addEventListener('keydown', unlockAudio, { once:true });
+showOpenStandby({}, [], {}); // 首屏（收到第一個 state 前）即顯示單一畫面待機態：聖火之夜氛圍
 connect();
 </script>
 <script>

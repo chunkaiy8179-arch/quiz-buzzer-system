@@ -78,11 +78,12 @@ async function main() {
   await con.click('label:has(#flame-toggle)');
   await con.click('label:has(#countdown-toggle)');
   await delay(300);
+  // 單一畫面重構：待機看的是 open 畫面（非 idle-screen），聖火能量條改驗 open-flame-bar
   const flameShownAfterToggle = await display.evaluate(() => {
-    const idle = document.getElementById('idle-flame-bar');
-    return !idle.classList.contains('is-hidden') && idle.getBoundingClientRect().width > 0;
+    const open = document.getElementById('open-flame-bar');
+    return !open.classList.contains('is-hidden') && open.getBoundingClientRect().width > 0;
   });
-  check('聖火開關開啟後：idle 能量條顯示', flameShownAfterToggle);
+  check('聖火開關開啟後：open 能量條顯示', flameShownAfterToggle);
 
   // 開搶 → 截 open（5 段三欄）
   await con.click('#btn-open');

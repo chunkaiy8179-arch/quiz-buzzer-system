@@ -113,11 +113,7 @@ async function main() {
   const flameCheckedAfter = await con.evaluate(() => document.getElementById('flame-toggle').checked);
   check('切換後主持端聖火開關已勾選', flameCheckedAfter === true);
 
-  const idleFlameShown = await display.evaluate(() => {
-    const el = document.getElementById('idle-flame-bar');
-    return !el.classList.contains('is-hidden') && el.getBoundingClientRect().width > 0;
-  });
-  check('聖火開啟：idle 畫面 #idle-flame-bar 顯示（無 is-hidden 且有寬度）', idleFlameShown);
+  // （單一畫面重構後 idle 畫面棄用，聖火條實際是 open-flame-bar，下方開搶後驗證；原 idle-flame-bar 斷言移除）
   await con.click('#btn-open');
   await delay(300);
   const openFlameShown = await display.evaluate(() => {
