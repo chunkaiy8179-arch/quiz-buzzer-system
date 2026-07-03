@@ -435,6 +435,8 @@ button, .town-btn { position: relative; overflow: hidden; }
 /* 右欄：英雄榜全顯示、禁捲動、各列等分填滿；換位用 FLIP 滑動 */
 #open-leaderboard { width: 100%; height: 100%; gap: clamp(5px,.8vw,10px); padding: clamp(12px,1.6vw,20px) clamp(12px,1.6vw,22px); overflow: hidden; }
 #open-leaderboard .lb-title { flex-shrink: 0; }
+/* 0 城空狀態：英雄榜常駐右欄時的等待提示 */
+#open-leaderboard .lb-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: clamp(12px,1.3vw,17px); letter-spacing: 3px; text-align: center; }
 #open-leaderboard.show .lb-row { flex: 1 1 0; min-height: 0; }
 .lb-row { animation: none; }
 
@@ -1007,7 +1009,14 @@ function renderLeaderboard(scores, teams, scoreSince){
 function renderOpenLeaderboard(scores, teams, scoreSince){
   const wrap=$('open-leaderboard');
   const entries = sortedScores(scores, teams, scoreSince); // 一開始就列所有已加入城鎮（含 0 分），之後依分數重排
-  if(entries.length===0){ wrap.classList.remove('show'); return; }
+  wrap.classList.add('show'); // 英雄榜常駐：0 城也顯示空榜佔住右欄，中央才不會因右側留白而視覺偏左
+  wrap.querySelector('.lb-empty')?.remove();
+  if(entries.length===0){
+    wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
+    const em=document.createElement('div'); em.className='lb-empty'; em.textContent='等待城鎮加入…';
+    wrap.appendChild(em);
+    return;
+  }
   wrap.classList.toggle('dense', entries.length>8);
   const _fp = flipCapture(wrap);
   wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
@@ -1026,7 +1035,6 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
     wrap.appendChild(row);
   });
   flipPlay(wrap, _fp);
-  wrap.classList.add('show');
 }
 
 // 聖火進度條：填充寬度 = min(100%, total/threshold)，逼近門檻火苗加劇，達標滿格金光。
