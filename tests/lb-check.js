@@ -29,7 +29,7 @@ async function main() {
   const mob = await browser.newContext({viewport:{width:390,height:780}});
   const con = await (await browser.newContext({viewport:{width:900,height:760}})).newPage();
   await con.goto(`${BASE}/console.html`); await con.fill('#pin-input',PIN); await con.click('#pin-btn'); await con.waitForSelector('#pin-screen',{state:'hidden'});
-  const TOWNS=['城鎮一','城鎮二','城鎮三','城鎮四','城鎮五','城鎮六','城鎮七','城鎮八','城鎮九','城鎮十'];
+  const TOWNS=['城鎮一','城鎮二','城鎮三','城鎮四','城鎮五','城鎮六','城鎮七','城鎮八','城鎮九','城鎮十','城鎮十一'];
   const clients=[];
   const dismiss=async()=>{if(await con.evaluate(()=>{const o=document.getElementById('confirm-overlay');return o&&!o.classList.contains('hidden')}))await con.click('#cd-ok');};
   async function score(town,pts){await con.click('#btn-open');await delay(200);await clients[TOWNS.indexOf(town)].click('#buzz-btn',{force:true});await delay(200);await con.click(`.points-chip[data-points="${pts}"]`);await con.click('.v-btn[data-result="correct"]');await delay(120);await dismiss();await delay(200);await con.click('#btn-reset');await delay(120);await dismiss();await delay(150);}
@@ -50,15 +50,15 @@ async function main() {
   await snap('idle-3城');
   await con.click('#btn-open'); await delay(500); await snap('open-3城'); await con.click('#btn-reset'); await delay(150); await dismiss();
 
-  // 滿城鎮：再加 7 = 10 城、給更多分差
+  // 滿城鎮：再加 8 = 11 城、給更多分差
   for (const t of TOWNS.slice(3)) await join(t);
   await score('城鎮三',30); await score('城鎮五',20); await score('城鎮七',10);
-  await snap('idle-10城');
-  await con.click('#btn-open'); await delay(500); await snap('open-10城');
+  await snap('idle-11城');
+  await con.click('#btn-open'); await delay(500); await snap('open-11城');
 
   console.log('=== 卷軸檢查（應全無）===');
   const keys = Object.keys(report);
-  if (!keys.length) console.log('✅ idle/open 榜單 × 3城/10城 × 兩解析度：完全無卷軸');
+  if (!keys.length) console.log('✅ idle/open 榜單 × 3城/11城 × 兩解析度：完全無卷軸');
   else keys.forEach(k=>console.log(k+':\n   '+report[k].join('\n   ')));
   console.log('截圖 →', SHOTS);
   await browser.close(); server.kill(); process.exit(keys.length?1:0);
