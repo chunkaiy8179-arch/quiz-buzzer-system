@@ -144,7 +144,7 @@ body::before{
 /* ── Open ── */
 #open-screen { padding: clamp(24px,3vw,40px) clamp(32px,4vw,64px); }
 .open-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-shrink: 0; margin-bottom: clamp(16px,2vw,28px); }
-.open-status { display: flex; align-items: center; gap: 16px; font-family:var(--font-title); font-size: clamp(24px,3.2vw,48px); font-weight: 700; letter-spacing: 6px; color: var(--gold-bright); text-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 22px rgba(245,166,35,.32); }
+.open-status { display: flex; align-items: center; gap: 16px; font-family:var(--font-title); font-size: clamp(24px,3.2vw,48px); font-weight: 700; letter-spacing: 6px; color: var(--gold-bright); text-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 22px rgba(245,166,35,.32); transform: translate(clamp(-18px,-1.4vw,-8px), clamp(-14px,-1.1vw,-6px)); }
 .flame-dot { width: clamp(14px,1.4vw,18px); height: clamp(14px,1.4vw,18px); border-radius: 50% 50% 50% 50%/ 60% 60% 40% 40%; background: radial-gradient(circle at 50% 65%, var(--flame-amber), var(--flame-red)); box-shadow: 0 0 14px var(--flame-amber); animation: flicker 1.1s ease-in-out infinite; }
 @keyframes flicker { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.15);opacity:.85;} }
 .count-badge { display: flex; align-items: center; gap: 14px; padding: clamp(8px,1vw,12px) clamp(18px,2vw,26px); }
@@ -166,11 +166,6 @@ body::before{
 .open-standby .emblem-wrap { width: clamp(140px,18vw,260px); height: clamp(140px,18vw,260px); }
 .open-standby-hint { font-size: clamp(14px,1.8vw,22px); color: var(--muted); letter-spacing: 5px; margin-top: clamp(6px,1vw,12px); }
 
-/* 提示文字：搶到 / 答對 / 答錯 一行，置中於狀態列下方，與中央大字並存 */
-.open-tip { position: absolute; top: clamp(70px,8vw,120px); left: 0; right: 0; z-index: 6; text-align: center; font-family: var(--font-title); font-size: clamp(20px,2.8vw,40px); font-weight: 900; letter-spacing: 4px; color: var(--gold-bright); text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 22px rgba(245,205,120,.5); pointer-events: none; animation: tip-pop .4s cubic-bezier(.16,1,.3,1) both; }
-.open-tip.correct { color: #7dff9a; text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 24px rgba(90,255,140,.55); }
-.open-tip.wrong { color: #ff8a6a; text-shadow: 0 2px 12px rgba(0,0,0,.7), 0 0 24px rgba(255,120,80,.5); }
-@keyframes tip-pop { 0%{ transform: translateY(-10px); opacity: 0; } 100%{ transform: translateY(0); opacity: 1; } }
 
 /* ── 順位列表（open 即時 / rank 回顧 共用）── */
 .order-list { list-style: none; width: 100%; max-width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: clamp(8px,1.2vw,14px); overflow-y: auto; overflow-x: hidden; padding: 6px 0; }
@@ -226,7 +221,7 @@ body.flash::after { content:''; position: fixed; inset: 0; z-index: 5; pointer-e
 #x-overlay.show { display: flex; }
 #x-overlay::before { content:''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 48%, rgba(192,57,43,.34), rgba(192,57,43,.06) 38%, transparent 60%); animation: x-flash .7s ease-out forwards; }
 @keyframes x-flash { 0%{opacity:0;} 18%{opacity:1;} 100%{opacity:0;} }
-.x-mark { width: clamp(180px,34vw,340px); height: auto; filter: drop-shadow(0 0 40px rgba(192,57,43,.6)); }
+.x-mark { width: clamp(240px,46vw,480px); height: auto; filter: drop-shadow(0 0 40px rgba(192,57,43,.6)); }
 @keyframes x-stamp { 0%{transform:scale(2.2) rotate(-15deg); opacity:0;} 60%{opacity:1;} 100%{transform:scale(1) rotate(0); opacity:1;} }
 .x-stamp { animation: x-stamp .36s cubic-bezier(.22,.61,.36,1) both; }
 
@@ -594,7 +589,6 @@ body.igniting #lit-badge { display: none !important; }
 <div id="open-screen" class="screen active">
   <div class="open-top">
     <div class="open-status"><span class="flame-dot"></span><span id="open-status-text">等待主持人點燃聖火</span></div>
-    <div id="open-tip" class="open-tip" style="display:none"></div>
     <div id="count-badge" class="count-badge gold-frame">
       <span class="cb-label">倒數</span>
       <span id="count-badge-num" class="num">--</span>
@@ -887,17 +881,6 @@ function showScreen(name){
 
 // open 單一畫面狀態列文字（待機「等待主持人點燃聖火」/ 搶答「聖火開放 · 搶答中」）
 function setOpenStatus(text){ const el=$('open-status-text'); if(el) el.textContent = text; }
-// open 單一畫面提示文字（搶到/答對/答錯一行）。text 為空則隱藏。kind: ''|'correct'|'wrong'
-function setOpenTip(text, kind){
-  const el=$('open-tip'); if(!el) return;
-  // 答錯提示保留窗內：擋掉非 wrong 的覆蓋（含清空），讓「答錯」穩定顯示數秒
-  if(kind!=='wrong' && Date.now() < wrongTipUntil) return;
-  if(!text){ el.style.display='none'; el.textContent=''; el.className='open-tip'; return; }
-  el.className = `open-tip${kind?` ${kind}`:''}`;
-  el.textContent = text;
-  el.style.display='block';
-  void el.offsetWidth; // 重觸發 tip-pop 動畫
-}
 // open 單一畫面「待機態」：中央顯示聖火之夜氛圍、隱藏大字卡與提示、右側英雄榜常駐
 function showOpenStandby(scores, teams, scoreSince){
   showScreen('open');
@@ -905,7 +888,6 @@ function showOpenStandby(scores, teams, scoreSince){
   $('open-hero').style.display = 'none';
   $('open-waiting').style.display = 'none';
   setOpenStatus('等待主持人點燃聖火');
-  setOpenTip('', '');
   $('open-leaderboard').classList.add('show');
   renderOpenLeaderboard(scores, teams, scoreSince);
 }
@@ -1165,12 +1147,10 @@ function applyState(state){
     if(entry){
       $('open-waiting').style.display = 'none';
       renderHero($('open-hero'), entry);
-      setOpenTip(`${entry.team} 搶到了！`, ''); // 中央大字卡 + 上方一行提示並存
     } else {
       $('open-hero').style.display = 'none';
       $('open-waiting').style.display = 'flex';
       renderChips($('open-waiting-chips'), teams);
-      setOpenTip('', '');
     }
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else if(state.phase==='reviewing'){
@@ -1182,7 +1162,6 @@ function applyState(state){
     $('open-waiting').style.display = 'none';
     const rv = state.buzzOrder[0] || null;
     renderHero($('open-hero'), rv);
-    setOpenTip(rv ? `${rv.team} 搶到了！` : '', '');
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
@@ -1196,8 +1175,6 @@ function applyState(state){
       $('open-waiting').style.display='none';
       renderHero($('open-hero'), winner);
       setOpenStatus('聖火開放 · 搶答中');
-      const pts = (winner.result==='correct' && winner.points!=null) ? `＋${winner.points}` : '';
-      setOpenTip(`答對！${pts}`, 'correct');
       $('open-leaderboard').classList.add('show');
       renderOpenLeaderboard(state.scores, teams, scoreSince);
       // 顯示 RANK_REVIEW_MS 後若仍 locked，回單一畫面待機態（不切 idle；用快取避免閉包抓舊值）
@@ -1271,8 +1248,6 @@ function handleMessage(msg){
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
         setTimeout(()=>overlay.classList.remove('show'),1800);
-        // 中央上方一行提示「答錯」；設保留窗擋掉後續 state 覆蓋，窗過即由下個 state 接管清除
-        setOpenTip(`${msg.team} 答錯`, 'wrong');
         wrongTipUntil = Date.now() + 1800;
       }
       break;
