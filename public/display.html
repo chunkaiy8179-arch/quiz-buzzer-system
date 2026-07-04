@@ -733,7 +733,7 @@ let ignitePlayed = false; // 本 session 是否已播過點燈動畫，避免重
 let prevCanIgnite = false;// 上次 state 是否已達標，用來偵測「剛達標」播提示音；首個 state 先同步不觸發
 let prevTotal = 0;        // 上次聖火總分，偵測分數上升播逼近漸強音
 let justVerified = null;  // verify_result correct 後設此旗標，下一次 applyState 對該組略過分數動畫避免重複
-let wrongTipUntil = 0;    // 答錯提示保留窗（時間戳）：窗內擋掉其他 state 對 open-tip 的覆蓋，讓「答錯」穩定顯示數秒
+let wrongOverlayUntil = 0; // 答錯保留窗（時間戳）：窗內擋掉緊跟的 state(locked) 清掉中央大叉叉 overlay，讓答錯叉叉穩定顯示約 1800ms
 let stateInited = false;  // 第一次 applyState 僅同步基準值（prevCanIgnite/prevTotal/prevScores），不播任何分數/達標音效
 // 倒數秒數 fallback：以伺服器下發的 state.countFrom 為權威來源，僅在尚未收到 state 時用此預設。
 // 同步成 server 預設 60，避免 remainingMs==null fallback 路徑顯示與伺服器不一致的秒數。
@@ -947,7 +947,9 @@ function hasAnyScore(scores){ return Object.values(scores||{}).some(v=>v>0); }
 
 // ── 英雄榜換位滑動（FLIP）：記錄重建前各列位置，重建後反向位移再過渡回 0 ──
 function flipCapture(wrap){
-  if(!wrap || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
+  // 換位滑動刻意不受 prefers-reduced-motion 閘門影響：投影大螢幕上這是使用者明確要的溫和位移效果。
+  // FLIP 用的是 inline transition（非被 media query 關掉的 animation），.lb-row 平時無 transition，不會衝突。
+  if(!wrap) return null;
   return new Map([...wrap.querySelectorAll('.lb-row')].map(r=>[r.dataset.lbTeam, r.getBoundingClientRect().top]));
 }
 function flipPlay(wrap, prev){
@@ -1000,22 +1002,39 @@ function renderOpenLeaderboard(scores, teams, scoreSince){
     return;
   }
   wrap.classList.toggle('dense', entries.length>8);
-  const _fp = flipCapture(wrap);
-  wrap.querySelectorAll('.lb-row').forEach(r=>r.remove());
+  // 「重排既有 DOM 節點順序 + 更新內容」而非整批 remove/重建：讓 FLIP 換位滑動穩定，且答對時的雙重渲染
+  // （verify_result correct 與緊跟 state 各呼叫一次）第二次不會摧毀第一次正在跑的滑動節點——第二次 DOM 已是
+  // 目標順序，flipCapture 記錄的舊位置＝新位置，dy=0 自然不重播，滑動不被打斷。
+  const _fp = flipCapture(wrap); // 必須在任何重排/內容更新「之前」記錄舊位置
+  const existing = new Map([...wrap.querySelectorAll('.lb-row')].map(r=>[r.dataset.lbTeam, r]));
+  const seen = new Set();
   entries.forEach((e,i)=>{
     const rank=i+1;
-    const row=document.createElement('div');
-    row.className = `lb-row${rank<=3?` r${rank}`:''}`;
-    row.dataset.lbTeam = e.team;
+    const rankCls = rank<=3 ? `r${rank}` : ''; // r1/r2/r3 前三名牌位樣式（row 與 badge 共用）
+    let row = existing.get(e.team);
+    if(!row){
+      // 新加入城鎮：建立節點，靠 slide-up 進場（FLIP 對新節點不滑，因舊位置無記錄）
+      row = document.createElement('div');
+      row.dataset.lbTeam = e.team;
+      row.innerHTML=`
+        <div class="lb-badge num"></div>
+        <div class="lb-team"></div>
+        <div class="lb-score num"></div>`;
+    }
+    row.className = `lb-row${rankCls?` ${rankCls}`:''}`;
     row.style.animationDelay=`${Math.min(i,8)*0.05}s`;
-    const badgeCls = rank<=3 ? `r${rank}` : '';
-    const crown = ''; // 英雄榜第一名不顯示聖火火把圖示（使用者要求移除；r1 仍靠金框＋大字突出）
-    row.innerHTML=`
-      <div class="lb-badge ${badgeCls} num">${rank}</div>
-      <div class="lb-team">${crown}${escHtml(e.team)}</div>
-      <div class="lb-score num">${e.score}</div>`;
-    wrap.appendChild(row);
+    const badge = row.querySelector('.lb-badge');
+    badge.className = `lb-badge ${rankCls} num`;
+    if(badge.textContent !== String(rank)) badge.textContent = rank;
+    const teamEl = row.querySelector('.lb-team');
+    if(teamEl.textContent !== e.team) teamEl.textContent = e.team;
+    const scoreEl = row.querySelector('.lb-score');
+    if(scoreEl.textContent !== String(e.score)) scoreEl.textContent = e.score;
+    wrap.appendChild(row); // appendChild 既有節點＝移到末尾，依 entries 順序逐一 append 即完成重排
+    seen.add(e.team);
   });
+  // 移除已不在榜上的舊城鎮列（理論上 sortedScores 以 joinedTeams 為全集，通常不會發生）
+  existing.forEach((row,team)=>{ if(!seen.has(team)) row.remove(); });
   flipPlay(wrap, _fp);
 }
 
@@ -1165,7 +1184,10 @@ function applyState(state){
     renderOpenLeaderboard(state.scores, teams, scoreSince);
   } else { // locked
     clearInterval(countdownInterval); countdownInterval=null;
-    $('x-overlay').classList.remove('show');
+    // 答錯保留窗內（wrongOverlayUntil）不清叉叉：verify_result(wrong) 剛點亮的大叉叉會被緊跟的 state(locked)
+    // 在同一瞬間清掉，導致完全看不到。窗內交給 verify 分支自己的 1800ms setTimeout 移除，兩者時長一致。
+    // 答對進 locked（winner 存在）時不在此窗內（correct 不設 wrongOverlayUntil），叉叉本就沒亮，維持原本清除行為。
+    if(Date.now() >= wrongOverlayUntil) $('x-overlay').classList.remove('show');
     const winner = state.buzzOrder[0] || null; // 答對者（locked 由答對而來）
     if(winner){
       // 答對後不跳 rank 畫面：留在 open 畫面，用中央大字卡顯示答對者（XXX 答對！+分數）＋右側英雄榜
@@ -1248,7 +1270,8 @@ function handleMessage(msg){
         icon.classList.remove('x-stamp'); void icon.offsetWidth; icon.classList.add('x-stamp');
         overlay.classList.add('show');
         setTimeout(()=>overlay.classList.remove('show'),1800);
-        wrongTipUntil = Date.now() + 1800;
+        // 開答錯保留窗：窗內擋掉緊跟的 state(locked) 把剛點亮的大叉叉 overlay 清掉（見 applyState locked 分支守衛）
+        wrongOverlayUntil = Date.now() + 1800;
       }
       break;
     case 'ignite':
